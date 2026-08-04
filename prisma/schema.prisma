@@ -1,0 +1,181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  password   String
+  avatar     String?
+  role       String   @default("member")
+  isApproved Boolean  @default(false)
+  status     String   @default("offline")
+  customStatus String?
+  jobTitle   String?
+  department String?
+  unit       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  sentMessages    Message[]       @relation("MessageSender")
+  sentDMs         DirectMessage[] @relation("DMSender")
+  receivedDMs     DirectMessage[] @relation("DMReceiver")
+  channelMembers  ChannelMember[]
+  createdChannels Channel[]       @relation("ChannelCreator")
+  reactions       Reaction[]
+  dmReactions     DMReaction[]
+  notifications   Notification[]
+  createdMeetings Meeting[]          @relation("MeetingCreator")
+  meetingParticipations MeetingParticipant[]
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  content   String
+  link      String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Channel {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  avatar      String?
+  isPrivate   Boolean  @default(false)
+  isGroup     Boolean  @default(false)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User            @relation("ChannelCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members   ChannelMember[]
+  messages  Message[]
+}
+
+model ChannelMember {
+  id        String   @id @default(cuid())
+  channelId String
+  userId    String
+  joinedAt  DateTime @default(now())
+
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, userId])
+  @@index([userId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  fileUrl   String?
+  fileName  String?
+  fileType  String?
+  senderId  String
+  channelId String
+  parentId  String?
+  edited    Boolean  @default(false)
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sender    User       @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  channel   Channel    @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  parent    Message?   @relation("MessageReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Message[]  @relation("MessageReplies")
+  reactions Reaction[]
+
+  @@index([channelId, createdAt])
+}
+
+model DirectMessage {
+  id         String   @id @default(cuid())
+  content    String
+  fileUrl    String?
+  fileName   String?
+  fileType   String?
+  senderId   String
+  receiverId String
+  parentId   String?
+  read       Boolean  @default(false)
+  edited     Boolean  @default(false)
+  isDeleted  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  sender   User @relation("DMSender",   fields: [senderId],   references: [id], onDelete: Cascade)
+  receiver User @relation("DMReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  parent   DirectMessage?   @relation("DMReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  DirectMessage[]  @relation("DMReplies")
+  reactions DMReaction[]
+
+  @@index([senderId, receiverId, createdAt])
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  emoji     String
+  userId    String
+  messageId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId],    references: [id], onDelete: Cascade)
+  message Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId, emoji])
+  @@index([messageId])
+}
+
+model DMReaction {
+  id              String   @id @default(cuid())
+  emoji           String
+  userId          String
+  directMessageId String
+  createdAt       DateTime @default(now())
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  directMessage DirectMessage @relation(fields: [directMessageId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, directMessageId, emoji])
+  @@index([directMessageId])
+}
+
+model Meeting {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  meetLink    String?
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy   User     @relation("MeetingCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  participants MeetingParticipant[]
+
+  @@index([startTime])
+}
+
+model MeetingParticipant {
+  id        String   @id @default(cuid())
+  meetingId String
+  userId    String
+  status    String   @default("pending") // pending, accepted, declined, tentative
+  joinedAt  DateTime @default(now())
+
+  meeting   Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, userId])
+  @@index([userId])
+}

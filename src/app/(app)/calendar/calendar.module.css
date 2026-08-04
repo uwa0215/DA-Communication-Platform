@@ -1,0 +1,692 @@
+/* ===== CALENDAR PAGE ===== */
+.calendarPage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  height: 100vh;
+  overflow: hidden;
+  transition: background 0.3s ease;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 32px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+:global(.dark) .header {
+  background: rgba(19, 27, 46, 0.6);
+  border-bottom-color: rgba(52, 211, 153, 0.08);
+}
+
+.titleArea {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.monthNav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-elevated);
+  padding: 4px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+}
+:global(.dark) .monthNav {
+  background: rgba(13, 18, 32, 0.6);
+  border-color: rgba(52, 211, 153, 0.06);
+}
+
+.navBtn {
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--t-fast);
+}
+.navBtn:hover {
+  background: var(--bg-hover);
+  color: var(--brand);
+}
+:global(.dark) .navBtn:hover {
+  background: rgba(52, 211, 153, 0.1);
+}
+
+.currentMonth {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 140px;
+  text-align: center;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mainArea {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Agenda Panel (Left) */
+.agendaPanel {
+  width: 340px;
+  border-right: 1px solid var(--border);
+  background: var(--bg-sidebar);
+  display: flex;
+  flex-direction: column;
+}
+:global(.dark) .agendaPanel {
+  background: rgba(15, 22, 40, 0.6);
+  border-right-color: rgba(52, 211, 153, 0.06);
+}
+
+.agendaHeader {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.agendaTitle {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.agendaList {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.agendaItem {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 16px;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+:global(.dark) .agendaItem {
+  background: rgba(26, 35, 64, 0.6);
+  border-color: rgba(52, 211, 153, 0.06);
+}
+.agendaItem::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--brand);
+}
+.agendaItem:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--brand-light);
+}
+:global(.dark) .agendaItem:hover {
+  border-color: rgba(52, 211, 153, 0.2);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 12px rgba(52, 211, 153, 0.05);
+}
+
+.agendaTime {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--brand);
+}
+.agendaMeetingTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.agendaParticipants {
+  display: flex;
+  align-items: center;
+  gap: -8px; /* overlap avatars slightly */
+  margin-top: 4px;
+}
+.agendaAvatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-elevated);
+  margin-left: -8px;
+}
+.agendaAvatar:first-child {
+  margin-left: 0;
+}
+
+.emptyAgenda {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 40px 20px;
+}
+
+/* Calendar Grid */
+.calendarGrid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  overflow: hidden;
+}
+
+.daysHeader {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+}
+:global(.dark) .daysHeader {
+  background: rgba(19, 27, 46, 0.8);
+  border-bottom-color: rgba(52, 211, 153, 0.08);
+}
+.dayName {
+  padding: 12px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.datesGrid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: minmax(100px, 1fr);
+  overflow-y: auto;
+  background: var(--border);
+  gap: 1px; /* Creates borders */
+}
+:global(.dark) .datesGrid {
+  background: rgba(52, 211, 153, 0.06);
+}
+
+.dateCell {
+  background: var(--bg-primary);
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: background var(--t-fast);
+}
+:global(.dark) .dateCell {
+  background: rgba(10, 15, 26, 0.95);
+}
+.dateCell:hover {
+  background: var(--bg-hover);
+}
+:global(.dark) .dateCell:hover {
+  background: rgba(26, 35, 64, 0.4);
+}
+
+.dateCellOtherMonth {
+  background: var(--bg-sidebar);
+  color: var(--text-muted);
+}
+:global(.dark) .dateCellOtherMonth {
+  background: rgba(13, 18, 32, 0.6);
+}
+
+.dateNumber {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  margin-bottom: 4px;
+}
+.dateNumberToday {
+  background: var(--brand);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+
+.meetingBlock {
+  background: var(--brand-light);
+  color: var(--brand);
+  border-left: 3px solid var(--brand);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all var(--t-fast);
+}
+:global(.dark) .meetingBlock {
+  background: rgba(52, 211, 153, 0.15);
+}
+.meetingBlock:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.2);
+}
+:global(.dark) .meetingBlock:hover {
+  box-shadow: 0 2px 12px rgba(52, 211, 153, 0.25);
+}
+.meetingBlockTime {
+  font-weight: 400;
+  margin-right: 4px;
+}
+
+/* Modals */
+.modalBody {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.modalFooter {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: var(--bg-sidebar);
+}
+:global(.dark) .modalFooter {
+  background: rgba(15, 22, 40, 0.6);
+  border-top-color: rgba(52, 211, 153, 0.08);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.formFull {
+  grid-column: 1 / -1;
+}
+
+.participantList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 8px;
+}
+:global(.dark) .participantList {
+  border-color: rgba(52, 211, 153, 0.08);
+}
+
+.participantItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px;
+  border-radius: 4px;
+}
+.participantItem:hover {
+  background: var(--bg-hover);
+}
+:global(.dark) .participantItem:hover {
+  background: rgba(52, 211, 153, 0.06);
+}
+
+.statusAccepted { color: var(--status-online); }
+.statusDeclined { color: #ef4444; }
+.statusPending { color: var(--status-away); }
+
+/* ── Philippine Holidays ── */
+.dateCellHoliday {
+  background: rgba(239, 68, 68, 0.04) !important;
+}
+:global(.dark) .dateCellHoliday {
+  background: rgba(239, 68, 68, 0.06) !important;
+}
+
+.dateNumberHoliday {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+.holidayTag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  line-height: 1.4;
+}
+
+.holidayTagRegular {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+  border-left: 3px solid #ef4444;
+}
+:global(.dark) .holidayTagRegular {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.holidayTagSpecial {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+  border-left: 3px solid #f59e0b;
+}
+:global(.dark) .holidayTagSpecial {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+}
+
+.holidayLegend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 32px 0 0;
+}
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+.legendRegular {
+  background: #ef4444;
+}
+.legendSpecial {
+  background: #f59e0b;
+}
+.legendLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+}
+
+/* Agenda holiday item */
+.agendaHoliday {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+}
+:global(.dark) .agendaHoliday {
+  background: rgba(26, 35, 64, 0.4);
+  border-color: rgba(239, 68, 68, 0.1);
+}
+.agendaHoliday::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #ef4444;
+}
+.agendaHolidayIcon {
+  color: #ef4444;
+  flex-shrink: 0;
+}
+.agendaHolidayText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.agendaHolidayName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.agendaHolidayDate {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.agendaHolidayType {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.agendaHolidayTypeRegular {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+:global(.dark) .agendaHolidayTypeRegular {
+  color: #f87171;
+}
+.agendaHolidayTypeSpecial {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+}
+:global(.dark) .agendaHolidayTypeSpecial {
+  color: #fbbf24;
+}
+
+/* Section label in agenda */
+.agendaSectionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-muted);
+  padding: 8px 0 4px;
+}
+
+/* ── Holiday Details Modal ── */
+.holidayModalHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 24px;
+  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  position: relative;
+  overflow: hidden;
+}
+.holidayModalHeaderRegular {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(239, 68, 68, 0.04));
+  border-bottom: 2px solid rgba(239, 68, 68, 0.2);
+}
+:global(.dark) .holidayModalHeaderRegular {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05));
+  border-bottom-color: rgba(239, 68, 68, 0.25);
+}
+.holidayModalHeaderSpecial {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.04));
+  border-bottom: 2px solid rgba(245, 158, 11, 0.2);
+}
+:global(.dark) .holidayModalHeaderSpecial {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05));
+  border-bottom-color: rgba(245, 158, 11, 0.25);
+}
+
+.holidayModalIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.holidayModalHeaderRegular .holidayModalIcon {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}
+:global(.dark) .holidayModalHeaderRegular .holidayModalIcon {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+.holidayModalHeaderSpecial .holidayModalIcon {
+  background: rgba(245, 158, 11, 0.15);
+  color: #b45309;
+}
+:global(.dark) .holidayModalHeaderSpecial .holidayModalIcon {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.holidayModalTitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+.holidayModalTypeBadge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-block;
+}
+.holidayModalTypeBadgeRegular {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+:global(.dark) .holidayModalTypeBadgeRegular {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+.holidayModalTypeBadgeSpecial {
+  background: rgba(245, 158, 11, 0.12);
+  color: #b45309;
+}
+:global(.dark) .holidayModalTypeBadgeSpecial {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+}
+
+.holidayModalBody {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.holidayModalRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.holidayModalRowIcon {
+  color: var(--text-muted);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+.holidayModalRowLabel {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+.holidayModalRowValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.holidayStatusBadge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-left: auto;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.holidayStatusToday {
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--brand);
+}
+.holidayStatusUpcoming {
+  background: rgba(59, 130, 246, 0.12);
+  color: #3b82f6;
+}
+:global(.dark) .holidayStatusUpcoming {
+  background: rgba(59, 130, 246, 0.18);
+  color: #60a5fa;
+}
+.holidayStatusPast {
+  background: var(--bg-hover);
+  color: var(--text-muted);
+}
+
+.holidayModalNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+:global(.dark) .holidayModalNote {
+  background: rgba(26, 35, 64, 0.4);
+  border-color: rgba(52, 211, 153, 0.06);
+}
+.holidayModalNoteIcon {
+  color: var(--text-muted);
+  margin-top: 2px;
+  flex-shrink: 0;
+}

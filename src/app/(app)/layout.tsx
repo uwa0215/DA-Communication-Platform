@@ -1,0 +1,24 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import Sidebar from "@/components/layout/Sidebar";
+import Topbar from "@/components/layout/Topbar";
+import GlobalSearchModal from "@/components/layout/GlobalSearchModal";
+import styles from "./app.module.css";
+
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth();
+  if (!session?.user) redirect("/login");
+
+  return (
+    <div className={styles.appShell}>
+      <Topbar currentUser={session.user as any} />
+      <div className={styles.appBody}>
+        <Sidebar currentUser={session.user as any} />
+        <main className={styles.mainContent}>
+          {children}
+        </main>
+      </div>
+      <GlobalSearchModal />
+    </div>
+  );
+}
