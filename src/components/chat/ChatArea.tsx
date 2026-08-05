@@ -13,6 +13,8 @@ import Image from 'next/image';
 import getSuggestion from './suggestion';
 import UserProfileModal from "./UserProfileModal";
 import ThreadPanel from "./ThreadPanel";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import styles from "./ChatArea.module.css";
 
 const EMOJI_SET = ["👍","❤️","😂","😮","😢","🔥","🎉","✅","👏","🚀"];
@@ -143,13 +145,13 @@ export default function ChatArea({
     };
   }, [showInputEmoji]);
 
+  const { data: usersData } = useSWR("/api/users", fetcher);
+
   useEffect(() => {
-    if (showAddPeopleModal && allUsers.length === 0) {
-      fetch("/api/users").then(r => r.json()).then(data => {
-        if (data.users) setAllUsers(data.users);
-      });
+    if (showAddPeopleModal && allUsers.length === 0 && usersData?.users) {
+      setAllUsers(usersData.users);
     }
-  }, [showAddPeopleModal, allUsers.length]);
+  }, [showAddPeopleModal, allUsers.length, usersData]);
 
   async function updateGroupData(updates: any) {
     if (!channelId) return;

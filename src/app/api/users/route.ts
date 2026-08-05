@@ -35,5 +35,8 @@ export async function GET(req: NextRequest) {
     orderBy: { name: "asc" },
   });
 
-  return NextResponse.json({ users });
+  return NextResponse.json(
+    { users },
+    { headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" } }
+  );
 }

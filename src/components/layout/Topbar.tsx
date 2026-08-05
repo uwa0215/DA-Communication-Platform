@@ -8,6 +8,8 @@ import { Search, Bell, Settings, LogOut, ChevronDown, Shield, Menu } from "lucid
 import { signOut } from "next-auth/react";
 import { useSocket } from "@/hooks/useSocket";
 import { useUI } from "@/components/UIProvider";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import styles from "./Topbar.module.css";
 
 interface User {
@@ -42,13 +44,11 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
 
   const { socket } = useSocket();
 
+  const { data: notifData, mutate: mutateNotifs } = useSWR("/api/notifications", fetcher);
+
   useEffect(() => {
-    fetch("/api/notifications")
-      .then(res => res.json())
-      .then(data => {
-        if (data.notifications) setNotifications(data.notifications);
-      });
-  }, []);
+    if (notifData?.notifications) setNotifications(notifData.notifications);
+  }, [notifData]);
 
   useEffect(() => {
     if (!socket) return;

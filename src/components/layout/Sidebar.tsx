@@ -5,6 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
+import useSWR from "swr";
+import { fetcher } from "@/lib/fetcher";
 import {
   Hash, MessageCircle, Users, Plus, ChevronDown, ChevronRight,
   Settings, LogOut, Search, Bell, BellOff, Sprout, Shield, MoreVertical,
@@ -176,44 +178,38 @@ export default function Sidebar({ currentUser }: SidebarProps) {
     }
   };
 
-  const fetchChannels = useCallback(async () => {
-    const res = await fetch("/api/channels");
-    const data = await res.json();
-    if (data.channels) setChannels(data.channels);
-  }, []);
-
-  const fetchUsers = useCallback(async () => {
-    const res = await fetch("/api/users");
-    const data = await res.json();
-    if (data.users) {
-      const others = data.users.filter((u: DMUser) => u.id !== currentUser.id);
-      setAllUsers(others);
-      const p: Record<string, string> = {};
-      data.users.forEach((u: DMUser) => { p[u.id] = u.status; });
-      setPresences(p);
-    }
-  }, [currentUser.id]);
-
-  const fetchDmUsers = useCallback(async () => {
-    const res = await fetch("/api/users/dms");
-    const data = await res.json();
-    if (data.users) {
-      setDmUsers(data.users);
-    }
-  }, []);
+  const { data: channelsData, mutate: mutateChannels } = useSWR("/api/channels", fetcher);
+  const { data: usersData, mutate: mutateUsers } = useSWR("/api/users", fetcher);
+  const { data: dmUsersData, mutate: mutateDmUsers } = useSWR("/api/users/dms", fetcher);
 
   useEffect(() => {
-    fetchChannels();
-    fetchUsers();
-    fetchDmUsers();
+    if (channelsData?.channels) setChannels(channelsData.channels);
+  }, [channelsData]);
 
+  useEffect(() => {
+    if (usersData?.users) {
+      const others = usersData.users.filter((u: DMUser) => u.id !== currentUser.id);
+      setAllUsers(others);
+      const p: Record<string, string> = {};
+      usersData.users.forEach((u: DMUser) => { p[u.id] = u.status; });
+      setPresences(p);
+    }
+  }, [usersData, currentUser.id]);
+
+  useEffect(() => {
+    if (dmUsersData?.users) {
+      setDmUsers(dmUsersData.users);
+    }
+  }, [dmUsersData]);
+
+  useEffect(() => {
     fetch("/api/users/presence", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "online" }),
     });
     setMyStatus("online");
-  }, [fetchChannels, fetchUsers, fetchDmUsers]);
+  }, []);
 
   useEffect(() => {
     if (!socket) return;
@@ -261,7 +257,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
     if (res.ok) {
       setNewChannelName("");
       setShowCreate(false);
-      fetchChannels();
+      mutateChannels();
     }
   }
 
@@ -293,7 +289,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
         setNewGroupName("");
         setSelectedGroupUsers([]);
         setShowCreateGroup(false);
-        fetchChannels();
+        mutateChannels();
       } else {
         const err = await res.json();
         alert("Failed to create group: " + (err.error || "Unknown error"));
