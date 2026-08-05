@@ -318,7 +318,7 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
                   <Link href="/settings" className={styles.menuItem} onClick={() => setShowProfileMenu(false)}>
                     <Settings size={16} /> Account Settings
                   </Link>
-                  {currentUser.role === 'admin' && (
+                  {currentUser.role?.toUpperCase() === 'ADMIN' && (
                     <Link href="/admin" className={styles.menuItem} onClick={() => setShowProfileMenu(false)}>
                       <Shield size={16} /> Admin Panel
                     </Link>
