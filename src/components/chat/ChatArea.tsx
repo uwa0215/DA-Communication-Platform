@@ -9,6 +9,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Link from '@tiptap/extension-link';
 import Mention from '@tiptap/extension-mention';
+import Image from 'next/image';
 import getSuggestion from './suggestion';
 import UserProfileModal from "./UserProfileModal";
 import ThreadPanel from "./ThreadPanel";
@@ -79,7 +80,7 @@ export default function ChatArea({
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const [selectedUserForProfile, setSelectedUserForProfile] = useState<User | null>(null);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
-  const [showDetailsPanel, setShowDetailsPanel] = useState(true);
+  const [showDetailsPanel, setShowDetailsPanel] = useState(false);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [threadMessages, setThreadMessages] = useState<Message[]>([]);
   const [loadingThread, setLoadingThread] = useState(false);
@@ -428,7 +429,7 @@ export default function ChatArea({
                 style={{ cursor: "pointer" }}
                 onClick={() => dmUser && setSelectedUserForProfile(dmUser)}
               >
-                {dmUser?.avatar ? <img src={dmUser.avatar} alt={dmUser.name} /> : initials(dmUser?.name || "U")}
+                {dmUser?.avatar ? <Image src={dmUser.avatar} alt={dmUser.name} width={32} height={32} /> : initials(dmUser?.name || "U")}
                 <span className="status-dot" />
               </div>
           }
@@ -485,7 +486,7 @@ export default function ChatArea({
             <div className={styles.pulseRing}></div>
             <div className={styles.callAvatar}>
               {dmUser?.avatar || groupAvatar ? (
-                <img src={dmUser?.avatar || groupAvatar || ""} alt="Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                <Image src={dmUser?.avatar || groupAvatar || ""} alt="Avatar" width={100} height={100} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
               ) : (
                 initials(dmUser?.name || channelName || 'U')
               )}
@@ -567,9 +568,16 @@ export default function ChatArea({
               </div>
             ) : displayMessages.map((msg, i) => {
               const showHeader = shouldShowHeader(i, displayMessages);
+              const isLastInSequence = i === displayMessages.length - 1 || shouldShowHeader(i + 1, displayMessages);
               const showDate = shouldShowDate(i, displayMessages);
               const isMine = msg.sender.id === currentUserId;
               const grouped = groupReactions(msg.reactions);
+
+              let groupPositionClass = "";
+              if (showHeader && isLastInSequence) groupPositionClass = styles.msgSingle;
+              else if (showHeader) groupPositionClass = styles.msgGroupTop;
+              else if (isLastInSequence) groupPositionClass = styles.msgGroupBottom;
+              else groupPositionClass = styles.msgGroupMiddle;
 
               return (
                 <div key={msg.id}>
@@ -583,36 +591,35 @@ export default function ChatArea({
                   onMouseEnter={() => setHoverMsgId(msg.id)}
                   onMouseLeave={() => setHoverMsgId(null)}
                 >
-                  {showHeader ? (
+                  {!isMine && isLastInSequence ? (
                     <div 
                       className={`avatar avatar-md ${styles.msgAvatar} status-${msg.sender.status}`}
                       onClick={() => setSelectedUserForProfile(msg.sender)}
+                      style={{ alignSelf: 'flex-end', marginBottom: 4 }}
                     >
                       {msg.sender.avatar
-                        ? <img src={msg.sender.avatar} alt={msg.sender.name} />
+                        ? <Image src={msg.sender.avatar} alt={msg.sender.name} width={32} height={32} />
                         : initials(msg.sender.name)
                       }
                     </div>
-                  ) : (
+                  ) : !isMine ? (
                     <div className={styles.msgAvatarPlaceholder}>
                       {hoverMsgId === msg.id && (
                         <span className={styles.msgTime}>{formatTime(msg.createdAt)}</span>
                       )}
                     </div>
-                  )}
+                  ) : null}
 
                   <div className={styles.msgBody}>
-                    {showHeader && (
+                    {showHeader && !isMine && !dmUserId && (
                       <div className={styles.msgHeader}>
                         <span 
                           className={styles.msgSender}
-                          style={{ cursor: "pointer" }}
+                          style={{ cursor: "pointer", fontSize: 12, marginLeft: 12 }}
                           onClick={() => setSelectedUserForProfile(msg.sender)}
                         >
                           {msg.sender.name}
                         </span>
-                        <span className={styles.msgTimestamp}>{formatTime(msg.createdAt)}</span>
-                        {msg.edited && <span className={styles.msgEdited}>(edited)</span>}
                       </div>
                     )}
 
@@ -624,7 +631,7 @@ export default function ChatArea({
                       <>
                         <div className={styles.msgContentWrapper}>
                           {msg.content && msg.content !== "Sent a file" && msg.content !== "<p>Sent a file</p>" && (
-                            <div className={`${styles.msgContent} ${isMine ? styles.msgContentMine : styles.msgContentTheirs}`} dangerouslySetInnerHTML={{ __html: msg.content }} />
+                            <div className={`${styles.msgContent} ${isMine ? styles.msgContentMine : styles.msgContentTheirs} ${groupPositionClass}`} dangerouslySetInnerHTML={{ __html: msg.content }} />
                           )}
                           
                           {/* Message Actions (on hover) */}
@@ -743,40 +750,14 @@ export default function ChatArea({
 
       <div className={styles.inputArea}>
         <div className={styles.inputWrap}>
-          {/* TipTap Formatting Toolbar */}
-          <div className={styles.inputToolbar}>
-            <button className={`btn-icon ${styles.toolbarBtn} ${editor?.isActive('bold') ? styles.toolbarBtnActive : ''}`} onClick={() => editor?.chain().focus().toggleBold().run()} title="Bold"><Bold size={14} /></button>
-            <button className={`btn-icon ${styles.toolbarBtn} ${editor?.isActive('italic') ? styles.toolbarBtnActive : ''}`} onClick={() => editor?.chain().focus().toggleItalic().run()} title="Italic"><Italic size={14} /></button>
-            <button className={`btn-icon ${styles.toolbarBtn} ${editor?.isActive('bulletList') ? styles.toolbarBtnActive : ''}`} onClick={() => editor?.chain().focus().toggleBulletList().run()} title="List"><List size={14} /></button>
-            <button className={`btn-icon ${styles.toolbarBtn} ${editor?.isActive('codeBlock') ? styles.toolbarBtnActive : ''}`} onClick={() => editor?.chain().focus().toggleCodeBlock().run()} title="Code snippet"><Code size={14} /></button>
-            <div className={styles.toolbarDivider}></div>
-            <button 
-              className={`btn-icon ${styles.toolbarBtn}`} 
-              title="Attach file" 
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Paperclip size={14} />
-            </button>
-            <div className={styles.toolbarDivider}></div>
-            <div style={{ position: "relative" }} ref={emojiPickerRef}>
-              <button 
-                className={`btn-icon ${styles.toolbarBtn} ${showInputEmoji ? styles.toolbarBtnActive : ''}`} 
-                title="Emoji"
-                onClick={() => setShowInputEmoji(!showInputEmoji)}
-              >
-                <Smile size={14} />
-              </button>
-              {showInputEmoji && (
-                <div style={{ position: "absolute", bottom: "100%", left: 0, marginBottom: "8px", zIndex: 9999 }}>
-                  <EmojiPicker onEmojiClick={(e) => {
-                    editor?.chain().focus().insertContent(e.emoji).run();
-                    setShowInputEmoji(false);
-                  }} />
-                </div>
-              )}
-            </div>
-          </div>
-
+          <button 
+            className={`btn-icon ${styles.toolbarBtn}`} 
+            title="Attach file" 
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Plus size={20} />
+          </button>
+          
           <input 
             type="file" 
             ref={fileInputRef} 
@@ -784,31 +765,46 @@ export default function ChatArea({
             style={{ display: "none" }} 
           />
 
-          <div className={styles.inputRow}>
-            <div className={`${styles.messageInput} tiptap-wrapper`} style={{ cursor: 'text' }} onClick={() => editor?.commands.focus()}>
-              <EditorContent editor={editor} />
-            </div>
+          <div className={`${styles.messageInput} tiptap-wrapper`} style={{ cursor: 'text' }} onClick={() => editor?.commands.focus()}>
+            <EditorContent editor={editor} />
+          </div>
 
-            <button
-              id="send-btn"
-              className={`${styles.sendBtn} ${!isEditorEmpty ? styles.sendBtnActive : ""}`}
-              onClick={sendMessage}
-              disabled={isEditorEmpty || sending}
-              aria-label={editingMessageId ? "Save changes" : "Send message"}
+          <div style={{ position: "relative", display: "flex", alignItems: "center" }} ref={emojiPickerRef}>
+            <button 
+              className={`btn-icon ${styles.toolbarBtn} ${showInputEmoji ? styles.toolbarBtnActive : ''}`} 
+              title="Emoji"
+              onClick={() => setShowInputEmoji(!showInputEmoji)}
             >
-              {sending ? <span className="spinner" style={{ width: 16, height: 16 }} /> : (editingMessageId ? <Check size={16} /> : <Send size={16} />)}
+              <Smile size={20} />
             </button>
-            {editingMessageId && (
-              <button
-                className="btn-icon"
-                onClick={() => { setEditingMessageId(null); editor?.commands.setContent(''); }}
-                title="Cancel Edit"
-                style={{ marginLeft: 8 }}
-              >
-                <X size={16} />
-              </button>
+            {showInputEmoji && (
+              <div style={{ position: "absolute", bottom: "100%", right: 0, marginBottom: "8px", zIndex: 9999 }}>
+                <EmojiPicker onEmojiClick={(e) => {
+                  editor?.chain().focus().insertContent(e.emoji).run();
+                  setShowInputEmoji(false);
+                }} />
+              </div>
             )}
           </div>
+
+          <button
+            id="send-btn"
+            className={`${styles.sendBtn} ${!isEditorEmpty ? styles.sendBtnActive : ""}`}
+            onClick={sendMessage}
+            disabled={isEditorEmpty || sending}
+            aria-label={editingMessageId ? "Save changes" : "Send message"}
+          >
+            {sending ? <span className="spinner" style={{ width: 16, height: 16 }} /> : (editingMessageId ? <Check size={18} /> : <Send size={18} />)}
+          </button>
+          {editingMessageId && (
+            <button
+              className={`btn-icon ${styles.toolbarBtn}`}
+              onClick={() => { setEditingMessageId(null); editor?.commands.setContent(''); }}
+              title="Cancel Edit"
+            >
+              <X size={20} />
+            </button>
+          )}
         </div>
       </div>
       </div> {/* End Main Column */}
@@ -841,7 +837,7 @@ export default function ChatArea({
               <div className={styles.detailsContent}>
                 <div className={styles.detailsHero}>
                   <div className={`avatar avatar-xl status-${dmUser.status}`} style={{ width: 80, height: 80, fontSize: 32, marginBottom: 16 }}>
-                    {dmUser.avatar ? <img src={dmUser.avatar} alt={dmUser.name} /> : initials(dmUser.name)}
+                    {dmUser.avatar ? <Image src={dmUser.avatar} alt={dmUser.name} width={80} height={80} /> : initials(dmUser.name)}
                     <span className="status-dot" style={{ width: 16, height: 16, borderWidth: 3 }} />
                   </div>
                   <h3 className={styles.detailsName}>{dmUser.name}</h3>
@@ -897,7 +893,7 @@ export default function ChatArea({
                 <div className={styles.detailsHero}>
                   <div style={{ position: 'relative' }}>
                     <div className={`avatar avatar-xl`} style={{ width: 80, height: 80, fontSize: 32, marginBottom: 16 }}>
-                      {currentGroupAvatar ? <img src={currentGroupAvatar} alt={channelName} /> : initials(channelName || "Group")}
+                      {currentGroupAvatar ? <Image src={currentGroupAvatar} alt={channelName || "Group"} width={80} height={80} /> : initials(channelName || "Group")}
                     </div>
                     <button 
                       className="btn-icon" 
@@ -955,7 +951,7 @@ export default function ChatArea({
                                  style={{ marginRight: 12 }}
                                />
                                <span className={`avatar avatar-sm status-${u.status || 'offline'}`} style={{ marginRight: 8, display: 'inline-flex' }}>
-                                 {u.avatar ? <img src={u.avatar} alt={u.name} /> : u.name.charAt(0).toUpperCase()}
+                                 {u.avatar ? <Image src={u.avatar} alt={u.name} width={32} height={32} /> : u.name.charAt(0).toUpperCase()}
                                </span>
                                <span>{u.name}</span>
                              </label>

@@ -17,9 +17,9 @@
   border-radius: var(--r-xl);
   padding: 36px 40px;
   overflow: hidden;
+  flex-shrink: 0;
   background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.06), rgba(6, 182, 212, 0.04), rgba(139, 92, 246, 0.03));
   border: 1px solid rgba(var(--brand-rgb), 0.1);
-  animation: fadeInUp 0.5s ease backwards;
 }
 :global(.dark) .hero {
   background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), rgba(6, 182, 212, 0.05), rgba(139, 92, 246, 0.04));
@@ -67,7 +67,6 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
   width: fit-content;
-  animation: fadeInUp 0.5s ease 0.1s backwards;
 }
 :global(.dark) .heroBadge {
   background: rgba(52, 211, 153, 0.12);
@@ -80,7 +79,6 @@
   margin: 0;
   letter-spacing: -0.5px;
   line-height: 1.2;
-  animation: fadeInUp 0.5s ease 0.15s backwards;
 }
 
 .heroName {
@@ -100,24 +98,39 @@
   font-size: 15px;
   color: var(--text-secondary);
   margin: 0;
-  animation: fadeInUp 0.5s ease 0.2s backwards;
 }
 
 .heroLogo {
-  width: 100px;
-  height: 100px;
-  background: var(--bg-elevated);
-  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--shadow-md);
   flex-shrink: 0;
-  animation: fadeInUp 0.6s ease 0.25s backwards;
+  animation: float 6s ease-in-out infinite;
+  position: relative;
 }
-:global(.dark) .heroLogo {
-  background: rgba(26, 35, 64, 0.6);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(52, 211, 153, 0.06);
+.heroLogo::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent, rgba(52, 211, 153, 0.5), transparent);
+  animation: spin 8s linear infinite;
+  z-index: -1;
+  filter: blur(12px);
+}
+.heroLogo img {
+  border-radius: 50%;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
+  100% { transform: translateY(0px); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 /* ── Stats Row ── */
@@ -125,7 +138,6 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  animation: fadeInUp 0.5s ease 0.3s backwards;
 }
 
 .statCard {
@@ -194,7 +206,6 @@
 
 /* ── Quick Actions ── */
 .quickActions {
-  animation: fadeInUp 0.5s ease 0.35s backwards;
 }
 
 .sectionTitle {
@@ -281,7 +292,6 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-  animation: fadeInUp 0.5s ease 0.4s backwards;
 }
 
 /* ── Card ── */
@@ -459,5 +469,25 @@
   .statsRow { grid-template-columns: 1fr; }
   .actionsGrid { grid-template-columns: 1fr; }
   .heroTitle { font-size: 24px; }
-  .heroLogo { display: none; }
+  .heroSection {
+    flex-direction: column-reverse;
+    text-align: center;
+    gap: 24px;
+    padding: 24px 16px;
+  }
+  .heroLogo { 
+    display: flex;
+    transform: scale(0.6); 
+    margin-bottom: -20px;
+  }
+}
+/* ── Keyframes (must be in-module so CSS Modules scoping matches) ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes subtleFloat {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-10px) scale(1.05); }
 }

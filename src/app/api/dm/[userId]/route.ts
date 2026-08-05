@@ -110,3 +110,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
 
   return NextResponse.json({ message }, { status: 201 });
 }
+
+// DELETE /api/dm/[userId] — delete entire DM conversation
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
+  const session = await auth();
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { userId: otherId } = await params;
+  const myId = session.user.id;
+
+  await prisma.directMessage.deleteMany({
+    where: {
+      OR: [
+        { senderId: myId, receiverId: otherId },
+        { senderId: otherId, receiverId: myId },
+      ],
+    },
+  });
+
+  return NextResponse.json({ success: true });
+}
+

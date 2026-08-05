@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { X, Calendar as CalendarIcon, Clock, Users, AlignLeft, CheckCircle2, XCircle, HelpCircle, Trash2, Video, Copy, ExternalLink } from "lucide-react";
 import calendarStyles from "@/app/(app)/calendar/calendar.module.css";
 
@@ -158,7 +159,7 @@ export default function MeetingDetailsModal({ meeting, onClose, onUpdate, curren
                     <div key={p.id} className={calendarStyles.participantItem}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <div className="avatar avatar-sm">
-                          {p.user.avatar ? <img src={p.user.avatar} alt="" /> : p.user.name[0]}
+                          {p.user.avatar ? <Image src={p.user.avatar} alt="" width={32} height={32} style={{ borderRadius: "50%", objectFit: "cover" }} /> : p.user.name[0]}
                         </div>
                         <span style={{ fontSize: 14, color: 'var(--text-primary)' }}>
                           {p.user.name} {p.userId === meeting.createdById ? '(Organizer)' : ''}

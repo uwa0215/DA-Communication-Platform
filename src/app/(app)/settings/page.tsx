@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { Camera, Save } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import styles from "./settings.module.css";
@@ -167,7 +168,7 @@ export default function SettingsPage() {
             <>
               <div className={styles.avatarSection}>
                 {avatar ? (
-                  <img src={avatar} alt="Profile" className={styles.avatarPreview} />
+                  <Image src={avatar} alt="Profile" width={100} height={100} className={styles.avatarPreview} />
                 ) : (
                   <div className={styles.avatarPreview}>{initials}</div>
                 )}
@@ -294,7 +295,7 @@ export default function SettingsPage() {
                       <div key={id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, background: 'var(--bg-input)', borderRadius: 12, border: '1px solid var(--border)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                           <div className={`avatar avatar-md`} style={{ fontSize: 16 }}>
-                            {user.avatar ? <img src={user.avatar} alt={user.name} /> : (user.name ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0,2) : "U")}
+                            {user.avatar ? <Image src={user.avatar} alt={user.name} width={32} height={32} style={{ borderRadius: "50%", objectFit: "cover" }} /> : (user.name ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0,2) : "U")}
                           </div>
                           <div>
                             <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{user.name}</div>

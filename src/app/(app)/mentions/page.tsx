@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { AtSign, Hash, MessageCircle, Clock, Bell } from "lucide-react";
 import styles from "./mentions.module.css";
@@ -97,7 +98,7 @@ export default function MentionsPage() {
               <div className={styles.mentionBody}>
                 <div className={`avatar avatar-md`}>
                   {m.sender.avatar ? (
-                    <img src={m.sender.avatar} alt={m.sender.name} />
+                    <Image src={m.sender.avatar} alt={m.sender.name} width={32} height={32} style={{ borderRadius: "50%", objectFit: "cover" }} />
                   ) : (
                     initials(m.sender.name)
                   )}

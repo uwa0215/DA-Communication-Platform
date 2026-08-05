@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import Image from "next/image";
 import { X, Send } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import styles from "./ThreadPanel.module.css";
@@ -173,7 +174,7 @@ export default function ThreadPanel({
         <div className={styles.parentMessage}>
           <div className={styles.msgHeader}>
             <div className={`avatar avatar-sm status-${parentMessage.sender.status}`}>
-              {parentMessage.sender.avatar ? <img src={parentMessage.sender.avatar} alt="Avatar" /> : initials(parentMessage.sender.name)}
+              {parentMessage.sender.avatar ? <Image src={parentMessage.sender.avatar} alt="Avatar" width={32} height={32} style={{ borderRadius: "50%", objectFit: "cover" }} /> : initials(parentMessage.sender.name)}
             </div>
             <span className={styles.senderName}>{parentMessage.sender.name}</span>
             <span className={styles.msgTime}>{formatTime(parentMessage.createdAt)}</span>
@@ -193,7 +194,7 @@ export default function ThreadPanel({
             <div key={msg.id} className={styles.replyMsg}>
               <div className={styles.msgHeader}>
                 <div className={`avatar avatar-xs status-${msg.sender.status}`}>
-                  {msg.sender.avatar ? <img src={msg.sender.avatar} alt="Avatar" /> : initials(msg.sender.name)}
+                  {msg.sender.avatar ? <Image src={msg.sender.avatar} alt="Avatar" width={32} height={32} style={{ borderRadius: "50%", objectFit: "cover" }} /> : initials(msg.sender.name)}
                 </div>
                 <span className={styles.senderName}>{msg.sender.name}</span>
                 <span className={styles.msgTime}>{formatTime(msg.createdAt)}</span>

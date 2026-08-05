@@ -7,6 +7,7 @@
   min-height: 100vh;
   display: grid;
   grid-template-columns: 1fr 1fr;
+  background: linear-gradient(145deg, #050e1f 0%, #071a13 50%, #020617 100%);
 }
 @media (max-width: 900px) {
   .splitPage { grid-template-columns: 1fr; }
@@ -17,7 +18,7 @@
 ════════════════════════════════════════ */
 .leftPanel {
   position: relative;
-  background: linear-gradient(145deg, #050e1f 0%, #071a13 50%, #050e1f 100%);
+  background: transparent;
   overflow: hidden;
   display: flex;
   align-items: stretch;
@@ -72,7 +73,8 @@
 
 /* logo */
 .leftLogo {
-  display: flex; align-items: center; gap: 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  width: 100%; text-align: center;
 }
 .leftLogoIcon {
   width: 44px; height: 44px;
@@ -91,7 +93,7 @@
 /* DA official seal */
 .leftDaLogoWrap {
   position: relative;
-  width: 72px; height: 72px; flex-shrink: 0;
+  width: 260px; height: 260px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
 }
 .leftDaLogoWrap::before {
@@ -113,10 +115,9 @@
   50%      { transform: scale(1.06); opacity: 1; }
 }
 .leftDaLogoImg {
-  width: 64px; height: 64px;
+  width: 260px; height: 260px;
   border-radius: 50%;
-  background: white;
-  padding: 4px;
+  object-fit: contain;
   object-fit: contain;
   box-shadow: 0 0 24px rgba(16,185,129,.4), 0 4px 12px rgba(0,0,0,.3);
   animation: logoBob 5s ease-in-out infinite;
@@ -134,7 +135,7 @@
 }
 
 /* hero text */
-.leftHero { display: flex; flex-direction: column; gap: 12px; }
+.leftHero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 16px; margin-top: 16px; }
 .leftTagline {
   font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
   color: rgba(16,185,129,.85);
@@ -162,9 +163,8 @@
   100% { background-position: 0% center; }
 }
 .leftDesc {
-  font-size: 14px; line-height: 1.65;
-  color: rgba(255,255,255,.45);
-  max-width: 380px;
+  font-size: 16px; line-height: 1.6; color: rgba(255,255,255,.6);
+  max-width: 480px; margin: 0 auto;
 }
 
 /* stats */
@@ -235,7 +235,7 @@
 .rightPanel {
   position: relative;
   display: flex; align-items: center; justify-content: center;
-  background: linear-gradient(145deg, #020617 0%, #0f172a 100%);
+  background: transparent;
   padding: 32px 24px;
   min-height: 100vh;
   overflow: hidden;
@@ -287,12 +287,9 @@
   display: flex; align-items: center; gap: 12px;
 }
 .formDaLogo {
-  width: 36px; height: 36px;
+  width: 60px; height: 60px;
   object-fit: contain;
-  background: white;
-  border-radius: 50%;
-  padding: 2px;
-  box-shadow: 0 0 12px rgba(16,185,129,.3);
+  transition: all var(--t-fast);
 }
 .formLogoName {
   display: block; font-weight: 800; font-size: 16px; color: white; letter-spacing: -0.5px;

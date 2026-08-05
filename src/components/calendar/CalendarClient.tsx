@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import Image from "next/image";
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Flag } from "lucide-react";
 import calendarStyles from "@/app/(app)/calendar/calendar.module.css";
 import ScheduleModal from "@/components/calendar/ScheduleModal";
@@ -55,8 +56,7 @@ export default function CalendarClient({ initialMeetings, currentUserId }: Calen
   const firstDayOfMonth = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const daysInPrevMonth = new Date(year, month, 0).getDate();
-  
-  const days = [];
+  const days: { day: number, isCurrentMonth: boolean, date: Date }[] = [];
   
   // Previous month padding
   for (let i = 0; i < firstDayOfMonth; i++) {
@@ -213,7 +213,7 @@ export default function CalendarClient({ initialMeetings, currentUserId }: Calen
                     <div className={calendarStyles.agendaParticipants}>
                       {m.participants?.slice(0, 4).map((p: any) => (
                         <div key={p.id} className={calendarStyles.agendaAvatar} title={p.user.name}>
-                          {p.user.avatar ? <img src={p.user.avatar} style={{width:'100%', height:'100%', borderRadius:'50%', objectFit:'cover'}} alt="" /> : p.user.name[0]}
+                          {p.user.avatar ? <Image src={p.user.avatar} alt="" width={32} height={32} style={{width:"100%", height:"100%", borderRadius:"50%", objectFit:"cover"}} /> : p.user.name[0]}
                         </div>
                       ))}
                       {m.participants?.length > 4 && (

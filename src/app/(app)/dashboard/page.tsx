@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Megaphone, Link as LinkIcon, Users, FileText, Shield, Zap, ShieldCheck, Globe, MessageSquare, CalendarDays, Hash, UserPlus, ArrowRight, Clock, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import styles from "./dashboard.module.css";
 import { getPhilippineHolidays } from "@/lib/philippineHolidays";
 
@@ -51,7 +52,7 @@ export default async function DashboardPage() {
 
   // Fetch recent channel messages for activity feed
   const recentMessages = await prisma.message.findMany({
-    where: { channelId: { not: null } },
+    where: {},
     include: {
       sender: { select: { name: true, avatar: true } },
       channel: { select: { name: true } }
@@ -72,15 +73,15 @@ export default async function DashboardPage() {
             <div className={styles.heroBadge}>
               <ShieldCheck size={14} /> DA CALABARZON Employee Portal
             </div>
-            <h1 className={styles.heroTitle}>
+            <h1 className={styles.heroTitle} style={{ opacity: 1, visibility: 'visible' }}>
               {greeting}, <span className={styles.heroName}>{firstName}</span> 👋
             </h1>
-            <p className={styles.heroSub}>
-              Welcome to your AgriTalk workspace. Here's what's happening today.
+            <p className={styles.heroSub} style={{ opacity: 1, visibility: 'visible' }}>
+              Welcome to your AGRI COMM workspace. Here's what's happening today.
             </p>
           </div>
           <div className={styles.heroLogo}>
-            <img src="/DA_LOGO.png" alt="DA Logo" width={80} height={80} style={{ objectFit: 'contain' }} />
+            <Image src="/Agri%20Logo.png" alt="Agri Logo" width={120} height={120} style={{ objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.15))' }} unoptimized />
           </div>
         </div>
       </section>
@@ -217,7 +218,7 @@ export default async function DashboardPage() {
               recentMessages.map(m => (
                 <div key={m.id} className={styles.activityItem}>
                   <div className="avatar avatar-sm" style={{ flexShrink: 0 }}>
-                    {m.sender.avatar ? <img src={m.sender.avatar} alt="" /> : m.sender.name[0]}
+                    {m.sender.avatar ? <Image src={m.sender.avatar} alt="" width={32} height={32} /> : m.sender.name[0]}
                   </div>
                   <div className={styles.activityInfo}>
                     <span className={styles.activityAuthor}>

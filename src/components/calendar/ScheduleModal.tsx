@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { X, Users } from "lucide-react";
 import calendarStyles from "@/app/(app)/calendar/calendar.module.css";
 
@@ -155,7 +156,7 @@ export default function ScheduleModal({ onClose, onSuccess, currentUserId }: Sch
                   <label key={u.id} className={calendarStyles.participantItem}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <div className="avatar avatar-sm">
-                        {u.avatar ? <img src={u.avatar} alt="" /> : u.name[0]}
+                        {u.avatar ? <Image src={u.avatar} alt="" width={32} height={32} style={{ borderRadius: "50%", objectFit: "cover" }} /> : u.name[0]}
                       </div>
                       <span style={{ fontSize: 14 }}>{u.name}</span>
                     </div>

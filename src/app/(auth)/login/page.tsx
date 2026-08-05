@@ -4,7 +4,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import daLogo from "../../../../public/da-logo.png";
+import daLogo from "../../../../public/Agri Logo.png";
 import {
   Mail, Lock, LogIn, Eye, EyeOff, Sprout,
   CheckCircle, Leaf, Users, MessageSquare, Zap,
@@ -193,13 +193,13 @@ export default function LoginPage() {
                   src={daLogo}
                   alt="Department of Agriculture CALABARZON"
                   className={styles.leftDaLogoImg}
-                  width={64}
-                  height={64}
+                  width={260}
+                  height={260}
                 />
               </div>
               <div>
                 <span className={styles.leftLogoText}>DA CALABARZON</span>
-                <div style={{ display: "flex", gap: 6, marginTop: 4, alignItems: "center" }}>
+                <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center", justifyContent: "center" }}>
                   <span className={styles.leftLogoBadge}>Official</span>
                   <span className={styles.leftLogoBadge} style={{ background: "rgba(6,182,212,.12)", borderColor: "rgba(6,182,212,.3)", color: "#06b6d4" }}>Region IV-A</span>
                 </div>
@@ -215,57 +215,13 @@ export default function LoginPage() {
                 for DA CALABARZON
               </h2>
               <p className={styles.leftDesc}>
-                DAChat is the secure internal communication platform for all employees
+                AGRI COMM is the secure internal communication platform for all employees
                 of the Department of Agriculture CALABARZON — connecting the regional
                 office and all five provincial offices.
               </p>
             </div>
-
-            {/* stats */}
-            <div className={styles.statsRow}>
-              <div className={styles.statItem}>
-                <span className={styles.statNum}>{c1.toLocaleString()}+</span>
-                <span className={styles.statLabel}>Employees</span>
-              </div>
-              <div className={styles.statDivider} />
-              <div className={styles.statItem}>
-                <span className={styles.statNum}>{c2}%</span>
-                <span className={styles.statLabel}>Uptime</span>
-              </div>
-              <div className={styles.statDivider} />
-              <div className={styles.statItem}>
-                <span className={styles.statNum}>{c3}</span>
-                <span className={styles.statLabel}>Offices</span>
-              </div>
-            </div>
-
-            {/* features grid */}
-            <div className={styles.featureGrid}>
-              {FEATURES.map(f => (
-                <div key={f.label} className={styles.featurePill}>
-                  {f.icon}
-                  <span>{f.label}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* testimonial */}
-            <div className={styles.testimonial}>
-              <div className={styles.testimonialStars}>
-                {[...Array(5)].map((_, i) => <Star key={i} size={13} fill="currentColor" />)}
-              </div>
-              <p className={styles.testimonialQuote}>&ldquo;{TESTIMONIAL.quote}&rdquo;</p>
-              <div className={styles.testimonialAuthor}>
-                <div className={styles.testimonialAvatar}>RD</div>
-                <div>
-                  <p className={styles.testimonialName}>{TESTIMONIAL.author}</p>
-                  <p className={styles.testimonialRole}>{TESTIMONIAL.role}</p>
-                </div>
-              </div>
-            </div>
           </div>
         </aside>
-
         {/* ── RIGHT PANEL (dark, matching left) ── */}
         <main className={styles.rightPanel}>
           {/* decorative blobs mirroring left */}
@@ -275,22 +231,6 @@ export default function LoginPage() {
 
           <div className={styles.formCard}>
 
-            {/* top logo bar */}
-            <div className={styles.formTopBar}>
-              <div className={styles.formLogoSmall}>
-                <Image src={daLogo} alt="DA CALABARZON" className={styles.formDaLogo} width={36} height={36} />
-                <div>
-                  <span className={styles.formLogoName}>DAChat</span>
-                  <span className={styles.formLogoSub}>DA CALABARZON</span>
-                </div>
-              </div>
-              <p className={styles.formTopBarLink}>
-                Need an account?&nbsp;
-                <Link href="/register" className={styles.formTopBarAction}>
-                  Register <ArrowRight size={12} />
-                </Link>
-              </p>
-            </div>
 
             {/* heading */}
             <div className={styles.formHeadingBlock}>
@@ -373,6 +313,13 @@ export default function LoginPage() {
                   ? <><span className={styles.btnSpinner} /> Signing in…</>
                   : <><LogIn size={17} /> Sign In to Workspace</>}
               </button>
+
+              <p className={styles.formTopBarLink} style={{ textAlign: "center", marginTop: "16px", marginBottom: "0" }}>
+                Need an account?&nbsp;
+                <Link href="/register" className={styles.formTopBarAction}>
+                  Register <ArrowRight size={12} />
+                </Link>
+              </p>
 
               {/* divider */}
               <div className={styles.divider}><span>secured by</span></div>

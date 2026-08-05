@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, Bell, Settings, LogOut, ChevronDown, Shield } from "lucide-react";
+import Image from "next/image";
+import agriLogo from "../../../public/Agri Logo.png";
+import { Search, Bell, Settings, LogOut, ChevronDown, Shield, Menu } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useSocket } from "@/hooks/useSocket";
+import { useUI } from "@/components/UIProvider";
 import styles from "./Topbar.module.css";
 
 interface User {
@@ -25,6 +28,7 @@ interface Notification {
 }
 
 export default function Topbar({ currentUser }: { currentUser: User }) {
+  const { toggleMobileSidebar } = useUI();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -108,10 +112,13 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
   return (
     <header className={styles.topbar}>
       <div className={styles.left}>
+        <button className={styles.mobileMenuBtn} onClick={toggleMobileSidebar} aria-label="Toggle mobile menu">
+          <Menu size={24} />
+        </button>
         <div className={styles.logoWrap}>
-          <img src="/DA_LOGO.png" alt="DA Logo" width={32} height={32} style={{ objectFit: 'contain' }} />
+          <Image src={agriLogo} alt="Agri Logo" width={60} height={60} style={{ objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} unoptimized />
         </div>
-        <span className={styles.brandName}>AgriTalk</span>
+        <span className={styles.brandName}>AGRI COMM</span>
       </div>
 
       <div className={styles.center}>
@@ -164,7 +171,7 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
                         {searchResults.users.map((u: any) => (
                           <Link key={u.id} href={`/dm/${u.id}`} className={styles.searchResultItem} onClick={() => setShowSearchMenu(false)}>
                             <div className={`avatar avatar-sm status-${u.status}`}>
-                              {u.avatar ? <img src={u.avatar} alt={u.name} /> : initials(u.name)}
+                              {u.avatar ? <Image src={u.avatar} alt={u.name} width={32} height={32} /> : initials(u.name)}
                             </div>
                             <div className={styles.searchResultText}>
                               <span className={styles.searchResultName}>{u.name}</span>
@@ -186,7 +193,7 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
                             onClick={() => setShowSearchMenu(false)}
                           >
                             <div className={`avatar avatar-sm`}>
-                              {m.sender.avatar ? <img src={m.sender.avatar} alt={m.sender.name} /> : initials(m.sender.name)}
+                              {m.sender.avatar ? <Image src={m.sender.avatar} alt={m.sender.name} width={32} height={32} /> : initials(m.sender.name)}
                             </div>
                             <div className={styles.searchResultText}>
                               <span className={styles.searchResultName}>{m.sender.name} <span style={{fontSize: 11, color: 'var(--text-muted)', fontWeight: 'normal'}}>in {m.type === 'channel' ? `#${m.channel.name}` : 'DM'}</span></span>
@@ -267,7 +274,7 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
             style={{ cursor: 'pointer' }}
           >
             <div className={`avatar avatar-sm ${styles.avatar} status-${myStatus}`}>
-              {currentUser.image ? <img src={currentUser.image} alt={currentUser.name} /> : initials(currentUser.name || 'U')}
+              {currentUser.image ? <Image src={currentUser.image} alt={currentUser.name} width={32} height={32} /> : initials(currentUser.name || 'U')}
               <span className="status-dot"></span>
             </div>
             <span className={styles.userName}>{currentUser.name}</span>

@@ -690,3 +690,95 @@
   margin-top: 2px;
   flex-shrink: 0;
 }
+
+/* ===== MOBILE RESPONSIVE CALENDAR ===== */
+@media (max-width: 768px) {
+  .calendarPage {
+    height: auto;
+    min-height: 100%;
+  }
+  .mainArea {
+    flex-direction: column-reverse;
+    overflow: auto;
+  }
+  .agendaPanel {
+    width: 100%;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .calendarGrid {
+    min-height: 350px;
+    flex: none;
+    padding-bottom: 16px;
+  }
+  /* Remove fixed widths so it squishes to screen width */
+  .daysHeader, .datesGrid {
+    min-width: unset;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    height: auto;
+    padding: 16px;
+    gap: 16px;
+  }
+  .titleArea {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .headerActions {
+    width: 100%;
+  }
+
+  /* Compact grid cells */
+  .dayName {
+    padding: 8px 2px;
+    font-size: 11px;
+    overflow: hidden;
+  }
+  .dateCell {
+    padding: 4px 2px;
+    gap: 2px;
+    align-items: center;
+  }
+  .dateNumber {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+    margin-bottom: 2px;
+  }
+  
+  /* Convert Events into Dots */
+  .meetingBlock {
+    width: 6px;
+    height: 6px;
+    min-height: 6px;
+    padding: 0;
+    margin: 2px auto;
+    border: none;
+    border-radius: 50%;
+    overflow: hidden;
+  }
+  .meetingBlock * {
+    display: none; /* Hide text/spans */
+  }
+  
+  .holidayTag {
+    width: 6px;
+    height: 6px;
+    min-height: 6px;
+    padding: 0;
+    margin: 2px auto;
+    border-radius: 50%;
+    font-size: 0; /* Hide text */
+    overflow: hidden;
+  }
+  /* On hover/active, maintain the dot */
+  .meetingBlock:hover, .holidayTag:hover {
+    transform: scale(1.5);
+  }
+}

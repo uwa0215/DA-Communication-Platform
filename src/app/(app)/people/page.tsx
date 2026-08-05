@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Search, MessageCircle, Mail, Briefcase, Building2, Users } from "lucide-react";
 import styles from "./people.module.css";
 
@@ -142,7 +143,7 @@ export default function PeoplePage() {
             <div key={user.id} className={styles.card}>
               <div className={`avatar avatar-xl status-${user.status} ${styles.cardAvatar}`}>
                 {user.avatar
-                  ? <img src={user.avatar} alt={user.name} />
+                  ? <Image src={user.avatar} alt={user.name} width={64} height={64} style={{ borderRadius: '50%', objectFit: 'cover' }} />
                   : initials(user.name)
                 }
                 <span className="status-dot" style={{ width: 14, height: 14 }} />

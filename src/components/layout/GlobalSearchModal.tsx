@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { Search, User, Hash, MessageSquare, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import styles from "./GlobalSearchModal.module.css";
@@ -105,7 +106,7 @@ export default function GlobalSearchModal() {
                   {results.users.map(user => (
                     <div key={user.id} className={styles.resultItem} onClick={() => handleNavigate(`/dm/${user.id}`)}>
                       <div className={`avatar avatar-sm status-${user.status}`}>
-                        {user.avatar ? <img src={user.avatar} alt="Avatar" /> : user.name.slice(0, 2).toUpperCase()}
+                        {user.avatar ? <Image src={user.avatar} alt="Avatar" width={32} height={32} style={{ borderRadius: "50%", objectFit: "cover" }} /> : user.name.slice(0, 2).toUpperCase()}
                       </div>
                       <div className={styles.resultText}>
                         <span className={styles.resultName}>{user.name}</span>

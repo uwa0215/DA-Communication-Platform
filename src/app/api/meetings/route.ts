@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
 
     const whereClause: any = {
       participants: {
-        some: { userId: session.user.id }
+        some: { userId: session.user!.id }
       }
     };
 
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
 
     // Include the creator as a participant automatically, with 'accepted' status
     const allParticipants = new Set(participantIds || []);
-    allParticipants.add(session.user.id);
+    allParticipants.add(session.user!.id);
 
     // Generate a unique Jitsi Meet link
     const sanitizedTitle = title
@@ -75,11 +75,11 @@ export async function POST(req: NextRequest) {
         startTime: new Date(startTime),
         endTime: new Date(endTime),
         meetLink,
-        createdById: session.user.id,
+        createdById: session.user!.id,
         participants: {
           create: Array.from(allParticipants).map((userId: any) => ({
             userId,
-            status: userId === session.user.id ? "accepted" : "pending"
+            status: userId === session.user!.id ? "accepted" : "pending"
           }))
         }
       },

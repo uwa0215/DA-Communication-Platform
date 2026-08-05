@@ -12,6 +12,7 @@ export function useSocket() {
       socket = io(window.location.origin, {
         transports: ["websocket", "polling"],
       });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSocketInstance(socket);
     }
     return () => {};
