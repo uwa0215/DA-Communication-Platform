@@ -24,6 +24,7 @@ interface User {
   email: string;
   image?: string;
   status?: string;
+  role?: string;
 }
 
 interface Channel {
@@ -583,6 +584,11 @@ export default function Sidebar({ currentUser }: SidebarProps) {
             <Link href="/calendar" className={`${styles.navItem} ${styles.navItemStatic} ${pathname === "/calendar" ? styles.navItemActive : ""}`}>
               <Calendar size={18} className={styles.navIcon} /> <span className={styles.navStaticText}>Calendar</span>
             </Link>
+            {currentUser.role?.toLowerCase() === "admin" && (
+              <Link href="/admin" className={`${styles.navItem} ${styles.navItemStatic} ${pathname === "/admin" ? styles.navItemActive : ""}`}>
+                <Shield size={18} className={styles.navIcon} /> <span className={styles.navStaticText}>Admin Dashboard</span>
+              </Link>
+            )}
           </div>
         )}
 
