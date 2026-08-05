@@ -34,4 +34,4 @@ COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 
 EXPOSE 3000
 
-CMD npx prisma db push && node server.js
+CMD npx prisma db push && node --max-http-header-size=81920 server.js
