@@ -75,12 +75,12 @@ export default function LoginPage() {
   useEffect(() => {
     if (!showWelcome) return;
     const interval = setInterval(() => {
-      setProgress(prev => { if (prev >= 100) { clearInterval(interval); return 100; } return prev + 2; });
-    }, 50);
-    const t1 = setTimeout(() => setWelcomePhase(1), 400);
-    const t2 = setTimeout(() => setWelcomePhase(2), 900);
-    const t3 = setTimeout(() => setWelcomePhase(3), 1500);
-    const t4 = setTimeout(() => { router.push("/dashboard"); router.refresh(); }, 3200);
+      setProgress(prev => { if (prev >= 100) { clearInterval(interval); return 100; } return prev + 5; });
+    }, 40);
+    const t1 = setTimeout(() => setWelcomePhase(1), 200);
+    const t2 = setTimeout(() => setWelcomePhase(2), 450);
+    const t3 = setTimeout(() => setWelcomePhase(3), 750);
+    const t4 = setTimeout(() => { router.push("/dashboard"); router.refresh(); }, 1200);
     return () => { clearInterval(interval); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [showWelcome, router]);
 
@@ -96,8 +96,20 @@ export default function LoginPage() {
         : "Invalid email or password. Please try again.");
     } else {
       const name = email.split("@")[0].replace(/[._]/g, " ");
-      setUserName(name.charAt(0).toUpperCase() + name.slice(1));
+      const fallbackName = name.charAt(0).toUpperCase() + name.slice(1);
+      setUserName(fallbackName);
       setShowWelcome(true);
+
+      // Dynamically fetch first name from database to display instead of email prefix
+      fetch("/api/users/me")
+        .then(r => r.json())
+        .then(data => {
+          if (data?.user?.name) {
+            const firstName = data.user.name.split(" ")[0];
+            setUserName(firstName);
+          }
+        })
+        .catch(err => console.error("Error fetching user first name:", err));
     }
   }
 
