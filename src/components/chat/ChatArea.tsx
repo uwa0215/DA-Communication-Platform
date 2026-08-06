@@ -356,22 +356,28 @@ export default function ChatArea({
       });
       const data = await res.json();
       
-      if (res.ok) {
-        await fetch(apiBase, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            content: "", 
-            fileUrl: data.url, 
-            fileName: data.fileName, 
-            fileType: data.fileType 
-          }),
-        });
-      } else {
-        throw new Error("Upload failed");
+      if (!res.ok) {
+        throw new Error(data.error || `Upload failed (status: ${res.status})`);
       }
-    } catch (err) {
-      console.error(err);
+
+      const msgRes = await fetch(apiBase, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          content: "", 
+          fileUrl: data.url, 
+          fileName: data.fileName, 
+          fileType: data.fileType 
+        }),
+      });
+
+      if (!msgRes.ok) {
+        const errData = await msgRes.json().catch(() => ({}));
+        throw new Error(errData.error || `Failed to save message (status: ${msgRes.status})`);
+      }
+    } catch (err: any) {
+      console.error("Upload error details:", err);
+      alert(`File upload failed: ${err.message || err}`);
       // Remove optimistic message on upload failure
       setMessages(prev => prev.filter(x => x.id !== tempId));
     } finally {
