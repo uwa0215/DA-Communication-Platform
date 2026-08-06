@@ -180,6 +180,26 @@ export default function ThreadPanel({
             <span className={styles.msgTime}>{formatTime(parentMessage.createdAt)}</span>
           </div>
           <div className={styles.msgContent} dangerouslySetInnerHTML={{ __html: parentMessage.content }} />
+          {parentMessage.fileUrl && (
+            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-start" }}>
+              {parentMessage.fileType?.startsWith("image/") ? (
+                <>
+                  <a href={parentMessage.fileUrl} target="_blank" rel="noopener noreferrer" title="Click to view full image">
+                    <img src={parentMessage.fileUrl} alt={parentMessage.fileName} style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "8px", objectFit: "contain", cursor: "pointer" }} />
+                  </a>
+                  <a href={parentMessage.fileUrl} download={parentMessage.fileName} 
+                     style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "var(--bg-elevated)", border: "1px solid var(--border)", borderRadius: "var(--r-md)", color: "var(--brand)", textDecoration: "none", fontSize: "12px" }}>
+                    📥 Download {parentMessage.fileName}
+                  </a>
+                </>
+              ) : (
+                <a href={parentMessage.fileUrl} download={parentMessage.fileName} target="_blank" rel="noopener noreferrer"
+                   style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "var(--bg-elevated)", border: "1px solid var(--border)", borderRadius: "var(--r-md)", color: "var(--brand)", textDecoration: "none", fontSize: "12px" }}>
+                  📎 {parentMessage.fileName}
+                </a>
+              )}
+            </div>
+          )}
         </div>
         
         <div className={styles.divider}>

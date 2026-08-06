@@ -703,9 +703,16 @@ export default function ChatArea({
                         {msg.fileUrl && (
                           <div className={styles.fileAttachment}>
                             {msg.fileType?.startsWith("image/") ? (
-                              <img src={msg.fileUrl} alt={msg.fileName} className={styles.fileImg} />
+                              <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-start" }}>
+                                <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer" title="Click to view full image">
+                                  <img src={msg.fileUrl} alt={msg.fileName} className={styles.fileImg} />
+                                </a>
+                                <a href={msg.fileUrl} download={msg.fileName} className={styles.fileLink}>
+                                  📥 Download {msg.fileName}
+                                </a>
+                              </div>
                             ) : (
-                              <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer"
+                              <a href={msg.fileUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer"
                                 className={styles.fileLink}>
                                 📎 {msg.fileName}
                               </a>
