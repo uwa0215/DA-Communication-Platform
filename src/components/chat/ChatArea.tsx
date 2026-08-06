@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { Hash, Phone, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle } from "lucide-react";
+import { Hash, Phone, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import EmojiPicker from "emoji-picker-react";
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -747,24 +747,27 @@ export default function ChatArea({
                           )}
                         </div>
 
-                        {msg.fileUrl && (
-                          <div className={styles.fileAttachment}>
-                            {msg.fileType?.startsWith("image/") ? (
-                              <img 
-                                src={msg.fileUrl} 
-                                alt={msg.fileName || "Uploaded image"} 
-                                className={styles.fileImg} 
-                                onClick={() => setLightboxUrl(msg.fileUrl!)}
-                                title="Click to view image"
-                              />
-                            ) : (
-                              <a href={msg.fileUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer"
-                                className={styles.fileLink}>
-                                📎 {msg.fileName}
-                              </a>
-                            )}
-                          </div>
-                        )}
+                        {msg.fileUrl && (() => {
+                          const isImage = msg.fileType?.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|svg)($|\?)/i.test(msg.fileUrl || "");
+                          return (
+                            <div className={styles.fileAttachment}>
+                              {isImage ? (
+                                <img 
+                                  src={msg.fileUrl} 
+                                  alt={msg.fileName || "Uploaded image"} 
+                                  className={styles.fileImg} 
+                                  onClick={() => setLightboxUrl(msg.fileUrl!)}
+                                  title="Click to view image"
+                                />
+                              ) : (
+                                <a href={msg.fileUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer"
+                                  className={styles.fileLink}>
+                                  📎 {msg.fileName}
+                                </a>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </>
                     )}
 
@@ -1123,12 +1126,16 @@ export default function ChatArea({
       {/* Lightbox Modal */}
       {lightboxUrl && (
         <div className={styles.lightboxOverlay} onClick={() => setLightboxUrl(null)}>
+          <div className={styles.lightboxHeader} onClick={e => e.stopPropagation()}>
+            <a href={lightboxUrl} download target="_blank" rel="noopener noreferrer" className={styles.lightboxAction} title="Download Image">
+              <Download size={20} />
+            </a>
+            <button className={styles.lightboxAction} onClick={() => setLightboxUrl(null)} title="Close">
+              <X size={20} />
+            </button>
+          </div>
           <div className={styles.lightboxContent} onClick={e => e.stopPropagation()}>
             <img src={lightboxUrl} alt="Preview" className={styles.lightboxImg} />
-            <button className={styles.lightboxClose} onClick={() => setLightboxUrl(null)}>×</button>
-            <a href={lightboxUrl} download="download.jpg" className={styles.lightboxDownload} target="_blank" rel="noopener noreferrer">
-              📥 Download Image
-            </a>
           </div>
         </div>
       )}
