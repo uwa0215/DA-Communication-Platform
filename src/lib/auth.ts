@@ -19,20 +19,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
+        console.log(`🔐 [Auth] Attempting login for email: ${credentials.email}`);
+        const startDb = Date.now();
         const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },
         });
+        console.log(`⏱️ [Auth] Database query took: ${Date.now() - startDb}ms`);
 
-        if (!user) return null;
+        if (!user) {
+          console.log("❌ [Auth] User not found in database.");
+          return null;
+        }
 
+        const startBcrypt = Date.now();
         const passwordMatch = await bcrypt.compare(
           credentials.password as string,
           user.password
         );
+        console.log(`⏱️ [Auth] Bcrypt comparison took: ${Date.now() - startBcrypt}ms`);
 
-        if (!passwordMatch) return null;
+        if (!passwordMatch) {
+          console.log("❌ [Auth] Invalid password provided.");
+          return null;
+        }
 
         if (!user.isApproved) {
+          console.log("⚠️ [Auth] Account pending admin approval.");
           throw new PendingApprovalError();
         }
 
