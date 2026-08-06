@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Readable } from "stream";
+// @ts-ignore
 import formidable from "formidable";
 import fs from "fs";
 import path from "path";
-
-// Disable default body parser config if Next.js checks it (mostly for pages, but safe fallback)
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,7 +32,7 @@ export async function POST(req: NextRequest) {
     });
 
     const data = await new Promise<{ url: string; fileName: string; fileType: string }>((resolve, reject) => {
-      form.parse(mockReq as any, (err, fields, files) => {
+      form.parse(mockReq as any, (err: any, fields: any, files: any) => {
         if (err) {
           return reject(err);
         }
