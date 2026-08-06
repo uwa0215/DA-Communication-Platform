@@ -76,6 +76,7 @@ export default function ChatArea({
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showEmoji, setShowEmoji] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [showInputEmoji, setShowInputEmoji] = useState(false);
   const [hoverMsgId, setHoverMsgId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -201,7 +202,10 @@ export default function ChatArea({
     if (channelId) {
       socket.emit("join-channel", channelId);
       socket.on("new-message", (msg: Message) => {
-        setMessages(m => [...m, msg]);
+        setMessages(m => {
+          const filtered = m.filter(x => !(x.id.startsWith("optimistic-") && (x.content === msg.content || x.fileName === msg.fileName) && x.sender.id === msg.sender.id));
+          return [...filtered, msg];
+        });
       });
       socket.on("user-typing", ({ userId, userName }: any) => {
         if (userId !== currentUserId) {
@@ -225,7 +229,10 @@ export default function ChatArea({
     } else if (roomId) {
       socket.emit("join-dm", roomId);
       socket.on("new-dm", (msg: Message) => {
-        setMessages(m => [...m, msg]);
+        setMessages(m => {
+          const filtered = m.filter(x => !(x.id.startsWith("optimistic-") && (x.content === msg.content || x.fileName === msg.fileName) && x.sender.id === msg.sender.id));
+          return [...filtered, msg];
+        });
       });
       socket.on("message-updated", (msg: Message) => {
         setMessages(m => m.map(x => x.id === msg.id ? { ...x, content: msg.content, edited: true } : x));
@@ -255,15 +262,31 @@ export default function ChatArea({
 
   async function sendMessage(e?: any) {
     if (e && e.preventDefault) e.preventDefault();
-    console.log("sendMessage called", { editor: !!editor, isEmpty: isEditorEmpty, sending });
     if (!editor || isEditorEmpty || sending) return;
     
+    const content = editor.getHTML();
+    
+    // 1. Create and append optimistic message
+    const tempId = `optimistic-${Date.now()}`;
+    const optimisticMsg: Message = {
+      id: tempId,
+      content: content,
+      sender: {
+        id: currentUserId,
+        name: currentUserName,
+        status: "online"
+      },
+      createdAt: new Date().toISOString(),
+      reactions: []
+    };
+    
+    setMessages(prev => [...prev, optimisticMsg]);
+    
+    // 2. Clear editor instantly
+    editor?.commands.setContent('');
+    setIsEditorEmpty(true);
+    
     try {
-      const content = editor.getHTML();
-      console.log("Sending content:", content);
-      
-      setSending(true);
-
       if (editingMessageId) {
         await fetch(`/api/messages/${editingMessageId}`, {
           method: "PATCH",
@@ -282,13 +305,10 @@ export default function ChatArea({
       if (channelId && socket) {
         socket.emit("typing-stop", { channelId, userId: currentUserId });
       }
-      
-      editor?.commands.setContent('');
-      setIsEditorEmpty(true);
     } catch (err) {
       console.error("Error sending message:", err);
-    } finally {
-      setSending(false);
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(x => x.id !== tempId));
     }
   }
 
@@ -302,10 +322,32 @@ export default function ChatArea({
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    
     setSending(true);
     
     const formData = new FormData();
     formData.append("file", file);
+    
+    // 1. Create optimistic attachment message
+    const tempId = `optimistic-${Date.now()}`;
+    const localUrl = URL.createObjectURL(file);
+    
+    const optimisticMsg: Message = {
+      id: tempId,
+      content: "",
+      fileUrl: localUrl,
+      fileName: file.name,
+      fileType: file.type,
+      sender: {
+        id: currentUserId,
+        name: currentUserName,
+        status: "online"
+      },
+      createdAt: new Date().toISOString(),
+      reactions: []
+    };
+    
+    setMessages(prev => [...prev, optimisticMsg]);
     
     try {
       const res = await fetch("/api/upload", {
@@ -325,11 +367,16 @@ export default function ChatArea({
             fileType: data.fileType 
           }),
         });
+      } else {
+        throw new Error("Upload failed");
       }
     } catch (err) {
       console.error(err);
+      // Remove optimistic message on upload failure
+      setMessages(prev => prev.filter(x => x.id !== tempId));
+    } finally {
+      setSending(false);
     }
-    setSending(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
@@ -703,14 +750,13 @@ export default function ChatArea({
                         {msg.fileUrl && (
                           <div className={styles.fileAttachment}>
                             {msg.fileType?.startsWith("image/") ? (
-                              <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-start" }}>
-                                <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer" title="Click to view full image">
-                                  <img src={msg.fileUrl} alt={msg.fileName} className={styles.fileImg} />
-                                </a>
-                                <a href={msg.fileUrl} download={msg.fileName} className={styles.fileLink}>
-                                  📥 Download {msg.fileName}
-                                </a>
-                              </div>
+                              <img 
+                                src={msg.fileUrl} 
+                                alt={msg.fileName || "Uploaded image"} 
+                                className={styles.fileImg} 
+                                onClick={() => setLightboxUrl(msg.fileUrl!)}
+                                title="Click to view image"
+                              />
                             ) : (
                               <a href={msg.fileUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer"
                                 className={styles.fileLink}>
@@ -1070,6 +1116,19 @@ export default function ChatArea({
                 Delete
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Modal */}
+      {lightboxUrl && (
+        <div className={styles.lightboxOverlay} onClick={() => setLightboxUrl(null)}>
+          <div className={styles.lightboxContent} onClick={e => e.stopPropagation()}>
+            <img src={lightboxUrl} alt="Preview" className={styles.lightboxImg} />
+            <button className={styles.lightboxClose} onClick={() => setLightboxUrl(null)}>×</button>
+            <a href={lightboxUrl} download="download.jpg" className={styles.lightboxDownload} target="_blank" rel="noopener noreferrer">
+              📥 Download Image
+            </a>
           </div>
         </div>
       )}
