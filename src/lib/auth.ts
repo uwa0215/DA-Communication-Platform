@@ -66,15 +66,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session.user as any).isApproved = token.isApproved as boolean;
 
-        // Fetch fresh data so changes like avatar/name update immediately
+        // Fetch fresh data so changes like role, avatar, name, and approval update immediately
         const dbUser = await prisma.user.findUnique({
           where: { id: token.id as string },
-          select: { name: true, avatar: true, email: true },
+          select: { name: true, avatar: true, email: true, role: true, isApproved: true },
         });
         if (dbUser) {
           session.user.name = dbUser.name;
           session.user.email = dbUser.email;
           session.user.image = dbUser.avatar;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (session.user as any).role = dbUser.role;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (session.user as any).isApproved = dbUser.isApproved;
         }
       }
       return session;

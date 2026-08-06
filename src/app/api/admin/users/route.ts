@@ -5,8 +5,12 @@ import { auth } from "@/lib/auth";
 export async function GET(req: NextRequest) {
   try {
     const session = await auth();
-    if (!session || (session?.user as any)?.role !== "admin") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized: No session found" }, { status: 401 });
+    }
+    const role = (session?.user as any)?.role;
+    if (role !== "admin") {
+      return NextResponse.json({ error: `Unauthorized: User is not an admin (Current role in session: "${role || 'none'}")` }, { status: 403 });
     }
 
     const users = await prisma.user.findMany({
