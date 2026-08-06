@@ -16,6 +16,63 @@ app.prepare().then(() => {
     const parsedUrl = parse(req.url, true);
     const { pathname } = parsedUrl;
 
+    // Handle POST /api/upload directly (bypasses Next.js 4MB size limits for files up to 50MB)
+    if (req.method === "POST" && pathname === "/api/upload") {
+      const formidable = require("formidable");
+      const fs = require("fs");
+      const path = require("path");
+      
+      const uploadDir = path.join(__dirname, "public", "uploads");
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const form = new formidable.IncomingForm({
+        uploadDir: uploadDir,
+        keepExtensions: true,
+        maxFileSize: 50 * 1024 * 1024, // 50MB limit
+      });
+
+      form.parse(req, (err, fields, files) => {
+        if (err) {
+          console.error("Formidable upload error:", err);
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: err.message || "Upload size limit exceeded" }));
+          return;
+        }
+
+        const fileArray = files.file;
+        const file = Array.isArray(fileArray) ? fileArray[0] : fileArray;
+
+        if (!file) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "No file uploaded" }));
+          return;
+        }
+
+        const originalName = file.originalFilename || "upload";
+        const uniqueName = `${Date.now()}-${originalName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+        const newPath = path.join(uploadDir, uniqueName);
+
+        try {
+          fs.renameSync(file.filepath, newPath);
+          const fileUrl = `/uploads/${uniqueName}`;
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({
+            url: fileUrl,
+            fileName: originalName,
+            fileType: file.mimetype
+          }));
+        } catch (renameErr) {
+          console.error("Rename error:", renameErr);
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Failed to store uploaded file" }));
+        }
+      });
+      return;
+    }
+
     // Serve uploaded files dynamically (bypasses Next.js static cache limitations in production)
     if (pathname && pathname.startsWith("/uploads/")) {
       const fs = require("fs");
