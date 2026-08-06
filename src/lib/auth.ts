@@ -43,6 +43,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        // Automatic hash migration: migrate 12 rounds to 10 rounds for 4x faster login
+        if (user.password.startsWith("$2a$12$") || user.password.startsWith("$2b$12$")) {
+          console.log("🔄 [Auth] Migrating password hash from 12 rounds to 10 rounds...");
+          bcrypt.hash(credentials.password as string, 10)
+            .then(newHash => {
+              prisma.user.update({
+                where: { id: user.id },
+                data: { password: newHash }
+              }).then(() => {
+                console.log("✅ [Auth] Password hash migrated successfully.");
+              }).catch(e => console.error("Failed to update migrated password hash:", e));
+            })
+            .catch(e => console.error("Failed to generate migrated hash:", e));
+        }
+
         if (!user.isApproved) {
           console.log("⚠️ [Auth] Account pending admin approval.");
           throw new PendingApprovalError();
