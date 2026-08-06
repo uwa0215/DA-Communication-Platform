@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import agriLogo from "../../../public/Agri Logo.png";
 import { Search, Bell, Settings, LogOut, ChevronDown, Shield, Menu } from "lucide-react";
 import { signOut } from "next-auth/react";
@@ -30,11 +31,18 @@ interface Notification {
 }
 
 export default function Topbar({ currentUser }: { currentUser: User }) {
+  const router = useRouter();
   const { toggleMobileSidebar } = useUI();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [myStatus, setMyStatus] = useState(currentUser.status || 'online');
+
+  const handleSignOut = async () => {
+    setShowProfileMenu(false);
+    await signOut({ redirect: false });
+    router.push("/login");
+  };
   
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
@@ -324,7 +332,7 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
                     </Link>
                   )}
                   <div className={styles.divider} />
-                  <button className={`${styles.menuItem} ${styles.danger}`} onClick={() => signOut({ callbackUrl: '/login' })}>
+                  <button className={`${styles.menuItem} ${styles.danger}`} onClick={handleSignOut}>
                     <LogOut size={16} /> Sign out
                   </button>
                 </div>
