@@ -53,9 +53,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 data: { password: newHash }
               }).then(() => {
                 console.log("✅ [Auth] Password hash migrated successfully.");
-              }).catch(e => console.error("Failed to update migrated password hash:", e));
+              }).catch((e: any) => console.error("Failed to update migrated password hash:", e));
             })
-            .catch(e => console.error("Failed to generate migrated hash:", e));
+            .catch((e: any) => console.error("Failed to generate migrated hash:", e));
         }
 
         if (!user.isApproved) {
