@@ -1,7 +1,11 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+
+class PendingApprovalError extends CredentialsSignin {
+  code = "pending_approval";
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   trustHost: true,
@@ -21,16 +25,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!user) return null;
 
-        if (!user.isApproved) {
-          throw new Error("Account pending approval");
-        }
-
         const passwordMatch = await bcrypt.compare(
           credentials.password as string,
           user.password
         );
 
         if (!passwordMatch) return null;
+
+        if (!user.isApproved) {
+          throw new PendingApprovalError();
+        }
 
         return {
           id: user.id,

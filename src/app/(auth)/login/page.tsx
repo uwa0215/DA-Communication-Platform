@@ -91,7 +91,7 @@ export default function LoginPage() {
     const res = await signIn("credentials", { email, password, redirect: false });
     setLoading(false);
     if (res?.error) {
-      setError(res.error.includes("pending approval")
+      setError(res.error.includes("pending")
         ? "Your account is pending admin approval."
         : "Invalid email or password. Please try again.");
     } else {
