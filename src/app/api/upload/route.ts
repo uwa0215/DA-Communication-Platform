@@ -1,41 +1,75 @@
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
-import { existsSync } from "fs";
+import { Readable } from "stream";
+import formidable from "formidable";
+import fs from "fs";
+import path from "path";
+
+// Disable default body parser config if Next.js checks it (mostly for pages, but safe fallback)
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 export async function POST(req: NextRequest) {
   try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
+    if (!req.body) {
+      return NextResponse.json({ error: "No request body provided" }, { status: 400 });
+    }
+
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    // Convert Web ReadableStream to Node.js Readable stream to bypass Next.js body limits
+    const nodeStream = Readable.fromWeb(req.body as any);
     
-    if (!file) {
-      return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
-    }
-
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Create unique filename
-    const uniqueName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-    const uploadDir = join(process.cwd(), "public", "uploads");
-
-    // Ensure dir exists
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true });
-    }
-
-    const filePath = join(uploadDir, uniqueName);
-    await writeFile(filePath, buffer);
-
-    const fileUrl = `/uploads/${uniqueName}`;
-
-    return NextResponse.json({
-      url: fileUrl,
-      fileName: file.name,
-      fileType: file.type
+    // Create a mock IncomingMessage shape for Formidable
+    const mockReq = Object.assign(nodeStream, {
+      headers: Object.fromEntries(req.headers.entries()),
+      method: req.method,
     });
+
+    const form = new formidable.IncomingForm({
+      uploadDir: uploadDir,
+      keepExtensions: true,
+      maxFileSize: 50 * 1024 * 1024, // 50MB limit
+    });
+
+    const data = await new Promise<{ url: string; fileName: string; fileType: string }>((resolve, reject) => {
+      form.parse(mockReq as any, (err, fields, files) => {
+        if (err) {
+          return reject(err);
+        }
+
+        const fileArray = files.file;
+        const file = Array.isArray(fileArray) ? fileArray[0] : fileArray;
+
+        if (!file) {
+          return reject(new Error("No file uploaded"));
+        }
+
+        const originalName = file.originalFilename || "upload";
+        const uniqueName = `${Date.now()}-${originalName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+        const newPath = path.join(uploadDir, uniqueName);
+
+        try {
+          fs.renameSync(file.filepath, newPath);
+          resolve({
+            url: `/uploads/${uniqueName}`,
+            fileName: originalName,
+            fileType: file.mimetype || "application/octet-stream"
+          });
+        } catch (renameErr) {
+          reject(renameErr);
+        }
+      });
+    });
+
+    return NextResponse.json(data);
   } catch (e: any) {
-    console.error("Upload error:", e);
-    return NextResponse.json({ error: "Failed to upload file" }, { status: 500 });
+    console.error("API Route upload error:", e);
+    return NextResponse.json({ error: e.message || "Failed to upload file" }, { status: 500 });
   }
 }
