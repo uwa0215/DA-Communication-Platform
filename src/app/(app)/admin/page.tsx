@@ -24,10 +24,18 @@ export default function AdminDashboard() {
   }, []);
 
   async function fetchUsers() {
-    const res = await fetch("/api/admin/users");
-    if (res.ok) {
-      const data = await res.json();
-      setUsers(data);
+    setErrorMsg("");
+    try {
+      const res = await fetch("/api/admin/users");
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setErrorMsg(data.error || `Failed to fetch users (status: ${res.status})`);
+      }
+    } catch (e: any) {
+      setErrorMsg(e.message || "Network error fetching users");
     }
     setLoading(false);
   }
