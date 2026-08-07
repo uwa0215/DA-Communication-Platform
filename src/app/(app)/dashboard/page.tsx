@@ -1,5 +1,7 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { users, channels, meetings, meetingParticipants, messages } from "@/lib/schema";
+import { sql, eq, ne, and, gte, lte } from "drizzle-orm";
 import { Megaphone, Link as LinkIcon, Users, FileText, Shield, Zap, ShieldCheck, Globe, MessageSquare, CalendarDays, Hash, UserPlus, ArrowRight, Clock, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -17,31 +19,41 @@ export default async function DashboardPage() {
   if (hour >= 12 && hour < 17) greeting = "Good afternoon";
   else if (hour >= 17) greeting = "Good evening";
 
-  // Fetch stats
-  const [userCount, channelCount, meetingCount] = await Promise.all([
-    prisma.user.count({ where: { status: { not: "offline" } } }),
-    prisma.channel.count(),
-    prisma.meeting.count({
-      where: {
-        startTime: { gte: new Date(now.getFullYear(), now.getMonth(), now.getDate()) },
-        endTime: { lte: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1) }
-      }
-    })
+  // Fetch stats using Drizzle count
+  const [userCountRes, channelCountRes, meetingCountRes] = await Promise.all([
+    db.select({ count: sql<number>`cast(count(${users.id}) as integer)` }).from(users).where(ne(users.status, "offline")),
+    db.select({ count: sql<number>`cast(count(${channels.id}) as integer)` }).from(channels),
+    db.select({ count: sql<number>`cast(count(${meetings.id}) as integer)` }).from(meetings).where(
+      and(
+        gte(meetings.startTime, new Date(now.getFullYear(), now.getMonth(), now.getDate())),
+        lte(meetings.endTime, new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1))
+      )
+    )
   ]);
+  const userCount = userCountRes[0].count;
+  const channelCount = channelCountRes[0].count;
+  const meetingCount = meetingCountRes[0].count;
 
   // Fetch upcoming meetings for this user
-  const upcomingMeetings = await prisma.meeting.findMany({
-    where: {
-      participants: { some: { userId: user?.id } },
-      startTime: { gte: now }
-    },
-    include: {
-      createdBy: { select: { name: true, avatar: true } },
-      participants: { include: { user: { select: { name: true, avatar: true } } } }
-    },
-    orderBy: { startTime: 'asc' },
-    take: 3
-  });
+  const userMeetingIds = (await db.select({ meetingId: meetingParticipants.meetingId })
+    .from(meetingParticipants)
+    .where(eq(meetingParticipants.userId, user?.id))).map(x => x.meetingId);
+
+  let upcomingMeetings: any[] = [];
+  if (userMeetingIds.length > 0) {
+    upcomingMeetings = await db.query.meetings.findMany({
+      where: (m, { and, gte, inArray }) => and(
+        gte(m.startTime, now),
+        inArray(m.id, userMeetingIds)
+      ),
+      with: {
+        createdBy: { columns: { name: true, avatar: true } },
+        participants: { with: { user: { columns: { name: true, avatar: true } } } }
+      },
+      orderBy: (m, { asc }) => [asc(m.startTime)],
+      limit: 3
+    });
+  }
 
   // Get upcoming holidays
   const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -51,14 +63,13 @@ export default async function DashboardPage() {
     .slice(0, 3);
 
   // Fetch recent channel messages for activity feed
-  const recentMessages = await prisma.message.findMany({
-    where: {},
-    include: {
-      sender: { select: { name: true, avatar: true } },
-      channel: { select: { name: true } }
+  const recentMessages = await db.query.messages.findMany({
+    with: {
+      sender: { columns: { name: true, avatar: true } },
+      channel: { columns: { name: true } }
     },
-    orderBy: { createdAt: 'desc' },
-    take: 5
+    orderBy: (msg, { desc }) => [desc(msg.createdAt)],
+    limit: 5
   });
 
   const firstName = user?.name?.split(' ')[0] || 'there';

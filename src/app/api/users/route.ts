@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { users } from "@/lib/schema";
+import { or, ilike } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 
 // GET /api/users — get all employees
@@ -10,18 +12,16 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q");
 
-  const users = await prisma.user.findMany({
+  const usersData = await db.query.users.findMany({
     where: q
-      ? {
-          OR: [
-            { name: { contains: q } },
-            { email: { contains: q } },
-            { department: { contains: q } },
-            { jobTitle: { contains: q } },
-          ],
-        }
+      ? (u, { or, ilike }) => or(
+          ilike(u.name, `%${q}%`),
+          ilike(u.email, `%${q}%`),
+          ilike(u.department, `%${q}%`),
+          ilike(u.jobTitle, `%${q}%`)
+        )
       : undefined,
-    select: {
+    columns: {
       id: true,
       name: true,
       email: true,
@@ -32,11 +32,11 @@ export async function GET(req: NextRequest) {
       department: true,
       unit: true,
     },
-    orderBy: { name: "asc" },
+    orderBy: (u, { asc }) => [asc(u.name)],
   });
 
   return NextResponse.json(
-    { users },
+    { users: usersData },
     { headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" } }
   );
 }

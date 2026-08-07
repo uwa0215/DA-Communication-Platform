@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { channels, channelMembers } from "@/lib/schema";
+import { eq, or, and } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 
 // GET /api/channels — list all channels user is member of + all public channels
@@ -7,21 +9,31 @@ export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const channels = await prisma.channel.findMany({
-    where: {
-      OR: [
-        { isPrivate: false },
-        { members: { some: { userId: session.user.id } } },
-      ],
+  // Find channels where isPrivate=false OR user is a member
+  // Using query API with a relational trick or just a subquery
+  const userChannelIds = (await db.select({ channelId: channelMembers.channelId })
+    .from(channelMembers)
+    .where(eq(channelMembers.userId, session.user.id))).map(c => c.channelId);
+
+  const channelsData = await db.query.channels.findMany({
+    where: (ch, { or, eq, inArray }) => 
+      userChannelIds.length > 0 
+        ? or(eq(ch.isPrivate, false), inArray(ch.id, userChannelIds))
+        : eq(ch.isPrivate, false),
+    with: {
+      members: { with: { user: { columns: { id: true, name: true, avatar: true, status: true } } } },
+      messages: { columns: { id: true } }
     },
-    include: {
-      members: { include: { user: { select: { id: true, name: true, avatar: true, status: true } } } },
-      _count: { select: { messages: true } },
-    },
-    orderBy: { name: "asc" },
+    orderBy: (ch, { asc }) => [asc(ch.name)],
   });
 
-  return NextResponse.json({ channels });
+  // Map to add _count.messages for compatibility
+  const mappedChannels = channelsData.map(ch => ({
+    ...ch,
+    _count: { messages: ch.messages.length }
+  }));
+
+  return NextResponse.json({ channels: mappedChannels });
 }
 
 // POST /api/channels — create a new channel or group chat
@@ -37,7 +49,7 @@ export async function POST(req: NextRequest) {
   let finalName = name;
   if (!isGroup) {
     finalName = name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-    const existing = await prisma.channel.findFirst({ where: { name: finalName, isGroup: false } });
+    const existing = await db.query.channels.findFirst({ where: (ch, { eq, and }) => and(eq(ch.name, finalName), eq(ch.isGroup, false)) });
     if (existing) return NextResponse.json({ error: "Channel name already exists" }, { status: 400 });
   } else {
     // For group chats, bypass SQLite's stubborn unique constraint on name by appending a unique ID
@@ -45,24 +57,31 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const channel = await prisma.channel.create({
-      data: {
-        name: finalName,
-        description,
-        isPrivate: isPrivate || false,
-        isGroup: isGroup || false,
-        avatar: avatar || null,
-        createdById: session.user.id,
-        members: { create: { userId: session.user.id } },
-      },
-      include: {
-        members: { include: { user: { select: { id: true, name: true, avatar: true, status: true } } } },
-      },
+    const [channel] = await db.insert(channels).values({
+      name: finalName,
+      description,
+      isPrivate: isPrivate || false,
+      isGroup: isGroup || false,
+      avatar: avatar || null,
+      createdById: session.user.id,
+    }).returning();
+
+    await db.insert(channelMembers).values({
+      channelId: channel.id,
+      userId: session.user.id,
     });
 
-    return NextResponse.json({ channel }, { status: 201 });
+    const createdChannel = await db.query.channels.findFirst({
+      where: (ch, { eq }) => eq(ch.id, channel.id),
+      with: {
+        members: { with: { user: { columns: { id: true, name: true, avatar: true, status: true } } } },
+      }
+    });
+
+    return NextResponse.json({ channel: createdChannel }, { status: 201 });
   } catch (error: any) {
-    if (error.code === "P2002") {
+    console.error(error);
+    if (error.code === "23505") { // Postgres unique constraint violation
       return NextResponse.json({ error: "Channel name already taken" }, { status: 409 });
     }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { users, channels, messages, directMessages, channelMembers } from "@/lib/schema";
+import { eq, or, and, ilike, inArray } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
@@ -13,58 +15,54 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ users: [], channels: [], messages: [] });
   }
 
+  const userId = session.user.id as string;
   const query = q.trim();
 
   try {
-    const users = await prisma.user.findMany({
-      where: {
-        OR: [
-          { name: { contains: query } },
-          { email: { contains: query } },
-          { jobTitle: { contains: query } },
-        ]
-      },
-      select: { id: true, name: true, email: true, avatar: true, jobTitle: true, status: true },
-      take: 10
+    const usersData = await db.query.users.findMany({
+      where: (u, { or, ilike }) => or(
+        ilike(u.name, `%${query}%`),
+        ilike(u.email, `%${query}%`),
+        ilike(u.jobTitle, `%${query}%`)
+      ),
+      columns: { id: true, name: true, email: true, avatar: true, jobTitle: true, status: true },
+      limit: 10
     });
 
-    const channels = await prisma.channel.findMany({
-      where: {
-        name: { contains: query }
-      },
-      select: { id: true, name: true, isPrivate: true },
-      take: 10
+    const channelsData = await db.query.channels.findMany({
+      where: (c, { ilike }) => ilike(c.name, `%${query}%`),
+      columns: { id: true, name: true, isPrivate: true },
+      limit: 10
     });
 
-    const channelMessages = await prisma.message.findMany({
-      where: {
-        content: { contains: query },
-        channel: {
-          members: { some: { userId: session.user.id } }
-        }
-      },
-      include: {
-        channel: { select: { id: true, name: true } },
-        sender: { select: { id: true, name: true } }
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 10
-    });
+    const userChannelIds = (await db.select({ channelId: channelMembers.channelId })
+      .from(channelMembers)
+      .where(eq(channelMembers.userId, userId))).map(c => c.channelId);
 
-    const directMessages = await prisma.directMessage.findMany({
-      where: {
-        content: { contains: query },
-        OR: [
-          { senderId: session.user.id },
-          { receiverId: session.user.id }
-        ]
+    const channelMessages = userChannelIds.length > 0 ? await db.query.messages.findMany({
+      where: (m, { ilike, and, inArray }) => and(
+        ilike(m.content, `%${query}%`),
+        inArray(m.channelId, userChannelIds)
+      ),
+      with: {
+        channel: { columns: { id: true, name: true } },
+        sender: { columns: { id: true, name: true } }
       },
-      include: {
-        sender: { select: { id: true, name: true } },
-        receiver: { select: { id: true, name: true } }
+      orderBy: (m, { desc }) => [desc(m.createdAt)],
+      limit: 10
+    }) : [];
+
+    const directMessagesData = await db.query.directMessages.findMany({
+      where: (m, { ilike, or, eq, and }) => and(
+        ilike(m.content, `%${query}%`),
+        or(eq(m.senderId, userId), eq(m.receiverId, userId))
+      ),
+      with: {
+        sender: { columns: { id: true, name: true } },
+        receiver: { columns: { id: true, name: true } }
       },
-      orderBy: { createdAt: 'desc' },
-      take: 10
+      orderBy: (m, { desc }) => [desc(m.createdAt)],
+      limit: 10
     });
 
     // Combine channel & direct messages and sort
@@ -77,7 +75,7 @@ export async function GET(req: NextRequest) {
         sender: m.sender,
         channel: m.channel,
       })),
-      ...directMessages.map(m => ({
+      ...directMessagesData.map(m => ({
         id: m.id,
         content: m.content,
         createdAt: m.createdAt,
@@ -89,8 +87,8 @@ export async function GET(req: NextRequest) {
      .slice(0, 15);
 
     return NextResponse.json({
-      users,
-      channels,
+      users: usersData,
+      channels: channelsData,
       messages: allMessages
     });
   } catch (error) {

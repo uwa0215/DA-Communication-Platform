@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { channels, channelMembers } from "@/lib/schema";
 import ChatArea from "@/components/chat/ChatArea";
 
 interface Props {
@@ -11,9 +12,9 @@ export default async function ChannelPage({ params }: Props) {
   const { name } = await params;
   const session = await auth();
 
-  const channel = await prisma.channel.findFirst({
-    where: { name, isGroup: false },
-    include: { members: true },
+  const channel = await db.query.channels.findFirst({
+    where: (ch, { eq, and }) => and(eq(ch.name, name), eq(ch.isGroup, false)),
+    with: { members: true },
   });
 
   if (!channel) return notFound();
@@ -21,8 +22,9 @@ export default async function ChannelPage({ params }: Props) {
   // Auto-join if not a member
   const isMember = channel.members.some(m => m.userId === session?.user?.id);
   if (!isMember && !channel.isPrivate && session?.user?.id) {
-    await prisma.channelMember.create({
-      data: { channelId: channel.id, userId: session.user.id },
+    await db.insert(channelMembers).values({
+      channelId: channel.id,
+      userId: session.user.id
     });
   }
 

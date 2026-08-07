@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { channels, channelMembers } from "@/lib/schema";
 import ChatArea from "@/components/chat/ChatArea";
 
 interface Props {
@@ -11,9 +12,9 @@ export default async function GroupPage({ params }: Props) {
   const { id } = await params;
   const session = await auth();
 
-  const channel = await prisma.channel.findUnique({
-    where: { id },
-    include: { members: true },
+  const channel = await db.query.channels.findFirst({
+    where: (ch, { eq }) => eq(ch.id, id),
+    with: { members: true },
   });
 
   if (!channel || !channel.isGroup) return notFound();
