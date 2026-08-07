@@ -12,22 +12,7 @@ import {
 } from "lucide-react";
 import styles from "./auth.module.css";
 
-/* ─── animated counter ─── */
-function useCounter(target: number, duration = 1500, start = false) {
-  const [val, setVal] = useState(0);
-  useEffect(() => {
-    if (!start) return;
-    let startTime: number | null = null;
-    const step = (ts: number) => {
-      if (!startTime) startTime = ts;
-      const pct = Math.min((ts - startTime) / duration, 1);
-      setVal(Math.floor(pct * target));
-      if (pct < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }, [start, target, duration]);
-  return val;
-}
+
 
 const FEATURES = [
   { icon: <MessageSquare size={16} />, label: "Office Announcements" },
@@ -51,37 +36,11 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const isApproved = searchParams.get("approved") === "1";
 
-  const [email, setEmail]     = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [error, setError]     = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  /* welcome overlay */
-  const [showWelcome, setShowWelcome]   = useState(false);
-  const [welcomePhase, setWelcomePhase] = useState(0);
-  const [userName, setUserName]         = useState("");
-  const [progress, setProgress]         = useState(0);
-
-  /* counters trigger */
-  const [panelVisible, setPanelVisible] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setPanelVisible(true); }, { threshold: 0.2 });
-    if (panelRef.current) obs.observe(panelRef.current);
-    return () => obs.disconnect();
-  }, []);
-
-  const c1 = useCounter(800, 1400, panelVisible);
-  const c2 = useCounter(99,  1200, panelVisible);
-  const c3 = useCounter(6,   1000, panelVisible);
-
-  /* welcome overlay sequence */
-  useEffect(() => {
-    if (!showWelcome) return;
-    router.push("/dashboard"); 
-    router.refresh();
-  }, [showWelcome, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -106,14 +65,7 @@ function LoginContent() {
     }
   }
 
-  const particles = useRef(
-    Array.from({ length: 30 }, (_, i) => ({
-      id: i,
-      x: Math.random() * 100, y: Math.random() * 100,
-      size: Math.random() * 6 + 2,
-      delay: Math.random() * 2, duration: Math.random() * 3 + 2,
-    }))
-  ).current;
+
 
   return (
     <>
@@ -121,7 +73,7 @@ function LoginContent() {
       <div className={styles.splitPage}>
 
         {/* ── LEFT PANEL ── */}
-        <aside className={styles.leftPanel} ref={panelRef}>
+        <aside className={styles.leftPanel}>
           <div className={styles.blob1} />
           <div className={styles.blob2} />
           <div className={styles.blob3} />
