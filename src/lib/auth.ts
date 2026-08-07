@@ -78,35 +78,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token.role = (user as any).role;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token.isApproved = (user as any).isApproved;
+        token.name = user.name;
+        token.email = user.email;
+        token.image = user.image;
       }
       return token;
     },
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        session.user.name = token.name as string;
+        session.user.email = token.email as string;
+        session.user.image = token.image as string;
         (session.user as any).role = token.role as string;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session.user as any).isApproved = token.isApproved as boolean;
-
-        // Fetch fresh data so changes like role, avatar, name, and approval update immediately
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { name: true, avatar: true, email: true, role: true, isApproved: true },
-        });
-        if (dbUser) {
-          session.user.name = dbUser.name;
-          session.user.email = dbUser.email;
-          session.user.image = dbUser.avatar;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (session.user as any).role = dbUser.role;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (session.user as any).isApproved = dbUser.isApproved;
-        }
       }
       return session;
     },

@@ -79,14 +79,8 @@ function LoginContent() {
   /* welcome overlay sequence */
   useEffect(() => {
     if (!showWelcome) return;
-    const interval = setInterval(() => {
-      setProgress(prev => { if (prev >= 100) { clearInterval(interval); return 100; } return prev + 5; });
-    }, 40);
-    const t1 = setTimeout(() => setWelcomePhase(1), 200);
-    const t2 = setTimeout(() => setWelcomePhase(2), 450);
-    const t3 = setTimeout(() => setWelcomePhase(3), 750);
-    const t4 = setTimeout(() => { router.push("/dashboard"); router.refresh(); }, 1200);
-    return () => { clearInterval(interval); clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+    router.push("/dashboard"); 
+    router.refresh();
   }, [showWelcome, router]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -101,21 +95,9 @@ function LoginContent() {
           ? "Your account is pending admin approval."
           : "Invalid email or password. Please try again.");
       } else {
-        const name = email.split("@")[0].replace(/[._]/g, " ");
-        const fallbackName = name.charAt(0).toUpperCase() + name.slice(1);
-        setUserName(fallbackName);
-        setShowWelcome(true);
-
-        // Dynamically fetch first name from database to display instead of email prefix
-        fetch("/api/users/me")
-          .then(r => r.json())
-          .then(data => {
-            if (data?.user?.name) {
-              const firstName = data.user.name.split(" ")[0];
-              setUserName(firstName);
-            }
-          })
-          .catch(err => console.error("Error fetching user first name:", err));
+        // Redirect immediately
+        router.push("/dashboard");
+        router.refresh();
       }
     } catch (err: any) {
       setLoading(false);
@@ -135,69 +117,6 @@ function LoginContent() {
 
   return (
     <>
-      {/* ════ WELCOME OVERLAY ════ */}
-      {showWelcome && (
-        <div className={styles.welcomeOverlay}>
-          <div className={styles.welcomeOrb1} />
-          <div className={styles.welcomeOrb2} />
-          <div className={styles.welcomeOrb3} />
-          <div className={styles.welcomeOrb4} />
-          {particles.map(p => (
-            <div key={p.id} className={styles.particle} style={{
-              left: `${p.x}%`, top: `${p.y}%`,
-              width: p.size, height: p.size,
-              animationDelay: `${p.delay}s`, animationDuration: `${p.duration}s`,
-            }} />
-          ))}
-          <div className={styles.welcomeGrid} />
-          <div className={styles.welcomeContent}>
-            <div className={`${styles.welcomeLogo} ${welcomePhase >= 0 ? styles.fadeInUp : ""}`}>
-              <div className={styles.welcomeLogoRing}>
-                <div className={styles.welcomeLogoRingInner} />
-                {/* DA logo in center of welcome overlay */}
-                <div className={styles.welcomeLogoIcon}>
-                  <Image 
-                    src={daLogo} 
-                    alt="DA CALABARZON" 
-                    style={{ width: 48, height: 48, objectFit: "contain", borderRadius: "50%", background: "white", padding: 4 }} 
-                  />
-                </div>
-              </div>
-              <div className={styles.orbitTrack}>
-                <div className={styles.orbitIcon} style={{ "--orbit-deg": "0deg" } as React.CSSProperties}><Leaf size={14} /></div>
-                <div className={styles.orbitIcon} style={{ "--orbit-deg": "120deg" } as React.CSSProperties}><Users size={14} /></div>
-                <div className={styles.orbitIcon} style={{ "--orbit-deg": "240deg" } as React.CSSProperties}><Zap size={14} /></div>
-              </div>
-            </div>
-            <div className={`${styles.checkBadge} ${welcomePhase >= 1 ? styles.fadeInScale : ""}`}>
-              <CheckCircle size={20} /><span>Employee Verified</span>
-            </div>
-            <div className={`${styles.welcomeTextBlock} ${welcomePhase >= 1 ? styles.fadeInUp : ""}`}>
-              <p className={styles.welcomeLabel}>DA CALABARZON · Employee Portal</p>
-              <h1 className={styles.welcomeHeading}>Good day, <span className={styles.welcomeName}>{userName}</span>! 🌾</h1>
-              <p className={styles.welcomeSub}>Loading your DA CALABARZON workspace...</p>
-            </div>
-            <div className={`${styles.featureBadges} ${welcomePhase >= 2 ? styles.fadeInUp : ""}`}>
-              <div className={styles.featureBadge}><MessageSquare size={14} />Announcements</div>
-              <div className={styles.featureBadge}><Users size={14} />Divisions</div>
-              <div className={styles.featureBadge}><Leaf size={14} />Programs</div>
-              <div className={styles.featureBadge}><Zap size={14} />Alerts</div>
-            </div>
-            <div className={`${styles.progressWrap} ${welcomePhase >= 2 ? styles.fadeInUp : ""}`}>
-              <div className={styles.progressBar}>
-                <div className={styles.progressFill} style={{ width: `${progress}%` }} />
-                <div className={styles.progressGlow} style={{ left: `${progress}%` }} />
-              </div>
-              <p className={styles.progressLabel}>
-                {progress < 40 ? "Authenticating..." : progress < 80 ? "Loading workspace..." : "Almost there..."}
-              </p>
-            </div>
-          </div>
-          <div className={styles.cornerTopLeft} />
-          <div className={styles.cornerBottomRight} />
-        </div>
-      )}
-
       {/* ════ SIGN-IN PAGE ════ */}
       <div className={styles.splitPage}>
 
