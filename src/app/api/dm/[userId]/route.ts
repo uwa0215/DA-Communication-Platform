@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { directMessages, notifications } from "@/lib/schema";
+import { getCache, setCache, invalidateCachePrefix } from "@/lib/cache";
+import { eq, and, or, isNull } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 
 // GET /api/dm/[userId] — get DM conversation
@@ -12,30 +15,49 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
   const { searchParams } = new URL(req.url);
   const parentId = searchParams.get("parentId");
 
-  const messages = await prisma.directMessage.findMany({
-    where: {
-      parentId: parentId || null,
-      OR: [
-        { senderId: myId, receiverId: otherId },
-        { senderId: otherId, receiverId: myId },
-      ],
+  const roomId = [myId, otherId].sort().join(":");
+  const cacheKey = `dm:${roomId}:${parentId || 'root'}`;
+  
+  const cachedMessages = await getCache(cacheKey);
+  if (cachedMessages) {
+    return NextResponse.json({ messages: cachedMessages });
+  }
+
+  const msgs = await db.query.directMessages.findMany({
+    where: (dms, { eq, and, or, isNull }) => 
+      and(
+        parentId ? eq(dms.parentId, parentId) : isNull(dms.parentId),
+        or(
+          and(eq(dms.senderId, myId), eq(dms.receiverId, otherId)),
+          and(eq(dms.senderId, otherId), eq(dms.receiverId, myId))
+        )
+      ),
+    limit: 100,
+    orderBy: (dms, { asc }) => [asc(dms.createdAt)],
+    with: {
+      sender: { columns: { id: true, name: true, avatar: true, status: true } },
+      reactions: { with: { user: { columns: { id: true, name: true } } } },
+      replies: { columns: { id: true } }
     },
-    include: {
-      sender: { select: { id: true, name: true, avatar: true, status: true } },
-      reactions: { include: { user: { select: { id: true, name: true } } } },
-      _count: { select: { replies: true } },
-    },
-    orderBy: { createdAt: "asc" },
-    take: 100,
+  });
+
+  const formattedMessages = msgs.map(m => {
+    const { replies, ...rest } = m;
+    return { ...rest, _count: { replies: replies.length } };
   });
 
   // Mark unread messages as read
-  await prisma.directMessage.updateMany({
-    where: { senderId: otherId, receiverId: myId, read: false },
-    data: { read: true },
-  });
+  await db.update(directMessages)
+    .set({ read: true })
+    .where(and(
+      eq(directMessages.senderId, otherId),
+      eq(directMessages.receiverId, myId),
+      eq(directMessages.read, false)
+    ));
 
-  return NextResponse.json({ messages });
+  await setCache(cacheKey, formattedMessages, 5); // Cache for 5 seconds
+
+  return NextResponse.json({ messages: formattedMessages });
 }
 
 // POST /api/dm/[userId] — send DM
@@ -51,35 +73,39 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
     return NextResponse.json({ error: "Message content required" }, { status: 400 });
   }
 
-  const message = await prisma.directMessage.create({
-    data: {
-      content: content || "",
-      fileUrl,
-      fileName,
-      fileType,
-      senderId: myId,
-      receiverId,
-      parentId: parentId || null,
-    },
-    include: {
-      sender: { select: { id: true, name: true, avatar: true, status: true } },
-      reactions: { include: { user: { select: { id: true, name: true } } } },
-    },
+  const [newMessage] = await db.insert(directMessages).values({
+    content: content || "",
+    fileUrl,
+    fileName,
+    fileType,
+    senderId: myId,
+    receiverId,
+    parentId: parentId || null,
+  }).returning();
+
+  const fullMessage = await db.query.directMessages.findFirst({
+    where: (dms, { eq }) => eq(dms.id, newMessage.id),
+    with: {
+      sender: { columns: { id: true, name: true, avatar: true, status: true } },
+      reactions: { with: { user: { columns: { id: true, name: true } } } },
+    }
   });
 
-  // Broadcast via Socket.io
+  const broadcastMsg = { ...fullMessage, _count: { replies: 0 } };
+
   const roomId = [myId, receiverId].sort().join(":");
+  await invalidateCachePrefix(`dm:${roomId}`);
+
+  // Broadcast via Socket.io
   if (global.io) {
-    global.io.to(`dm:${roomId}`).emit("new-dm", message);
+    global.io.to(`dm:${roomId}`).emit("new-dm", broadcastMsg);
     
-    const notif = await prisma.notification.create({
-      data: {
-        userId: receiverId,
-        title: "New Message",
-        content: `${message.sender.name} sent you a message`,
-        link: `/dm/${myId}`,
-      }
-    });
+    const [notif] = await db.insert(notifications).values({
+      userId: receiverId,
+      title: "New Message",
+      content: `${fullMessage?.sender?.name} sent you a message`,
+      link: `/dm/${myId}`,
+    }).returning();
 
     global.io.to(`user:${receiverId}`).emit("new-notification", notif);
   }
@@ -95,20 +121,19 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
   }
 
   for (const userId of mentionedUserIds) {
-    const notif = await prisma.notification.create({
-      data: {
-        userId,
-        title: "Mentioned you",
-        content: `${message.sender.name} mentioned you in a DM`,
-        link: `/dm/${myId}`, // Usually mentions in DMs aren't standard, but supported
-      }
-    });
+    const [notif] = await db.insert(notifications).values({
+      userId,
+      title: "Mentioned you",
+      content: `${fullMessage?.sender?.name} mentioned you in a DM`,
+      link: `/dm/${myId}`,
+    }).returning();
+
     if (global.io) {
       global.io.to(`user:${userId}`).emit("new-notification", notif);
     }
   }
 
-  return NextResponse.json({ message }, { status: 201 });
+  return NextResponse.json({ message: broadcastMsg }, { status: 201 });
 }
 
 // DELETE /api/dm/[userId] — delete entire DM conversation
@@ -119,14 +144,15 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ u
   const { userId: otherId } = await params;
   const myId = session.user.id;
 
-  await prisma.directMessage.deleteMany({
-    where: {
-      OR: [
-        { senderId: myId, receiverId: otherId },
-        { senderId: otherId, receiverId: myId },
-      ],
-    },
-  });
+  await db.delete(directMessages).where(
+    or(
+      and(eq(directMessages.senderId, myId), eq(directMessages.receiverId, otherId)),
+      and(eq(directMessages.senderId, otherId), eq(directMessages.receiverId, myId))
+    )
+  );
+
+  const roomId = [myId, otherId].sort().join(":");
+  await invalidateCachePrefix(`dm:${roomId}`);
 
   return NextResponse.json({ success: true });
 }

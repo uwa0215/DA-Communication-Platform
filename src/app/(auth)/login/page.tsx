@@ -44,7 +44,9 @@ const TESTIMONIAL = {
   role: "Regional Director · DA CALABARZON",
 };
 
-export default function LoginPage() {
+import { Suspense } from "react";
+
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isApproved = searchParams.get("approved") === "1";
@@ -370,5 +372,13 @@ export default function LoginPage() {
         </main>
       </div>
     </>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginContent />
+    </Suspense>
   );
 }

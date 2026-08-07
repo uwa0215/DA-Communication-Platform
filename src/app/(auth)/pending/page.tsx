@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,7 +9,7 @@ import { Clock, ArrowLeft, CheckCircle2, ShieldAlert } from "lucide-react";
 import daLogo from "../../../../public/Agri Logo.png";
 import styles from "../login/auth.module.css";
 
-export default function PendingPage() {
+function PendingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
@@ -77,5 +77,13 @@ export default function PendingPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function PendingPage() {
+  return (
+    <Suspense fallback={null}>
+      <PendingContent />
+    </Suspense>
   );
 }

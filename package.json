@@ -14,6 +14,8 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "@paralleldrive/cuid2": "^3.3.0",
     "@prisma/adapter-libsql": "^7.9.1",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
@@ -25,6 +27,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/pg": "^8.20.4",
     "bcryptjs": "^3.0.3",
+    "drizzle-orm": "^0.45.2",
     "emoji-picker-react": "^4.19.1",
     "formidable": "^3.5.4",
     "lucide-react": "^1.27.0",
@@ -46,6 +49,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
     "tailwindcss": "^4",
