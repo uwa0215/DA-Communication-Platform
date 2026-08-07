@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
         role: isFirstUser ? "admin" : "member",
         isApproved: isFirstUser ? true : false,
       },
-      select: { id: true, name: true, email: true, role: true, createdAt: true },
+      select: { id: true, name: true, email: true, role: true, isApproved: true, createdAt: true },
     });
 
     // Auto-join the "general" channel

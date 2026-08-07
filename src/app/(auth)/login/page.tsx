@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import daLogo from "../../../../public/Agri Logo.png";
@@ -46,6 +46,9 @@ const TESTIMONIAL = {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isApproved = searchParams.get("approved") === "1";
+
   const [email, setEmail]     = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -262,6 +265,13 @@ export default function LoginPage() {
               <div className={styles.formError} role="alert">
                 <span className={styles.formErrorDot} />
                 {error}
+              </div>
+            )}
+            
+            {isApproved && !error && (
+              <div className={styles.formError} style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#15803d', border: '1px solid rgba(34, 197, 94, 0.2)' }} role="alert">
+                <span className={styles.formErrorDot} style={{ background: '#22c55e' }} />
+                Your account has been approved! You can now log in.
               </div>
             )}
 

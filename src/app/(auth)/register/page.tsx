@@ -55,7 +55,11 @@ export default function RegisterPage() {
       return;
     }
 
-    router.push("/login?registered=1");
+    if (data.user?.isApproved) {
+      router.push("/login?registered=1");
+    } else {
+      router.push(`/pending?email=${encodeURIComponent(form.email)}`);
+    }
   }
 
   return (
