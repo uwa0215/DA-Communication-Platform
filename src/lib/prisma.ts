@@ -8,7 +8,7 @@ const globalForPrisma = globalThis as unknown as {
 
 function createPrismaClient() {
   const pool = new Pool({ 
-    connectionString: process.env.DATABASE_URL!,
+    connectionString: process.env.DATABASE_URL || "postgresql://dummy:dummy@dummy/dummy",
     max: 10, // Limit connections to prevent exhaustion
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000, // Timeout after 5s instead of hanging indefinitely
