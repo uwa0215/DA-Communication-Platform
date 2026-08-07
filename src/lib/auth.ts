@@ -1,6 +1,8 @@
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { users } from "@/lib/schema";
+import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 class PendingApprovalError extends CredentialsSignin {
@@ -21,8 +23,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         console.log(`🔐 [Auth] Attempting login for email: ${credentials.email}`);
         const startDb = Date.now();
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
+        const user = await db.query.users.findFirst({
+          where: (u, { eq }) => eq(u.email, credentials.email as string),
         });
         console.log(`⏱️ [Auth] Database query took: ${Date.now() - startDb}ms`);
 
@@ -48,10 +50,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           console.log("🔄 [Auth] Migrating password hash from 12 rounds to 10 rounds...");
           bcrypt.hash(credentials.password as string, 10)
             .then(newHash => {
-              prisma.user.update({
-                where: { id: user.id },
-                data: { password: newHash }
-              }).then(() => {
+              db.update(users).set({ password: newHash })
+                .where(eq(users.id, user.id))
+              .then(() => {
                 console.log("✅ [Auth] Password hash migrated successfully.");
               }).catch((e: any) => console.error("Failed to update migrated password hash:", e));
             })
