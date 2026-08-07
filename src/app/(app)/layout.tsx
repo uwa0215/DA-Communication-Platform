@@ -13,6 +13,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <UIProvider>
       <div className={styles.appShell}>
+        <div className={styles.blob1} />
+        <div className={styles.blob2} />
+        <div className={styles.blob3} />
+        <div className={styles.meshGrid} />
         <Topbar currentUser={session.user as any} />
         <div className={styles.appBody}>
           <Sidebar currentUser={session.user as any} />

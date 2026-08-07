@@ -1,6 +1,8 @@
 /* ===== SIDEBAR ===== */
 .sidebar {
-  background: var(--bg-sidebar);
+  background: rgba(var(--bg-panel-rgb), 0.4);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;

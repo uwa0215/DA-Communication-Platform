@@ -31,6 +31,74 @@
   opacity: 0.02;
 }
 
+/* ===== ANIMATED BACKGROUND BLOBS ===== */
+.blob1, .blob2, .blob3 {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  z-index: 0;
+  opacity: 0.6;
+  pointer-events: none;
+  animation: blobFloat 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+}
+:global(.dark) .blob1, :global(.dark) .blob2, :global(.dark) .blob3 {
+  opacity: 0.4;
+  filter: blur(120px);
+}
+
+.blob1 {
+  width: 50vw;
+  height: 50vw;
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.4), transparent 60%);
+  top: -10%;
+  left: -10%;
+  animation-delay: 0s;
+}
+
+.blob2 {
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.3), transparent 60%);
+  bottom: -20%;
+  right: -10%;
+  animation-delay: -5s;
+}
+
+.blob3 {
+  width: 45vw;
+  height: 45vw;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.3), transparent 60%);
+  top: 30%;
+  left: 40%;
+  animation-delay: -10s;
+}
+
+@keyframes blobFloat {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(5%, 10%) scale(1.1); }
+  66% { transform: translate(-5%, 5%) scale(0.9); }
+  100% { transform: translate(0, -10%) scale(1.05); }
+}
+
+/* Mesh Grid overlay for texture */
+.meshGrid {
+  position: absolute;
+  inset: 0;
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(0,0,0,0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0,0,0,0.03) 1px, transparent 1px);
+  mask-image: radial-gradient(circle at center, black, transparent 80%);
+  -webkit-mask-image: radial-gradient(circle at center, black, transparent 80%);
+  pointer-events: none;
+  z-index: 0;
+}
+:global(.dark) .meshGrid {
+  background-image: 
+    linear-gradient(to right, rgba(255,255,255,0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255,255,255,0.02) 1px, transparent 1px);
+}
+
 .appBody {
   display: flex;
   flex: 1;
@@ -44,7 +112,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background: var(--bg-panel);
+  background: transparent;
   transition: background 0.3s ease;
   position: relative;
 }

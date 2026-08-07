@@ -145,11 +145,13 @@
   align-items: center;
   gap: 16px;
   padding: 20px 22px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
+  background: rgba(var(--bg-panel-rgb), 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: var(--r-lg);
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
 }
 :global(.dark) .statCard {
   background: rgba(26, 35, 64, 0.4);
@@ -227,8 +229,10 @@
   align-items: center;
   gap: 12px;
   padding: 24px 16px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
+  background: rgba(var(--bg-panel-rgb), 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: var(--r-lg);
   text-decoration: none;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -296,8 +300,10 @@
 
 /* ── Card ── */
 .card {
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
+  background: rgba(var(--bg-panel-rgb), 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: var(--r-xl);
   padding: 0;
   overflow: hidden;
