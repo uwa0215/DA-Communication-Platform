@@ -54,4 +54,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
   CMD curl -f http://localhost:3000/api/auth/status || exit 1
 
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node --max-http-header-size=81920 server.js"]
+CMD ["node", "--max-http-header-size=81920", "server.js"]
