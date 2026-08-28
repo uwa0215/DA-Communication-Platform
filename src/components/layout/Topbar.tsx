@@ -5,10 +5,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import agriLogo from "../../../public/Agri Logo.png";
-import { Search, Bell, Settings, LogOut, ChevronDown, Shield, Menu } from "lucide-react";
+import { Search, Bell, Settings, LogOut, ChevronDown, Shield, Menu, Moon, Sun, Monitor, HelpCircle, User, MessageSquare } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useSocket } from "@/hooks/useSocket";
 import { useUI } from "@/components/UIProvider";
+import { useTheme } from "@/components/ThemeProvider";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import styles from "./Topbar.module.css";
@@ -33,6 +34,7 @@ interface Notification {
 export default function Topbar({ currentUser }: { currentUser: User }) {
   const router = useRouter();
   const { toggleMobileSidebar } = useUI();
+  const { theme, setTheme } = useTheme();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -124,7 +126,7 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
           <Menu size={24} />
         </button>
         <div className={styles.logoWrap}>
-          <Image src={agriLogo} alt="Agri Logo" width={60} height={60} style={{ objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} unoptimized />
+          <Image src={agriLogo} alt="Agri Logo" width={60} height={60} style={{ objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} unoptimized priority />
         </div>
         <span className={styles.brandName}>AGRI COMM</span>
       </div>
@@ -324,8 +326,50 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
                   <div className={styles.divider} />
                   
                   <Link href="/settings" className={styles.menuItem} onClick={() => setShowProfileMenu(false)}>
+                    <User size={16} /> My Profile
+                  </Link>
+                  <Link href="/settings" className={styles.menuItem} onClick={() => setShowProfileMenu(false)}>
                     <Settings size={16} /> Account Settings
                   </Link>
+
+                  <div className={styles.divider} />
+
+                  <div style={{ padding: '8px 12px' }}>
+                    <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 8 }}>Appearance</p>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <button 
+                        className={styles.menuItem} 
+                        style={{ flex: 1, justifyContent: 'center', padding: '6px', background: theme === 'light' ? 'var(--surface-active)' : 'transparent' }}
+                        onClick={() => setTheme('light')}
+                        title="Light Mode"
+                      >
+                        <Sun size={14} />
+                      </button>
+                      <button 
+                        className={styles.menuItem} 
+                        style={{ flex: 1, justifyContent: 'center', padding: '6px', background: theme === 'dark' ? 'var(--surface-active)' : 'transparent' }}
+                        onClick={() => setTheme('dark')}
+                        title="Dark Mode"
+                      >
+                        <Moon size={14} />
+                      </button>
+                      <button 
+                        className={styles.menuItem} 
+                        style={{ flex: 1, justifyContent: 'center', padding: '6px', background: theme === 'system' ? 'var(--surface-active)' : 'transparent' }}
+                        onClick={() => setTheme('system')}
+                        title="System Theme"
+                      >
+                        <Monitor size={14} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className={styles.divider} />
+
+                  <a href="mailto:support@agricomm.com" className={styles.menuItem} onClick={() => setShowProfileMenu(false)}>
+                    <HelpCircle size={16} /> Help & Support
+                  </a>
+                  
                   {currentUser.role?.toUpperCase() === 'ADMIN' && (
                     <Link href="/admin" className={styles.menuItem} onClick={() => setShowProfileMenu(false)}>
                       <Shield size={16} /> Admin Panel

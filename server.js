@@ -3,6 +3,9 @@ const { createServer } = require("http");
 const { parse } = require("url");
 const next = require("next");
 const { Server } = require("socket.io");
+const { createClient } = require("redis");
+const { createAdapter } = require("@socket.io/redis-adapter");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "0.0.0.0";
@@ -33,7 +36,7 @@ app.prepare().then(() => {
         maxFileSize: 50 * 1024 * 1024, // 50MB limit
       });
 
-      form.parse(req, (err, fields, files) => {
+      form.parse(req, async (err, fields, files) => {
         if (err) {
           console.error("Formidable upload error:", err);
           res.writeHead(500, { "Content-Type": "application/json" });
@@ -56,16 +59,47 @@ app.prepare().then(() => {
 
         try {
           fs.renameSync(file.filepath, newPath);
-          const fileUrl = `/uploads/${uniqueName}`;
+          
+          if (process.env.AWS_S3_BUCKET_NAME && process.env.AWS_S3_BUCKET_NAME !== "your_bucket_name") {
+            // Upload to S3
+            const s3Client = new S3Client({
+              region: process.env.AWS_REGION || "us-east-1",
+              credentials: {
+                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+              }
+            });
+            const fileStream = fs.createReadStream(newPath);
+            await s3Client.send(new PutObjectCommand({
+              Bucket: process.env.AWS_S3_BUCKET_NAME,
+              Key: uniqueName,
+              Body: fileStream,
+              ContentType: file.mimetype,
+            }));
+            
+            const fileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION || "us-east-1"}.amazonaws.com/${uniqueName}`;
+            
+            // Cleanup local temp file
+            fs.unlinkSync(newPath);
 
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({
-            url: fileUrl,
-            fileName: originalName,
-            fileType: file.mimetype
-          }));
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({
+              url: fileUrl,
+              fileName: originalName,
+              fileType: file.mimetype
+            }));
+          } else {
+            // Fallback to local file serving
+            const fileUrl = `/uploads/${uniqueName}`;
+            res.writeHead(200, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({
+              url: fileUrl,
+              fileName: originalName,
+              fileType: file.mimetype
+            }));
+          }
         } catch (renameErr) {
-          console.error("Rename error:", renameErr);
+          console.error("Upload processing error:", renameErr);
           res.writeHead(500, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Failed to store uploaded file" }));
         }
@@ -111,6 +145,21 @@ app.prepare().then(() => {
     },
   });
 
+  // Configure Redis Adapter for horizontal scaling if REDIS_URL is provided
+  if (process.env.REDIS_URL) {
+    const pubClient = createClient({ url: process.env.REDIS_URL });
+    const subClient = pubClient.duplicate();
+
+    Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
+      io.adapter(createAdapter(pubClient, subClient));
+      console.log(`🔗 Socket.io Redis adapter connected`);
+    }).catch((err) => {
+      console.error(`Failed to connect to Redis for Socket.io adapter:`, err);
+    });
+  } else {
+    console.log(`ℹ️ REDIS_URL not set, using default in-memory Socket.io adapter`);
+  }
+
   // Make io accessible globally
   global.io = io;
 
@@ -148,6 +197,46 @@ app.prepare().then(() => {
 
     socket.on("typing-stop", ({ channelId, userId }) => {
       socket.to(`channel:${channelId}`).emit("user-stop-typing", { userId });
+    });
+
+    socket.on("dm-typing-stop", ({ roomId, userId }) => {
+      socket.to(`dm:${roomId}`).emit("user-stop-typing", { userId });
+    });
+
+    // WebRTC Signaling
+    socket.on("call-user", (data) => {
+      io.to(`user:${data.userToCall}`).emit("call-made", {
+        offer: data.offer,
+        callerSocket: socket.id,
+        caller: data.caller,
+        type: data.type
+      });
+    });
+
+    socket.on("make-answer", (data) => {
+      io.to(`user:${data.to}`).emit("answer-made", {
+        answerSocket: socket.id,
+        answer: data.answer
+      });
+    });
+    
+    socket.on("ice-candidate", (data) => {
+      io.to(`user:${data.to}`).emit("ice-candidate", {
+        candidate: data.candidate,
+        fromSocket: socket.id
+      });
+    });
+
+    socket.on("reject-call", (data) => {
+      io.to(`user:${data.to}`).emit("call-rejected", {
+        fromSocket: socket.id
+      });
+    });
+
+    socket.on("end-call", (data) => {
+      io.to(`user:${data.to}`).emit("call-ended", {
+        fromSocket: socket.id
+      });
     });
 
     socket.on("disconnect", () => {

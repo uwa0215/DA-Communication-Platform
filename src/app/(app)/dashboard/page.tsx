@@ -92,7 +92,7 @@ export default async function DashboardPage() {
             </p>
           </div>
           <div className={styles.heroLogo}>
-            <Image src="/Agri%20Logo.png" alt="Agri Logo" width={120} height={120} style={{ objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.15))' }} unoptimized />
+            <Image src="/Agri%20Logo.png" alt="Agri Logo" width={120} height={120} style={{ objectFit: 'contain', filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.15))' }} unoptimized priority />
           </div>
         </div>
       </section>

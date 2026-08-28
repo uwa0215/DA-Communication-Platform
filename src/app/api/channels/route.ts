@@ -3,11 +3,18 @@ import { db } from "@/lib/db";
 import { channels, channelMembers } from "@/lib/schema";
 import { eq, or, and } from "drizzle-orm";
 import { auth } from "@/lib/auth";
+import { getCache, setCache, invalidateCachePrefix } from "@/lib/cache";
 
 // GET /api/channels — list all channels user is member of + all public channels
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const cacheKey = `channels_${session.user.id}`;
+  const cachedChannels = await getCache(cacheKey);
+  if (cachedChannels) {
+    return NextResponse.json({ channels: cachedChannels });
+  }
 
   // Find channels where isPrivate=false OR user is a member
   // Using query API with a relational trick or just a subquery
@@ -22,18 +29,13 @@ export async function GET(req: NextRequest) {
         : eq(ch.isPrivate, false),
     with: {
       members: { with: { user: { columns: { id: true, name: true, avatar: true, status: true } } } },
-      messages: { columns: { id: true } }
     },
     orderBy: (ch, { asc }) => [asc(ch.name)],
   });
 
-  // Map to add _count.messages for compatibility
-  const mappedChannels = channelsData.map(ch => ({
-    ...ch,
-    _count: { messages: ch.messages.length }
-  }));
+  await setCache(cacheKey, channelsData, 60);
 
-  return NextResponse.json({ channels: mappedChannels });
+  return NextResponse.json({ channels: channelsData });
 }
 
 // POST /api/channels — create a new channel or group chat
@@ -77,6 +79,8 @@ export async function POST(req: NextRequest) {
         members: { with: { user: { columns: { id: true, name: true, avatar: true, status: true } } } },
       }
     });
+
+    await invalidateCachePrefix('channels_');
 
     return NextResponse.json({ channel: createdChannel }, { status: 201 });
   } catch (error: any) {

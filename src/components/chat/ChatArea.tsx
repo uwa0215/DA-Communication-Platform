@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
-import { Hash, Phone, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download } from "lucide-react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { Hash, Phone, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import EmojiPicker from "emoji-picker-react";
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -12,8 +12,10 @@ import Mention from '@tiptap/extension-mention';
 import Image from 'next/image';
 import getSuggestion from './suggestion';
 import UserProfileModal from "./UserProfileModal";
+import ChannelSettingsModal from "./ChannelSettingsModal";
 import ThreadPanel from "./ThreadPanel";
 import useSWR from "swr";
+import LinkPreview from "./LinkPreview";
 import { fetcher } from "@/lib/fetcher";
 import styles from "./ChatArea.module.css";
 
@@ -46,6 +48,8 @@ interface Message {
   reactions?: Reaction[];
   edited?: boolean;
   parentId?: string;
+  parent?: { content?: string; sender?: { name: string } } | null;
+  isDeleted?: boolean;
   _count?: { replies: number };
 }
 
@@ -58,6 +62,7 @@ interface ChatAreaProps {
   dmUser?: User;
   currentUserId: string;
   currentUserName: string;
+  currentUserRole?: string;
 }
 
 export default function ChatArea({
@@ -69,17 +74,21 @@ export default function ChatArea({
   dmUser,
   currentUserId,
   currentUserName,
+  currentUserRole = "member",
 }: ChatAreaProps) {
   const { socket } = useSocket();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isEditorEmpty, setIsEditorEmpty] = useState(true);
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [showInputEmoji, setShowInputEmoji] = useState(false);
   const [hoverMsgId, setHoverMsgId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [replyingToMessage, setReplyingToMessage] = useState<any | null>(null);
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
   const [selectedUserForProfile, setSelectedUserForProfile] = useState<User | null>(null);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
@@ -94,12 +103,19 @@ export default function ChatArea({
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [selectedUsersToAdd, setSelectedUsersToAdd] = useState<string[]>([]);
   const [isCalling, setIsCalling] = useState<'video' | 'audio' | null>(null);
+  const [showChannelSettings, setShowChannelSettings] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const typingTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const apiBase = channelId ? `/api/channels/${channelId}/messages` : `/api/dm/${dmUserId}`;
   const roomId = dmUserId ? [currentUserId, dmUserId].sort().join(":") : null;
@@ -183,8 +199,43 @@ export default function ChatArea({
     const res = await fetch(apiBase);
     const data = await res.json();
     setMessages(data.messages || []);
+    setHasMore((data.messages || []).length === 50);
     setLoading(false);
   }, [apiBase]);
+
+  const loadMoreMessages = async () => {
+    if (loadingMore || !hasMore || messages.length === 0) return;
+    setLoadingMore(true);
+    const oldestMessage = messages[0];
+    if (!oldestMessage) return;
+    
+    const cursor = oldestMessage.createdAt;
+    const url = new URL(apiBase, window.location.origin);
+    url.searchParams.append("cursor", cursor);
+    
+    const res = await fetch(url.toString());
+    const data = await res.json();
+    const newMessages = data.messages || [];
+    
+    if (newMessages.length < 50) {
+      setHasMore(false);
+    }
+    
+    // Remember scroll position
+    const scrollContainer = document.querySelector(`.${styles.messagesScroll}`);
+    const scrollHeightBefore = scrollContainer?.scrollHeight || 0;
+    
+    setMessages(prev => [...newMessages, ...prev]);
+    
+    // Restore scroll position after React updates
+    setTimeout(() => {
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight - scrollHeightBefore;
+      }
+    }, 0);
+    
+    setLoadingMore(false);
+  };
 
   useEffect(() => {
     fetchMessages();
@@ -197,11 +248,29 @@ export default function ChatArea({
   }, [messages]);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  useEffect(() => {
     if (!socket) return;
 
     if (channelId) {
       socket.emit("join-channel", channelId);
-      socket.on("new-message", (msg: Message) => {
+      socket.on("new-message", (msg: Message & { parentId?: string }) => {
+        if (msg.parentId) {
+          setMessages(m => m.map(x => x.id === msg.parentId ? {
+            ...x,
+            _count: { replies: ((x as any)._count?.replies || 0) + 1 }
+          } : x));
+          return;
+        }
+
+        if (msg.sender.id !== currentUserId && typeof document !== "undefined" && !document.hasFocus() && "Notification" in window && Notification.permission === "granted") {
+          const text = msg.content ? msg.content.replace(/<[^>]*>?/gm, '') : (msg.fileName ? `Attachment: ${msg.fileName}` : 'New message');
+          new Notification(`${msg.sender.name} in #${channelName}`, { body: text, icon: msg.sender.avatar || '/favicon.ico' });
+        }
         setMessages(m => {
           const filtered = m.filter(x => !(x.id.startsWith("optimistic-") && (x.content === msg.content || x.fileName === msg.fileName) && x.sender.id === msg.sender.id));
           return [...filtered, msg];
@@ -229,6 +298,10 @@ export default function ChatArea({
     } else if (roomId) {
       socket.emit("join-dm", roomId);
       socket.on("new-dm", (msg: Message) => {
+        if (msg.sender.id !== currentUserId && typeof document !== "undefined" && !document.hasFocus() && "Notification" in window && Notification.permission === "granted") {
+          const text = msg.content ? msg.content.replace(/<[^>]*>?/gm, '') : (msg.fileName ? `Attachment: ${msg.fileName}` : 'New message');
+          new Notification(msg.sender.name, { body: text, icon: msg.sender.avatar || '/favicon.ico' });
+        }
         setMessages(m => {
           const filtered = m.filter(x => !(x.id.startsWith("optimistic-") && (x.content === msg.content || x.fileName === msg.fileName) && x.sender.id === msg.sender.id));
           return [...filtered, msg];
@@ -260,6 +333,34 @@ export default function ChatArea({
     };
   }, [socket, channelId, roomId, currentUserId]);
 
+  useEffect(() => {
+    if (roomId && dmUser && messages.length > 0) {
+      const hasUnread = messages.some(m => !(m as any).read && m.sender.id === dmUser.id);
+      if (hasUnread) {
+        fetch(`/api/dm/${dmUser.id}/read`, { method: "POST" }).catch(console.error);
+        setMessages(msgs => msgs.map(m => m.sender.id === dmUser.id ? { ...m, read: true } : m));
+      }
+    }
+  }, [messages, roomId, dmUser]);
+
+  useEffect(() => {
+    if (!socket || !roomId) return;
+    socket.on("messages-read", ({ readerId }: { readerId: string }) => {
+      if (readerId === dmUser?.id) {
+        setMessages(msgs => msgs.map(m => m.sender.id === currentUserId ? { ...m, read: true } : m));
+      }
+    });
+    return () => {
+      socket.off("messages-read");
+    };
+  }, [socket, roomId, dmUser, currentUserId]);
+
+  const lastReadMessageId = useMemo(() => {
+    if (!roomId) return null;
+    const myReadMessages = messages.filter(m => m.sender.id === currentUserId && (m as any).read);
+    return myReadMessages.length > 0 ? myReadMessages[myReadMessages.length - 1].id : null;
+  }, [messages, roomId, currentUserId]);
+
   async function sendMessage(e?: any) {
     if (e && e.preventDefault) e.preventDefault();
     if (!editor || isEditorEmpty || sending) return;
@@ -277,7 +378,8 @@ export default function ChatArea({
         status: "online"
       },
       createdAt: new Date().toISOString(),
-      reactions: []
+      reactions: [],
+      parent: replyingToMessage || undefined
     };
     
     setMessages(prev => [...prev, optimisticMsg]);
@@ -285,6 +387,8 @@ export default function ChatArea({
     // 2. Clear editor instantly
     editor?.commands.setContent('');
     setIsEditorEmpty(true);
+    const parentIdToUse = replyingToMessage?.id;
+    setReplyingToMessage(null);
     
     try {
       if (editingMessageId) {
@@ -298,7 +402,7 @@ export default function ChatArea({
         await fetch(apiBase, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content }),
+          body: JSON.stringify({ content, parentId: parentIdToUse }),
         });
       }
       
@@ -385,6 +489,63 @@ export default function ChatArea({
     }
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingDuration(0);
+
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration((prev) => prev + 1);
+      }, 1000);
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      alert("Microphone access denied or unavailable.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new (globalThis as any).File(audioChunksRef.current, "voice_message.webm", { type: "audio/webm" });
+        audioChunksRef.current = [];
+        
+        const fakeEvent = {
+          target: { files: [audioBlob] }
+        } as unknown as React.ChangeEvent<HTMLInputElement>;
+        
+        await handleFileUpload(fakeEvent);
+      };
+
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.onstop = null;
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      audioChunksRef.current = [];
+      setIsRecording(false);
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+    }
+  };
 
 
 
@@ -530,6 +691,16 @@ export default function ChatArea({
           >
             <Info size={18} />
           </button>
+          {channelId && (
+            <button 
+              className={`btn-icon`} 
+              title="Channel Settings" 
+              aria-label="Channel Settings"
+              onClick={() => setShowChannelSettings(true)}
+            >
+              <Settings size={18} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -621,7 +792,21 @@ export default function ChatArea({
                 <h3 className={styles.emptyTitle}>No results found</h3>
                 <p className={styles.emptySub}>Try searching for something else.</p>
               </div>
-            ) : displayMessages.map((msg, i) => {
+            ) : (
+              <>
+                {hasMore && !searchQuery.trim() && (
+                  <div style={{ textAlign: 'center', padding: '16px 0' }}>
+                    <button 
+                      onClick={loadMoreMessages} 
+                      disabled={loadingMore}
+                      className="btn btn-ghost"
+                      style={{ fontSize: 13 }}
+                    >
+                      {loadingMore ? 'Loading...' : 'Load older messages'}
+                    </button>
+                  </div>
+                )}
+                {displayMessages.map((msg, i) => {
               const showHeader = shouldShowHeader(i, displayMessages);
               const isLastInSequence = i === displayMessages.length - 1 || shouldShowHeader(i + 1, displayMessages);
               const showDate = shouldShowDate(i, displayMessages);
@@ -684,10 +869,39 @@ export default function ChatArea({
                       </div>
                     ) : (
                       <>
-                        <div className={styles.msgContentWrapper}>
-                          {msg.content && msg.content !== "Sent a file" && msg.content !== "<p>Sent a file</p>" && (
-                            <div className={`${styles.msgContent} ${isMine ? styles.msgContentMine : styles.msgContentTheirs} ${groupPositionClass}`} dangerouslySetInnerHTML={{ __html: msg.content }} />
+                        <div className={styles.msgContentWrapper} style={{ display: 'flex', flexDirection: 'column', alignItems: isMine ? 'flex-end' : 'flex-start' }}>
+                          {msg.parent && (
+                            <div className={styles.quotePreview} style={{
+                              padding: '6px 10px',
+                              marginBottom: 4,
+                              background: 'var(--bg-hover)',
+                              borderRadius: 8,
+                              borderLeft: `4px solid ${isMine ? 'var(--primary)' : 'var(--text-muted)'}`,
+                              fontSize: 12,
+                              color: 'var(--text-secondary)',
+                              maxWidth: '100%'
+                            }}>
+                              <div style={{ fontWeight: 600, marginBottom: 2, fontSize: 11 }}>{msg.parent.sender?.name}</div>
+                              <div className="line-clamp-1" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} dangerouslySetInnerHTML={{ __html: msg.parent.content || "Sent an attachment" }} />
+                            </div>
                           )}
+                          {msg.content && msg.content !== "Sent a file" && msg.content !== "<p>Sent a file</p>" && (() => {
+                            let linkMatch = null;
+                            if (msg.content) {
+                              linkMatch = msg.content.match(/<a [^>]*href="([^"]+)"/);
+                              if (!linkMatch) {
+                                linkMatch = msg.content.match(/(https?:\/\/[^\s<]+)/);
+                              }
+                            }
+                            return (
+                              <>
+                                <div className={`${styles.msgContent} ${isMine ? styles.msgContentMine : styles.msgContentTheirs} ${groupPositionClass}`} dangerouslySetInnerHTML={{ __html: msg.content }} />
+                                {linkMatch && linkMatch[1] && (
+                                  <LinkPreview url={linkMatch[1]} />
+                                )}
+                              </>
+                            );
+                          })()}
                           
                           {/* Message Actions (on hover) */}
                           {hoverMsgId === msg.id && !(msg as any).isDeleted && (
@@ -701,35 +915,39 @@ export default function ChatArea({
                               </button>
                               <button
                                 className={`btn-icon ${styles.msgActionBtn}`}
-                                onClick={() => { setActiveThreadId(msg.id); setShowDetailsPanel(false); }}
+                                onClick={() => setActiveThreadId(msg.id)}
                                 title="Reply in thread"
+                              >
+                                <MessageSquare size={15} />
+                              </button>
+                              <button
+                                className={`btn-icon ${styles.msgActionBtn}`}
+                                onClick={() => { setReplyingToMessage(msg); editor?.commands.focus(); }}
+                                title="Quote Reply"
                               >
                                 <MessageCircle size={15} />
                               </button>
-                              <span style={{fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '0 4px'}} onClick={() => { setActiveThreadId(msg.id); setShowDetailsPanel(false); }}>
-                                {msg._count?.replies ? `${msg._count.replies} replies` : 'Reply'}
-                              </span>
                               {isMine && (
-                                <>
-                                  <button
-                                    className={`btn-icon ${styles.msgActionBtn}`}
-                                    onClick={() => {
-                                      editor?.commands.setContent(msg.content);
-                                      setEditingMessageId(msg.id);
-                                      editor?.commands.focus();
-                                    }}
-                                    title="Edit message"
-                                  >
-                                    <Edit3 size={15} />
-                                  </button>
-                                  <button
-                                    className={`btn-icon ${styles.msgActionBtn}`}
-                                    onClick={() => setMessageToDelete(msg.id)}
-                                    title="Delete message"
-                                  >
-                                    <Trash2 size={15} />
-                                  </button>
-                                </>
+                                <button
+                                  className={`btn-icon ${styles.msgActionBtn}`}
+                                  onClick={() => {
+                                    editor?.commands.setContent(msg.content);
+                                    setEditingMessageId(msg.id);
+                                    editor?.commands.focus();
+                                  }}
+                                  title="Edit message"
+                                >
+                                  <Edit3 size={15} />
+                                </button>
+                              )}
+                              {(isMine || currentUserRole === "admin" || currentUserRole === "moderator") && (
+                                <button
+                                  className={`btn-icon ${styles.msgActionBtn}`}
+                                  onClick={() => setMessageToDelete(msg.id)}
+                                  title="Delete message"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
                               )}
                             </div>
                           )}
@@ -755,6 +973,7 @@ export default function ChatArea({
 
                         {msg.fileUrl && (() => {
                           const isImage = msg.fileType?.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|svg)($|\?)/i.test(msg.fileUrl || "");
+                          const isAudio = msg.fileType?.startsWith("audio/") || /\.(mp3|wav|webm|ogg)($|\?)/i.test(msg.fileUrl || "");
                           return (
                             <div className={styles.fileAttachment}>
                               {isImage ? (
@@ -765,6 +984,8 @@ export default function ChatArea({
                                   onClick={() => setLightboxUrl(msg.fileUrl!)}
                                   title="Click to view image"
                                 />
+                              ) : isAudio ? (
+                                <audio controls src={msg.fileUrl} style={{ height: 40, outline: 'none', maxWidth: 250 }} />
                               ) : (
                                 <a href={msg.fileUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer"
                                   className={styles.fileLink}>
@@ -774,6 +995,11 @@ export default function ChatArea({
                             </div>
                           );
                         })()}
+                        {isMine && (
+                          <div style={{ fontSize: 10, color: 'var(--text-muted)', textAlign: 'right', marginTop: 4, marginRight: 4 }}>
+                            {formatTime(msg.createdAt)}
+                          </div>
+                        )}
                       </>
                     )}
 
@@ -792,20 +1018,57 @@ export default function ChatArea({
                         ))}
                       </div>
                     )}
+                    
+                                 {/* Thread Indicator */}
+                    {((msg as any)._count?.replies > 0) && (
+                      <div style={{ marginTop: 8 }}>
+                        <button
+                          className={styles.threadIndicatorBtn}
+                          onClick={() => setActiveThreadId(msg.id)}
+                        >
+                          <MessageSquare size={14} style={{ marginRight: 6 }} />
+                          {(msg as any)._count.replies} {(msg as any)._count.replies === 1 ? 'reply' : 'replies'}
+                        </button>
+                      </div>
+                    )}
+                    
+                    {lastReadMessageId === msg.id && dmUser && (
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
+                        <div className={`avatar avatar-sm status-${dmUser.status}`} style={{ width: 14, height: 14, fontSize: 8 }} title={`Seen by ${dmUser.name}`}>
+                          {dmUser.avatar ? <Image src={dmUser.avatar} alt={dmUser.name} width={14} height={14} /> : initials(dmUser.name)}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             );
-          })
-        })() )}
+          })}
+          </>
+          );
+        })()
+      )}
 
         {/* Typing indicator */}
         {typingUsers.length > 0 && (
-          <div className={styles.typingIndicator}>
-            <span className={styles.typingDots}>
-              <span /><span /><span />
-            </span>
-            <span>{typingUsers.join(", ")} {typingUsers.length === 1 ? "is" : "are"} typing...</span>
+          <div className={`${styles.messageRow}`} style={{ paddingLeft: 12, paddingBottom: 16 }}>
+            <div className={`avatar avatar-md ${styles.msgAvatar}`} style={{ alignSelf: 'flex-end', marginBottom: 4, opacity: 0.7 }}>
+              {initials(typingUsers[0] || "User")}
+            </div>
+            <div className={styles.msgBody}>
+              <div className={styles.msgHeader}>
+                <span className={styles.msgSender} style={{ fontSize: 12, marginLeft: 12, opacity: 0.7 }}>
+                  {typingUsers.join(", ")}
+                </span>
+              </div>
+              <div className={`${styles.msgContentWrapper}`}>
+                <div className={`${styles.msgContent} ${styles.msgContentTheirs}`} style={{ padding: '8px 12px' }}>
+                  <span className={styles.typingDots}>
+                    <span /><span /><span />
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -813,7 +1076,30 @@ export default function ChatArea({
       </div>
 
       <div className={styles.inputArea}>
-        <div className={styles.inputWrap}>
+        {replyingToMessage && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '8px 12px',
+            background: 'var(--bg-hover)',
+            borderRadius: '8px 8px 0 0',
+            borderBottom: '1px solid var(--border)',
+            borderLeft: '4px solid var(--primary)',
+            fontSize: 12,
+            marginBottom: 0,
+            zIndex: 1
+          }}>
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <div style={{ fontWeight: 600, color: 'var(--primary)', marginBottom: 2 }}>Replying to {replyingToMessage.sender?.name}</div>
+              <div className="line-clamp-1" style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} dangerouslySetInnerHTML={{ __html: replyingToMessage.content || "Sent an attachment" }} />
+            </div>
+            <button className="btn-icon" style={{ marginLeft: 8 }} onClick={() => setReplyingToMessage(null)}>
+              <X size={16} />
+            </button>
+          </div>
+        )}
+        <div className={styles.inputWrap} style={{ borderTopLeftRadius: replyingToMessage ? 0 : 8, borderTopRightRadius: replyingToMessage ? 0 : 8 }}>
           <button 
             className={`btn-icon ${styles.toolbarBtn}`} 
             title="Attach file" 
@@ -829,37 +1115,67 @@ export default function ChatArea({
             style={{ display: "none" }} 
           />
 
-          <div className={`${styles.messageInput} tiptap-wrapper`} style={{ cursor: 'text' }} onClick={() => editor?.commands.focus()}>
-            <EditorContent editor={editor} />
-          </div>
-
-          <div style={{ position: "relative", display: "flex", alignItems: "center" }} ref={emojiPickerRef}>
-            <button 
-              className={`btn-icon ${styles.toolbarBtn} ${showInputEmoji ? styles.toolbarBtnActive : ''}`} 
-              title="Emoji"
-              onClick={() => setShowInputEmoji(!showInputEmoji)}
-            >
-              <Smile size={20} />
-            </button>
-            {showInputEmoji && (
-              <div style={{ position: "absolute", bottom: "100%", right: 0, marginBottom: "8px", zIndex: 9999 }}>
-                <EmojiPicker onEmojiClick={(e) => {
-                  editor?.chain().focus().insertContent(e.emoji).run();
-                  setShowInputEmoji(false);
-                }} />
+          {isRecording ? (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '0 12px' }}>
+              <div style={{ color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: 8, fontWeight: 500 }}>
+                <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--danger)', animation: 'pulse 1.5s infinite' }} />
+                Recording ({Math.floor(recordingDuration / 60)}:{(recordingDuration % 60).toString().padStart(2, '0')})
               </div>
-            )}
-          </div>
+              <div style={{ flex: 1 }} />
+              <button className="btn-icon" onClick={cancelRecording} title="Cancel" style={{ color: 'var(--text-muted)' }}>
+                <Trash2 size={20} />
+              </button>
+              <button className="btn-icon" onClick={stopRecording} title="Send" style={{ color: 'var(--primary)' }}>
+                <Send size={20} />
+              </button>
+            </div>
+          ) : (
+            <div className={`${styles.messageInput} tiptap-wrapper`} style={{ cursor: 'text' }} onClick={() => editor?.commands.focus()}>
+              <EditorContent editor={editor} />
+            </div>
+          )}
 
-          <button
-            id="send-btn"
-            className={`${styles.sendBtn} ${!isEditorEmpty ? styles.sendBtnActive : ""}`}
-            onClick={sendMessage}
-            disabled={isEditorEmpty || sending}
-            aria-label={editingMessageId ? "Save changes" : "Send message"}
-          >
-            {sending ? <span className="spinner" style={{ width: 16, height: 16 }} /> : (editingMessageId ? <Check size={18} /> : <Send size={18} />)}
-          </button>
+          {!isRecording && (
+            <div style={{ position: "relative", display: "flex", alignItems: "center" }} ref={emojiPickerRef}>
+              <button 
+                className={`btn-icon ${styles.toolbarBtn} ${showInputEmoji ? styles.toolbarBtnActive : ''}`} 
+                title="Emoji"
+                onClick={() => setShowInputEmoji(!showInputEmoji)}
+              >
+                <Smile size={20} />
+              </button>
+              {showInputEmoji && (
+                <div style={{ position: "absolute", bottom: "100%", right: 0, marginBottom: "8px", zIndex: 9999 }}>
+                  <EmojiPicker onEmojiClick={(e) => {
+                    editor?.chain().focus().insertContent(e.emoji).run();
+                    setShowInputEmoji(false);
+                  }} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {!isRecording && !editingMessageId && (
+            <button
+              className={`btn-icon ${styles.toolbarBtn}`}
+              onClick={startRecording}
+              title="Record Voice Message"
+            >
+              <Mic size={20} />
+            </button>
+          )}
+
+          {!isRecording && (
+            <button
+              id="send-btn"
+              className={`${styles.sendBtn} ${!isEditorEmpty ? styles.sendBtnActive : ""}`}
+              onClick={sendMessage}
+              disabled={isEditorEmpty || sending}
+              aria-label={editingMessageId ? "Save changes" : "Send message"}
+            >
+              {sending ? <span className="spinner" style={{ width: 16, height: 16 }} /> : (editingMessageId ? <Check size={18} /> : <Send size={18} />)}
+            </button>
+          )}
           {editingMessageId && (
             <button
               className={`btn-icon ${styles.toolbarBtn}`}
@@ -1146,6 +1462,13 @@ export default function ChatArea({
         </div>
       )}
 
+      {showChannelSettings && channelId && (
+        <ChannelSettingsModal
+          channelId={channelId}
+          currentUserId={currentUserId}
+          onClose={() => setShowChannelSettings(false)}
+        />
+      )}
     </div>
   );
 }

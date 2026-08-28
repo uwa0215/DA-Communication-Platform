@@ -21,11 +21,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ messages: cachedMessages });
   }
 
+  const { lt } = require("drizzle-orm");
+
   const msgs = await db.query.messages.findMany({
-    where: (messages, { eq, and, isNull }) => 
-      parentId 
+    where: (messages, { eq, and, isNull }) => {
+      const channelCondition = parentId 
         ? and(eq(messages.channelId, channelId), eq(messages.parentId, parentId))
-        : and(eq(messages.channelId, channelId), isNull(messages.parentId)),
+        : and(eq(messages.channelId, channelId), isNull(messages.parentId));
+      
+      return cursor 
+        ? and(channelCondition, lt(messages.createdAt, new Date(cursor))) 
+        : channelCondition;
+    },
     limit: 50,
     orderBy: (messages, { desc }) => [desc(messages.createdAt)],
     with: {
@@ -35,7 +42,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       reactions: {
         with: { user: { columns: { id: true, name: true } } }
       },
-      replies: { columns: { id: true } }
+      replies: { columns: { id: true } },
+      parent: {
+        with: { sender: { columns: { name: true } } }
+      }
     },
   });
 
@@ -77,6 +87,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     with: {
       sender: { columns: { id: true, name: true, avatar: true, status: true } },
       reactions: { with: { user: { columns: { id: true, name: true } } } },
+      parent: { with: { sender: { columns: { name: true } } } }
     }
   });
 

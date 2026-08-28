@@ -38,6 +38,7 @@ export const channelMembers = pgTable('ChannelMember', {
   id: text('id').primaryKey().$defaultFn(() => createId()),
   channelId: text('channelId').notNull().references(() => channels.id, { onDelete: 'cascade' }),
   userId: text('userId').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  role: text('role').notNull().default('member'),
   joinedAt: timestamp('joinedAt').notNull().defaultNow(),
 }, (t) => [
   uniqueIndex('ChannelMember_channelId_userId_key').on(t.channelId, t.userId),

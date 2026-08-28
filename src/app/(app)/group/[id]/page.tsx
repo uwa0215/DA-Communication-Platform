@@ -20,7 +20,9 @@ export default async function GroupPage({ params }: Props) {
   if (!channel || !channel.isGroup) return notFound();
 
   // Must be a member to view group chat
-  const isMember = channel.members.some(m => m.userId === session?.user?.id);
+  // Must be a member to view group chat
+  const member = channel.members.find(m => m.userId === session?.user?.id);
+  const isMember = !!member;
   if (!isMember) return notFound();
 
   return (
@@ -31,6 +33,7 @@ export default async function GroupPage({ params }: Props) {
       groupAvatar={channel.avatar}
       currentUserId={session?.user?.id || ""}
       currentUserName={session?.user?.name || "Unknown"}
+      currentUserRole={member.role}
     />
   );
 }

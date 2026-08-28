@@ -77,7 +77,20 @@ export async function DELETE(req: Request, props: { params: Promise<{ id: string
       return NextResponse.json(updated);
     } else {
       const existing = await prisma.message.findUnique({ where: { id: messageId } });
-      if (!existing || existing.senderId !== session.user.id) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+      let canDelete = existing.senderId === session.user.id;
+
+      if (!canDelete) {
+        const member = await prisma.channelMember.findUnique({
+          where: { channelId_userId: { channelId: existing.channelId, userId: session.user.id } }
+        });
+        if (member && (member.role === "admin" || member.role === "moderator")) {
+          canDelete = true;
+        }
+      }
+
+      if (!canDelete) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
       const updated = await prisma.message.update({
         where: { id: messageId },

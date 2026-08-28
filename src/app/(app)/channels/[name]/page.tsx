@@ -20,12 +20,17 @@ export default async function ChannelPage({ params }: Props) {
   if (!channel) return notFound();
 
   // Auto-join if not a member
-  const isMember = channel.members.some(m => m.userId === session?.user?.id);
+  const member = channel.members.find(m => m.userId === session?.user?.id);
+  const isMember = !!member;
+  let currentUserRole = member?.role || "member";
+
   if (!isMember && !channel.isPrivate && session?.user?.id) {
     await db.insert(channelMembers).values({
       channelId: channel.id,
-      userId: session.user.id
+      userId: session.user.id,
+      role: "member"
     });
+    currentUserRole = "member";
   }
 
   return (
@@ -34,6 +39,7 @@ export default async function ChannelPage({ params }: Props) {
       channelName={channel.name}
       currentUserId={session?.user?.id || ""}
       currentUserName={session?.user?.name || "Unknown"}
+      currentUserRole={currentUserRole}
     />
   );
 }

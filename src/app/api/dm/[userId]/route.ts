@@ -15,29 +15,38 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
   const { searchParams } = new URL(req.url);
   const parentId = searchParams.get("parentId");
 
+  const cursor = searchParams.get("cursor");
   const roomId = [myId, otherId].sort().join(":");
-  const cacheKey = `dm:${roomId}:${parentId || 'root'}`;
+  const cacheKey = `dm:${roomId}:${parentId || 'root'}:${cursor || 'latest'}`;
   
   const cachedMessages = await getCache(cacheKey);
   if (cachedMessages) {
     return NextResponse.json({ messages: cachedMessages });
   }
 
+  const { lt } = require("drizzle-orm");
+
   const msgs = await db.query.directMessages.findMany({
-    where: (dms, { eq, and, or, isNull }) => 
-      and(
+    where: (dms, { eq, and, or, isNull }) => {
+      const dmCondition = and(
         parentId ? eq(dms.parentId, parentId) : isNull(dms.parentId),
         or(
           and(eq(dms.senderId, myId), eq(dms.receiverId, otherId)),
           and(eq(dms.senderId, otherId), eq(dms.receiverId, myId))
         )
-      ),
-    limit: 100,
-    orderBy: (dms, { asc }) => [asc(dms.createdAt)],
+      );
+
+      return cursor 
+        ? and(dmCondition, lt(dms.createdAt, new Date(cursor))) 
+        : dmCondition;
+    },
+    limit: 50,
+    orderBy: (dms, { desc }) => [desc(dms.createdAt)],
     with: {
       sender: { columns: { id: true, name: true, avatar: true, status: true } },
       reactions: { with: { user: { columns: { id: true, name: true } } } },
-      replies: { columns: { id: true } }
+      replies: { columns: { id: true } },
+      parent: { with: { sender: { columns: { name: true } } } }
     },
   });
 
@@ -45,6 +54,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
     const { replies, ...rest } = m;
     return { ...rest, _count: { replies: replies.length } };
   });
+
+  const responseMessages = formattedMessages.reverse();
 
   // Mark unread messages as read
   await db.update(directMessages)
@@ -55,9 +66,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
       eq(directMessages.read, false)
     ));
 
-  await setCache(cacheKey, formattedMessages, 5); // Cache for 5 seconds
+  await setCache(cacheKey, responseMessages, 5); // Cache for 5 seconds
 
-  return NextResponse.json({ messages: formattedMessages });
+  return NextResponse.json({ messages: responseMessages });
 }
 
 // POST /api/dm/[userId] — send DM
@@ -88,6 +99,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
     with: {
       sender: { columns: { id: true, name: true, avatar: true, status: true } },
       reactions: { with: { user: { columns: { id: true, name: true } } } },
+      parent: { with: { sender: { columns: { name: true } } } }
     }
   });
 

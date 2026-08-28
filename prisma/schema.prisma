@@ -69,6 +69,7 @@ model ChannelMember {
   id        String   @id @default(cuid())
   channelId String
   userId    String
+  role      String   @default("member")
   joinedAt  DateTime @default(now())
 
   channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)

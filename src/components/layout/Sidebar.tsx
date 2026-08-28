@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import UserProfileModal from "@/components/chat/UserProfileModal";
+import { useCall } from "@/components/CallProvider";
 import { useUI } from "@/components/UIProvider";
 import styles from "./Sidebar.module.css";
 
@@ -52,7 +53,8 @@ export default function Sidebar({ currentUser }: SidebarProps) {
   const { isMobileSidebarOpen, setMobileSidebarOpen } = useUI();
   const pathname = usePathname();
   const router = useRouter();
-  const { socket } = useSocket();
+  const { socket, isConnected } = useSocket();
+  const { initiateCall } = useCall();
 
   const [channels, setChannels] = useState<Channel[]>([]);
   const [dmUsers, setDmUsers] = useState<DMUser[]>([]);
@@ -420,14 +422,14 @@ export default function Sidebar({ currentUser }: SidebarProps) {
               <button className={styles.dmMenuItem} onClick={(e) => { 
                 e.stopPropagation(); e.preventDefault();
                 setActiveMenuUserId(null); 
-                setAudioCallingUser(user);
+                initiateCall({ id: user.id, name: user.name, avatar: user.avatar }, 'audio');
               }}>
                 <Phone size={14} /> Audio call
               </button>
               <button className={styles.dmMenuItem} onClick={(e) => { 
                 e.stopPropagation(); e.preventDefault();
                 setActiveMenuUserId(null); 
-                setVideoCallingUser(user);
+                initiateCall({ id: user.id, name: user.name, avatar: user.avatar }, 'video');
               }}>
                 <Video size={14} /> Video chat
               </button>
@@ -553,6 +555,13 @@ export default function Sidebar({ currentUser }: SidebarProps) {
           </button>
         ))}
       </div>
+
+      {/* Connection Warning */}
+      {!isConnected && (
+        <div style={{ backgroundColor: 'var(--danger)', color: 'white', padding: '6px 12px', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, margin: '0 16px 12px', borderRadius: 6, fontWeight: 500 }}>
+          <AlertTriangle size={14} /> Reconnecting...
+        </div>
+      )}
       
       {showDmSearch && (
         <div className={styles.dmSearchWrap}>

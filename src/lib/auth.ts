@@ -83,7 +83,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.isApproved = (user as any).isApproved;
         token.name = user.name;
         token.email = user.email;
-        token.image = user.image;
+        // Omit token.image to prevent HTTP 431 Request Header Fields Too Large
       }
       return token;
     },
@@ -92,7 +92,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id as string;
         session.user.name = token.name as string;
         session.user.email = token.email as string;
-        session.user.image = token.image as string;
+        // Omit session.user.image
         (session.user as any).role = token.role as string;
         (session.user as any).isApproved = token.isApproved as boolean;
       }

@@ -7,6 +7,8 @@ let socket: Socket | null = null;
 export function useSocket() {
   const [socketInstance, setSocketInstance] = useState<Socket | null>(socket);
 
+  const [isConnected, setIsConnected] = useState(socket ? socket.connected : false);
+
   useEffect(() => {
     if (!socket) {
       socket = io(window.location.origin, {
@@ -15,8 +17,19 @@ export function useSocket() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setSocketInstance(socket);
     }
-    return () => {};
+    
+    if (socket) {
+      setIsConnected(socket.connected);
+      const onConnect = () => setIsConnected(true);
+      const onDisconnect = () => setIsConnected(false);
+      socket.on("connect", onConnect);
+      socket.on("disconnect", onDisconnect);
+      return () => {
+        socket?.off("connect", onConnect);
+        socket?.off("disconnect", onDisconnect);
+      };
+    }
   }, []);
 
-  return { socket: socketInstance };
+  return { socket: socketInstance, isConnected };
 }

@@ -12,20 +12,39 @@ export default function SettingsPage() {
   const [jobTitle, setJobTitle] = useState("");
   const [department, setDepartment] = useState("");
   const [unit, setUnit] = useState("");
+  const [customStatus, setCustomStatus] = useState("");
   const [password, setPassword] = useState("");
   const [avatar, setAvatar] = useState("");
-  const [activeTab, setActiveTab] = useState("preferences");
+  const [activeTab, setActiveTab] = useState("profile");
   
   const { theme, setTheme, systemTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
+
+  // Preferences
+  const [playSounds, setPlaySounds] = useState(true);
+  const [desktopNotifs, setDesktopNotifs] = useState(true);
+  const [enterToSend, setEnterToSend] = useState(true);
+  const [timezone, setTimezone] = useState("Asia/Manila (PST)");
   
   useEffect(() => {
     setMounted(true);
     try {
       const b = localStorage.getItem("agritalk_blockedUsers");
       if (b) setBlockedUserIds(JSON.parse(b));
+      
+      const pSounds = localStorage.getItem("agritalk_playSounds");
+      if (pSounds !== null) setPlaySounds(pSounds === 'true');
+      
+      const dNotifs = localStorage.getItem("agritalk_desktopNotifs");
+      if (dNotifs !== null) setDesktopNotifs(dNotifs === 'true');
+      
+      const eToSend = localStorage.getItem("agritalk_enterToSend");
+      if (eToSend !== null) setEnterToSend(eToSend === 'true');
+      
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      setTimezone(tz || "Asia/Manila (PST)");
     } catch(e) {}
   }, []);
   
@@ -53,6 +72,7 @@ export default function SettingsPage() {
           setDepartment(data.user.department || "");
           setUnit(data.user.unit || "");
           setAvatar(data.user.avatar || "");
+          setCustomStatus(data.user.customStatus || "");
         }
         if (usersData.users) {
           setAllUsers(usersData.users);
@@ -97,6 +117,12 @@ export default function SettingsPage() {
     setError("");
 
     try {
+      if (activeTab === 'preferences') {
+        localStorage.setItem("agritalk_playSounds", String(playSounds));
+        localStorage.setItem("agritalk_desktopNotifs", String(desktopNotifs));
+        localStorage.setItem("agritalk_enterToSend", String(enterToSend));
+      }
+
       const res = await fetch("/api/users/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -104,7 +130,10 @@ export default function SettingsPage() {
           name,
           email,
           jobTitle,
+          department,
+          unit,
           avatar,
+          customStatus,
           password: password ? password : undefined
         }),
       });
@@ -247,6 +276,18 @@ export default function SettingsPage() {
                     placeholder="e.g. Administrative Aide"
                   />
                 </div>
+
+                <div className={`${styles.formGroup} ${styles.fullWidth}`}>
+                  <label className="form-label">Custom Status Message</label>
+                  <input 
+                    type="text" 
+                    className="input" 
+                    value={customStatus} 
+                    onChange={e => setCustomStatus(e.target.value)} 
+                    placeholder="e.g. Working from home..."
+                    maxLength={50}
+                  />
+                </div>
               </div>
             </>
           )}
@@ -267,12 +308,46 @@ export default function SettingsPage() {
                    </select>
                  )}
                </div>
+               
                <div className={`${styles.formGroup} ${styles.fullWidth}`}>
-                 <label className="form-label">Timezone</label>
-                 <select className="input">
-                   <option>Asia/Manila (PST)</option>
-                   <option>UTC</option>
+                 <label className="form-label">Notification Sounds</label>
+                 <select 
+                   className="input"
+                   value={playSounds ? "on" : "off"}
+                   onChange={(e) => setPlaySounds(e.target.value === "on")}
+                 >
+                   <option value="on">Play sound for new messages</option>
+                   <option value="off">Mute sounds</option>
                  </select>
+               </div>
+
+               <div className={`${styles.formGroup} ${styles.fullWidth}`}>
+                 <label className="form-label">Desktop Notifications</label>
+                 <select 
+                   className="input"
+                   value={desktopNotifs ? "on" : "off"}
+                   onChange={(e) => setDesktopNotifs(e.target.value === "on")}
+                 >
+                   <option value="on">Show desktop notifications</option>
+                   <option value="off">Do not show</option>
+                 </select>
+               </div>
+
+               <div className={`${styles.formGroup} ${styles.fullWidth}`}>
+                 <label className="form-label">Chat Settings</label>
+                 <select 
+                   className="input"
+                   value={enterToSend ? "on" : "off"}
+                   onChange={(e) => setEnterToSend(e.target.value === "on")}
+                 >
+                   <option value="on">Press Enter to send message</option>
+                   <option value="off">Press Enter to add new line</option>
+                 </select>
+               </div>
+
+               <div className={`${styles.formGroup} ${styles.fullWidth}`}>
+                 <label className="form-label">Timezone (Detected)</label>
+                 <input type="text" className="input" value={timezone} disabled />
                </div>
             </div>
           )}

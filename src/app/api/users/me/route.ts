@@ -66,6 +66,8 @@ export async function GET(req: Request) {
         name: true,
         email: true,
         jobTitle: true,
+        department: true,
+        unit: true,
         avatar: true,
         customStatus: true,
       }
