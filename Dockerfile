@@ -7,7 +7,8 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma
 COPY prisma.config.ts ./
-RUN npm ci --omit=dev && npm cache clean --force
+# Install ALL dependencies (including devDeps needed for build)
+RUN npm ci && npm cache clean --force
 
 # ─── Builder Stage ───
 FROM base AS builder
@@ -16,8 +17,12 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NODE_ENV=production
+# Limit memory for constrained build environments (Render free tier)
+ENV NODE_OPTIONS="--max-old-space-size=1024"
 RUN npx prisma generate
 RUN npm run build
+# Prune devDependencies after build to reduce final image size
+RUN npm prune --omit=dev
 
 # ─── Runner Stage ───
 FROM base AS runner
