@@ -33,10 +33,13 @@ export default function ForgotPasswordPage() {
 
       if (!res.ok) {
         setStatus("error");
-        setMessage(data.error || "Failed to request reset link.");
+        setMessage(data.error || "Failed to request reset code.");
       } else {
         setStatus("success");
-        setMessage(data.message || "Reset link sent!");
+        setMessage(data.message || "Reset code sent! Redirecting...");
+        setTimeout(() => {
+          router.push("/reset-password");
+        }, 1500);
       }
     } catch (err: any) {
       setStatus("error");
@@ -99,7 +102,7 @@ export default function ForgotPasswordPage() {
           <div className={styles.formHeadingBlock}>
             <div className={styles.formHeadingBadge}><ShieldCheck size={14} /> Password Recovery</div>
             <h1 className={styles.formTitle}>Forgot Password?</h1>
-            <p className={styles.formSub}>Enter your registered email and we will send you a reset link.</p>
+            <p className={styles.formSub}>Enter your registered email and we will send you a 6-digit reset code.</p>
           </div>
 
           {status === "error" && (
@@ -136,7 +139,7 @@ export default function ForgotPasswordPage() {
             </div>
 
             <button type="submit" className={styles.btnPrimary} disabled={status === "loading"}>
-              {status === "loading" ? "Sending..." : "Send Reset Link"}
+              {status === "loading" ? "Sending..." : "Send Reset Code"}
             </button>
 
             <div className={styles.registerPrompt}>

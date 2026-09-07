@@ -22,8 +22,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "If that email is registered, a reset link has been sent." }, { status: 200 });
     }
 
-    // Generate a secure token
-    const token = crypto.randomBytes(32).toString("hex");
+    // Generate a secure 6-digit OTP
+    const token = Math.floor(100000 + Math.random() * 900000).toString();
     const expiry = new Date(Date.now() + 3600000); // 1 hour
 
     // Save token to DB
@@ -42,20 +42,19 @@ export async function POST(req: Request) {
       },
     });
 
-    // In a production environment, use the actual domain.
-    const baseUrl = process.env.AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const resetLink = `${baseUrl}/reset-password?token=${token}`;
-
     const mailOptions = {
       from: `"AGRI COMM Support" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: "Password Reset Request",
+      subject: "Your Password Reset Code",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2>Reset Your Password</h2>
+          <h2>Password Reset Request</h2>
           <p>You recently requested to reset your password for your AGRI COMM account.</p>
-          <p>Click the button below to reset it. This link is valid for 1 hour.</p>
-          <a href="${resetLink}" style="display: inline-block; padding: 10px 20px; background-color: #10b981; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px;">Reset Password</a>
+          <p>Your 6-digit verification code is:</p>
+          <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; padding: 20px; background-color: #f1f5f9; text-align: center; border-radius: 8px; margin: 20px 0;">
+            ${token}
+          </div>
+          <p>This code is valid for 1 hour.</p>
           <p style="margin-top: 20px; font-size: 12px; color: #666;">If you didn't request a password reset, you can safely ignore this email.</p>
         </div>
       `,
@@ -65,10 +64,10 @@ export async function POST(req: Request) {
     if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
       await transporter.sendMail(mailOptions);
     } else {
-      console.log("No email credentials configured. Reset link:", resetLink);
+      console.log("No email credentials configured. OTP code:", token);
     }
 
-    return NextResponse.json({ message: "If that email is registered, a reset link has been sent." }, { status: 200 });
+    return NextResponse.json({ message: "If that email is registered, a reset code has been sent." }, { status: 200 });
   } catch (error: any) {
     console.error("Forgot password error:", error);
     return NextResponse.json({ error: "Failed to process request" }, { status: 500 });

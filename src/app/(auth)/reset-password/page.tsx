@@ -1,18 +1,17 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import daLogo from "../../../../public/New Logo.png";
-import { Lock, ShieldCheck, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Lock, ShieldCheck, ArrowRight, Eye, EyeOff, Hash } from "lucide-react";
 import styles from "../login/auth.module.css";
 
-function ResetPasswordContent() {
+export default function ResetPasswordPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token");
 
+  const [token, setToken] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -20,16 +19,13 @@ function ResetPasswordContent() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    if (!token) {
-      setStatus("error");
-      setMessage("Invalid or missing password reset token.");
-    }
-  }, [token]);
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!token) return;
+    if (!token) {
+      setStatus("error");
+      setMessage("Please enter the 6-digit verification code.");
+      return;
+    }
 
     if (password !== confirmPassword) {
       setStatus("error");
@@ -126,7 +122,7 @@ function ResetPasswordContent() {
           <div className={styles.formHeadingBlock}>
             <div className={styles.formHeadingBadge}><ShieldCheck size={14} /> Password Recovery</div>
             <h1 className={styles.formTitle}>Create New Password</h1>
-            <p className={styles.formSub}>Please enter your new password below.</p>
+            <p className={styles.formSub}>Enter the 6-digit code sent to your email and your new password.</p>
           </div>
 
           {status === "error" && (
@@ -144,6 +140,27 @@ function ResetPasswordContent() {
           )}
 
           <form onSubmit={handleSubmit} className={styles.formBody} noValidate>
+            
+            <div className={styles.fieldGroup}>
+              <label htmlFor="otp-code" className={styles.fieldLabel}>
+                <Hash size={14} /> 6-Digit Code
+              </label>
+              <div className={styles.fieldWrap}>
+                <input
+                  id="otp-code"
+                  type="text"
+                  placeholder="e.g. 123456"
+                  className={styles.fieldInput}
+                  value={token}
+                  onChange={e => setToken(e.target.value)}
+                  disabled={status === "success"}
+                  maxLength={6}
+                  style={{ letterSpacing: "2px", fontWeight: "bold" }}
+                  required
+                />
+              </div>
+            </div>
+
             <div className={styles.fieldGroup}>
               <label htmlFor="new-password" className={styles.fieldLabel}>
                 <Lock size={14} /> New Password
@@ -156,14 +173,14 @@ function ResetPasswordContent() {
                   className={styles.fieldInput}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  disabled={!token || status === "success"}
+                  disabled={status === "success"}
                   required
                 />
                 <button
                   type="button"
                   className={styles.fieldToggle}
                   onClick={() => setShowPass(!showPass)}
-                  disabled={!token || status === "success"}
+                  disabled={status === "success"}
                   aria-label={showPass ? "Hide password" : "Show password"}
                 >
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -183,14 +200,14 @@ function ResetPasswordContent() {
                   className={styles.fieldInput}
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
-                  disabled={!token || status === "success"}
+                  disabled={status === "success"}
                   required
                 />
                 <button
                   type="button"
                   className={styles.fieldToggle}
                   onClick={() => setShowConfirmPass(!showConfirmPass)}
-                  disabled={!token || status === "success"}
+                  disabled={status === "success"}
                   aria-label={showConfirmPass ? "Hide confirm password" : "Show confirm password"}
                 >
                   {showConfirmPass ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -198,28 +215,18 @@ function ResetPasswordContent() {
               </div>
             </div>
 
-            <button type="submit" className={styles.btnPrimary} disabled={!token || status === "loading" || status === "success"}>
-              {status === "loading" ? "Updating..." : "Reset Password"}
+            <button type="submit" className={styles.btnPrimary} disabled={status === "loading" || status === "success"}>
+              {status === "loading" ? "Updating..." : "Verify & Reset Password"}
             </button>
             
-            {status === "success" && (
-              <div className={styles.registerPrompt} style={{ marginTop: '1rem' }}>
-                <Link href="/login" className={styles.registerLink}>
-                  Go to Login <ArrowRight size={12} style={{ display: 'inline', marginLeft: 4 }} />
-                </Link>
-              </div>
-            )}
+            <div className={styles.registerPrompt} style={{ marginTop: '1rem' }}>
+              <Link href="/login" className={styles.registerLink}>
+                Go to Login <ArrowRight size={12} style={{ display: 'inline', marginLeft: 4 }} />
+              </Link>
+            </div>
           </form>
         </div>
       </main>
     </div>
-  );
-}
-
-export default function ResetPasswordPage() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <ResetPasswordContent />
-    </Suspense>
   );
 }
