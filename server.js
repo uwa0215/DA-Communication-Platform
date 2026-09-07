@@ -159,6 +159,12 @@ app.prepare().then(() => {
       origin: "*",
       methods: ["GET", "POST"],
     },
+    connectionStateRecovery: {
+      maxDisconnectionDuration: 2 * 60 * 1000,
+      skipMiddlewares: true,
+    },
+    pingTimeout: 60000,
+    pingInterval: 25000,
   });
 
   // Configure Redis Adapter for horizontal scaling if REDIS_URL is provided

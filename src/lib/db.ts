@@ -8,7 +8,7 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL || "postgresql://dummy:dummy@dummy/dummy",
   // Production: more connections, longer timeouts for reliability
   // Development: fewer connections, shorter timeouts for faster feedback
-  max: isProduction ? 20 : 10,
+  max: isProduction ? 50 : 10,
   idleTimeoutMillis: isProduction ? 60000 : 30000,
   connectionTimeoutMillis: isProduction ? 10000 : 5000,
   // Neon serverless requires SSL in production
