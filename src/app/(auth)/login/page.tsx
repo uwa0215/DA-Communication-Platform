@@ -54,8 +54,8 @@ function LoginContent() {
           ? "Your account is pending admin approval."
           : "Invalid email or password. Please try again.");
       } else {
-        // Use absolute URL to prevent Safari "invalid address" errors
-        window.location.href = window.location.origin + "/dashboard";
+        // Use Next.js router for client-side navigation
+        router.push("/dashboard");
       }
     } catch (err: any) {
       setLoading(false);
