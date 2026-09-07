@@ -4,7 +4,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import daLogo from "../../../../public/Agri Logo.png";
+import daLogo from "../../../../public/New Logo.png";
 import {
   Mail, Lock, LogIn, Eye, EyeOff, Sprout,
   CheckCircle, Leaf, Users, MessageSquare, Zap,

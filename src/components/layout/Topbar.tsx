@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import agriLogo from "../../../public/Agri Logo.png";
+import agriLogo from "../../../public/New Logo.png";
 import { Search, Bell, Settings, LogOut, ChevronDown, Shield, Menu, Moon, Sun, Monitor, HelpCircle, User, MessageSquare } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useSocket } from "@/hooks/useSocket";

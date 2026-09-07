@@ -6,7 +6,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { Clock, ArrowLeft, CheckCircle2, ShieldAlert } from "lucide-react";
-import daLogo from "../../../../public/Agri Logo.png";
+import daLogo from "../../../../public/New Logo.png";
 import styles from "../login/auth.module.css";
 
 function PendingContent() {

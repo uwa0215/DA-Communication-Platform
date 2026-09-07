@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import daLogo from "../../../../public/Agri Logo.png";
+import daLogo from "../../../../public/New Logo.png";
 import { User, Mail, Lock, Briefcase, Building2, Eye, EyeOff, UserPlus, ArrowLeft, ShieldCheck, Globe, Zap } from "lucide-react";
 import styles from "../login/auth.module.css";
 
