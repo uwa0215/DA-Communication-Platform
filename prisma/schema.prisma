@@ -19,6 +19,8 @@ model User {
   jobTitle   String?
   department String?
   unit       String?
+  resetToken String?
+  resetTokenExpiry DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

@@ -15,6 +15,8 @@ export const users = pgTable('User', {
   jobTitle: text('jobTitle'),
   department: text('department'),
   unit: text('unit'),
+  resetToken: text('resetToken'),
+  resetTokenExpiry: timestamp('resetTokenExpiry'),
   createdAt: timestamp('createdAt').notNull().defaultNow(),
   updatedAt: timestamp('updatedAt').notNull().defaultNow(),
 }, (t) => [
