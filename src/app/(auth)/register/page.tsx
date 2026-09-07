@@ -78,7 +78,7 @@ export default function RegisterPage() {
                 <Image
                   src={daLogo}
                   alt="Department of Agriculture CALABARZON"
-                  className={styles.leftDaLogoImg}
+                  className={`${styles.leftDaLogoImg} theme-logo`}
                   width={260}
                   height={260}
                 />

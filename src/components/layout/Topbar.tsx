@@ -126,7 +126,7 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
           <Menu size={24} />
         </button>
         <div className={styles.logoWrap}>
-          <Image src={agriLogo} alt="Agri Logo" width={60} height={60} style={{ objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} unoptimized priority />
+          <Image src={agriLogo} alt="Agri Logo" width={60} height={60} className="theme-logo" style={{ objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} unoptimized priority />
         </div>
         <span className={styles.brandName}>AGRI COMM</span>
       </div>

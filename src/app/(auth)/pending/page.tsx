@@ -38,6 +38,7 @@ function PendingContent() {
             <Image
               src={daLogo}
               alt="DA Logo"
+              className={`${styles.leftDaLogoImg} theme-logo`}
               width={80}
               height={80}
               style={{ objectFit: 'contain' }}
