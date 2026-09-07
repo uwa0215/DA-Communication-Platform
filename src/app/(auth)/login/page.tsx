@@ -178,7 +178,7 @@ function LoginContent() {
                   <label htmlFor="login-password" className={styles.fieldLabel}>
                     <Lock size={14} /> Password
                   </label>
-                  <Link href="/forgot-password" className={styles.forgotBtn}>Forgot password?</Link>
+                  <a href="/forgot-password" className={styles.forgotBtn}>Forgot password?</a>
                 </div>
                 <div className={styles.fieldWrap}>
                   <input
