@@ -128,8 +128,8 @@ function LoginContent() {
             {/* heading */}
             <div className={styles.formHeadingBlock}>
               <div className={styles.formHeadingBadge}><ShieldCheck size={14} /> DA CALABARZON Employee Portal</div>
-              <h1 className={styles.formTitle}>Good day! 👋</h1>
-              <p className={styles.formSub}>Sign in with your official DA CALABARZON employee credentials</p>
+              <h1 className={styles.formTitle}>Good day! 🌾</h1>
+              <p className={styles.formSub}>Sign in with your official DA CALABARZON employee credentials.</p>
             </div>
 
             {/* error */}
