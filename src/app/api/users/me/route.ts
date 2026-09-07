@@ -25,7 +25,7 @@ export async function PATCH(req: Request) {
       if (password.length < 6) {
         return NextResponse.json({ error: "Password must be at least 6 characters." }, { status: 400 });
       }
-      dataToUpdate.password = await bcrypt.hash(password, 10);
+      dataToUpdate.password = await bcrypt.hash(password, 12);
     }
 
     const updatedUser = await prisma.user.update({

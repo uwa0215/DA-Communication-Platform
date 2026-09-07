@@ -4,9 +4,15 @@ import { Readable } from "stream";
 import formidable from "formidable";
 import fs from "fs";
 import path from "path";
+import { auth } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     if (!req.body) {
       return NextResponse.json({ error: "No request body provided" }, { status: 400 });
     }

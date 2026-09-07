@@ -45,15 +45,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        // Automatic hash migration: migrate 12 rounds to 10 rounds for 4x faster login
-        if (user.password.startsWith("$2a$12$") || user.password.startsWith("$2b$12$")) {
-          console.log("🔄 [Auth] Migrating password hash from 12 rounds to 10 rounds...");
-          bcrypt.hash(credentials.password as string, 10)
+        // Automatic hash migration: migrate 10 rounds to 12 rounds for better security
+        if (user.password.startsWith("$2a$10$") || user.password.startsWith("$2b$10$")) {
+          console.log("🔄 [Auth] Migrating password hash from 10 rounds to 12 rounds for better security...");
+          bcrypt.hash(credentials.password as string, 12)
             .then(newHash => {
               db.update(users).set({ password: newHash })
                 .where(eq(users.id, user.id))
               .then(() => {
-                console.log("✅ [Auth] Password hash migrated successfully.");
+                console.log("✅ [Auth] Password hash migrated successfully to 12 rounds.");
               }).catch((e: any) => console.error("Failed to update migrated password hash:", e));
             })
             .catch((e: any) => console.error("Failed to generate migrated hash:", e));

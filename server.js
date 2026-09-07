@@ -21,20 +21,31 @@ app.prepare().then(() => {
 
     // Handle POST /api/upload directly (bypasses Next.js 4MB size limits for files up to 50MB)
     if (req.method === "POST" && pathname === "/api/upload") {
-      const formidable = require("formidable");
-      const fs = require("fs");
-      const path = require("path");
-      
-      const uploadDir = path.join(__dirname, "public", "uploads");
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
+      const { getToken } = require("next-auth/jwt");
+      const secret = process.env.AUTH_SECRET;
 
-      const form = new formidable.IncomingForm({
-        uploadDir: uploadDir,
-        keepExtensions: true,
-        maxFileSize: 50 * 1024 * 1024, // 50MB limit
-      });
+      getToken({ req, secret, secureCookie: process.env.NODE_ENV === "production" })
+        .then((token) => {
+          if (!token) {
+            res.writeHead(401, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Unauthorized: You must be logged in to upload files" }));
+            return;
+          }
+
+          const formidable = require("formidable");
+          const fs = require("fs");
+          const path = require("path");
+          
+          const uploadDir = path.join(__dirname, "public", "uploads");
+          if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+          }
+
+          const form = new formidable.IncomingForm({
+            uploadDir: uploadDir,
+            keepExtensions: true,
+            maxFileSize: 50 * 1024 * 1024, // 50MB limit
+          });
 
       form.parse(req, async (err, fields, files) => {
         if (err) {
@@ -103,6 +114,11 @@ app.prepare().then(() => {
           res.writeHead(500, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Failed to store uploaded file" }));
         }
+      });
+      }).catch((err) => {
+        console.error("Token verification error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Failed to authenticate request" }));
       });
       return;
     }
