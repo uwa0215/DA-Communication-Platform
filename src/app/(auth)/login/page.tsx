@@ -36,32 +36,34 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const isApproved = searchParams.get("approved") === "1";
 
+  const authError = searchParams.get("error");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(
+    authError === "CredentialsSignin" 
+      ? "Invalid email or password. Please try again." 
+      : authError === "pending_approval"
+        ? "Your account is pending admin approval."
+        : authError ? "Authentication failed." : ""
+  );
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
-    try {
-      const res = await signIn("credentials", { email, password, redirect: false });
-      setLoading(false);
-      if (res?.error) {
-        setError(res.error.includes("pending")
-          ? "Your account is pending admin approval."
-          : "Invalid email or password. Please try again.");
-      } else {
-        // Use Next.js router for client-side navigation
-        router.push("/dashboard");
-      }
-    } catch (err: any) {
-      setLoading(false);
-      setError("An unexpected connection error occurred. Please try again.");
-      console.error("Login client error:", err);
-    }
+    
+    // Rely on NextAuth's native HTTP 302 redirect for maximum browser compatibility (iOS Safari/Chrome)
+    await signIn("credentials", { 
+      email, 
+      password, 
+      redirectTo: "/dashboard" 
+    });
+    
+    // If we reach here, it means the redirect is happening or an error occurred. 
+    // We don't need to manually router.push(). 
   }
 
 
