@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
-import { X, Users } from "lucide-react";
+import { X, Users, Search } from "lucide-react";
 import calendarStyles from "@/app/(app)/calendar/calendar.module.css";
 
 interface ScheduleModalProps {
@@ -21,6 +21,7 @@ export default function ScheduleModal({ onClose, onSuccess, currentUserId }: Sch
   const [endTime, setEndTime] = useState("");
   
   const [users, setUsers] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedParticipants, setSelectedParticipants] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -147,12 +148,25 @@ export default function ScheduleModal({ onClose, onSuccess, currentUserId }: Sch
             </div>
 
             <div className="form-group">
-              <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <label className="form-label" style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                 <Users size={16} /> Invite Attendees
               </label>
+              
+              <div style={{ position: "relative", marginBottom: 12 }}>
+                <Search size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#6b7280" }} />
+                <input 
+                  type="text"
+                  className="input"
+                  style={{ paddingLeft: 36, paddingRight: 12, paddingTop: 8, paddingBottom: 8 }}
+                  placeholder="Search by name..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
               <div className={calendarStyles.participantList}>
                 {users.length === 0 && <span className="text-muted" style={{ fontSize: 13, padding: 8 }}>Loading users...</span>}
-                {users.map(u => (
+                {users.filter(u => u.name.toLowerCase().includes(searchQuery.toLowerCase())).map(u => (
                   <label key={u.id} className={calendarStyles.participantItem}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <div className="avatar avatar-sm">
