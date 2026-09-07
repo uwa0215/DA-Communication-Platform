@@ -54,9 +54,8 @@ function LoginContent() {
           ? "Your account is pending admin approval."
           : "Invalid email or password. Please try again.");
       } else {
-        // Redirect immediately
-        router.push("/dashboard");
-        router.refresh();
+        // Redirect immediately using hard navigation to ensure cookies are sent reliably on mobile Safari
+        window.location.href = "/dashboard";
       }
     } catch (err: any) {
       setLoading(false);
