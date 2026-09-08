@@ -1,11 +1,12 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import daLogo from "../../../../public/New Logo.png";
-import { User, Mail, Lock, Briefcase, Building2, Eye, EyeOff, UserPlus, ArrowLeft, ShieldCheck, Globe, Zap } from "lucide-react";
-import styles from "../login/auth.module.css";
+import { User, Mail, Lock, Briefcase, Building2, Eye, EyeOff, UserPlus, ShieldCheck, Globe, Zap } from "lucide-react";
+import loginStyles from "../login/login.module.css";
+import styles from "./register.module.css";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -22,38 +23,22 @@ export default function RegisterPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-    if (form.password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
+    if (form.password !== form.confirmPassword) { setError("Passwords do not match."); return; }
+    if (form.password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    setLoading(true); setError("");
 
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: form.name,
-        email: form.email,
-        password: form.password,
-        jobTitle: form.jobTitle,
-        department: form.department,
-        unit: form.unit,
+        name: form.name, email: form.email, password: form.password,
+        jobTitle: form.jobTitle, department: form.department, unit: form.unit,
       }),
     });
 
     const data = await res.json();
     setLoading(false);
-
-    if (!res.ok) {
-      setError(data.error || "Registration failed.");
-      return;
-    }
+    if (!res.ok) { setError(data.error || "Registration failed."); return; }
 
     if (data.user?.isApproved) {
       router.push("/login?registered=1");
@@ -63,171 +48,105 @@ export default function RegisterPage() {
   }
 
   return (
-    <>
-      <div className={styles.splitPage}>
-        {/* ── LEFT PANEL ── */}
-        <aside className={styles.leftPanel}>
-          <div className={styles.blob1} />
-          <div className={styles.blob2} />
-          <div className={styles.blob3} />
-          <div className={styles.leftGrid} />
-
-          <div className={styles.leftInner}>
-            <div className={styles.leftLogo}>
-              <div className={styles.leftDaLogoWrap}>
-                <Image
-                  src={daLogo}
-                  alt="Department of Agriculture CALABARZON"
-                  className={`${styles.leftDaLogoImg} theme-logo`}
-                  width={260}
-                  height={260}
-                />
-              </div>
-              <div>
-                <span className={styles.leftLogoText}>DA CALABARZON</span>
-                <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center", justifyContent: "center" }}>
-                  <span className={styles.leftLogoBadge}>Official</span>
-                  <span className={styles.leftLogoBadge} style={{ background: "rgba(6,182,212,.12)", borderColor: "rgba(6,182,212,.3)", color: "#06b6d4" }}>Region IV-A</span>
-                </div>
-              </div>
+    <div className={loginStyles.page}>
+      <div className={styles.container}>
+        <div className={styles.mainCard}>
+          {/* Logo */}
+          <div className={loginStyles.logoWrap}>
+            <div className={loginStyles.logoImgWrap}>
+              <Image src={daLogo} alt="DA CALABARZON Logo" className={loginStyles.logoImg} width={80} height={80} />
             </div>
-
-            <div className={styles.leftHero}>
-              <div className={styles.leftTagline}>🌾 Department of Agriculture · Region IV-A</div>
-              <h2 className={styles.leftHeading}>
-                The official<br />
-                <span className={styles.leftHeadingAccent}>employee portal</span><br />
-                for DA CALABARZON
-              </h2>
-              <p className={styles.leftDesc}>
-                AGRI COMM is the secure internal communication platform for all employees
-                of the Department of Agriculture CALABARZON — connecting the regional
-                office and all five provincial offices.
-              </p>
-            </div>
+            <div className={loginStyles.logoText}>DA CALABARZON</div>
+            <div className={loginStyles.logoSub}>Create your employee account</div>
           </div>
-        </aside>
 
-        {/* ── RIGHT PANEL ── */}
-        <main className={styles.rightPanel}>
-          <div className={styles.rightBlob1} />
-          <div className={styles.rightBlob2} />
-          <div className={styles.rightGrid} />
+          {error && <div className={loginStyles.errorBox}>{error}</div>}
 
-          <div className={styles.formCard}>
-            <div className={styles.formHeadingBlock}>
-              <div className={styles.formHeadingBadge}><ShieldCheck size={14} /> Employee Registration</div>
-              <h1 className={styles.formTitle}>Create account</h1>
-              <p className={styles.formSub}>Join the official DA CALABARZON workspace</p>
+          <form className={styles.form} onSubmit={handleSubmit} noValidate>
+            {/* Full Name */}
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}><User size={13} /> Full Name</label>
+              <input id="reg-name" type="text" className={loginStyles.input}
+                placeholder="Juan Dela Cruz" value={form.name}
+                onChange={e => update("name", e.target.value)} required />
             </div>
 
-            {error && (
-              <div className={styles.formError} role="alert">
-                <span className={styles.formErrorDot} />
-                {error}
-              </div>
-            )}
+            {/* Email */}
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}><Mail size={13} /> Email address</label>
+              <input id="reg-email" type="email" className={loginStyles.input}
+                placeholder="you@da.gov.ph" value={form.email}
+                onChange={e => update("email", e.target.value)} required />
+            </div>
 
-            <form onSubmit={handleSubmit} className={styles.formBody} noValidate>
-              
+            {/* Job Title + Division */}
+            <div className={styles.twoCol}>
               <div className={styles.fieldGroup}>
-                <label htmlFor="reg-name" className={styles.fieldLabel}><User size={14} /> Full Name</label>
-                <div className={styles.fieldWrap}>
-                  <input id="reg-name" type="text" className={styles.fieldInput}
-                    placeholder="Juan Dela Cruz" value={form.name}
-                    onChange={e => update("name", e.target.value)} required />
-                </div>
+                <label className={styles.fieldLabel}><Briefcase size={13} /> Job Title</label>
+                <input id="reg-jobtitle" type="text" className={loginStyles.input}
+                  placeholder="e.g. Agriculturist II" value={form.jobTitle}
+                  onChange={e => update("jobTitle", e.target.value)} />
               </div>
-
               <div className={styles.fieldGroup}>
-                <label htmlFor="reg-email" className={styles.fieldLabel}><Mail size={14} /> Email address</label>
-                <div className={styles.fieldWrap}>
-                  <input id="reg-email" type="email" className={styles.fieldInput}
-                    placeholder="you@da.gov.ph" value={form.email}
-                    onChange={e => update("email", e.target.value)} required />
-                </div>
+                <label className={styles.fieldLabel}><Building2 size={13} /> Division</label>
+                <input id="reg-dept" type="text" className={loginStyles.input}
+                  placeholder="e.g. PMED" value={form.department}
+                  onChange={e => update("department", e.target.value)} />
               </div>
+            </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div className={styles.fieldGroup}>
-                  <label htmlFor="reg-jobtitle" className={styles.fieldLabel}><Briefcase size={14} /> Job Title</label>
-                  <div className={styles.fieldWrap}>
-                    <input id="reg-jobtitle" type="text" className={styles.fieldInput}
-                      placeholder="e.g. Agriculturist II" value={form.jobTitle}
-                      onChange={e => update("jobTitle", e.target.value)} />
-                  </div>
-                </div>
-                
-                <div className={styles.fieldGroup}>
-                  <label htmlFor="reg-dept" className={styles.fieldLabel}><Building2 size={14} /> Division</label>
-                  <div className={styles.fieldWrap}>
-                    <input id="reg-dept" type="text" className={styles.fieldInput}
-                      placeholder="e.g. PMED" value={form.department}
-                      onChange={e => update("department", e.target.value)} />
-                  </div>
-                </div>
-              </div>
+            {/* Unit */}
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel}><Building2 size={13} /> Unit</label>
+              <input id="reg-unit" type="text" className={loginStyles.input}
+                placeholder="e.g. MIS" value={form.unit}
+                onChange={e => update("unit", e.target.value)} />
+            </div>
 
+            {/* Password + Confirm */}
+            <div className={styles.twoCol}>
               <div className={styles.fieldGroup}>
-                <label htmlFor="reg-unit" className={styles.fieldLabel}><Building2 size={14} /> Unit</label>
-                <div className={styles.fieldWrap}>
-                  <input id="reg-unit" type="text" className={styles.fieldInput}
-                    placeholder="e.g. MIS" value={form.unit}
-                    onChange={e => update("unit", e.target.value)} />
+                <label className={styles.fieldLabel}><Lock size={13} /> Password</label>
+                <div className={loginStyles.inputWrap}>
+                  <input id="reg-password" type={showPass ? "text" : "password"} className={loginStyles.input}
+                    placeholder="Min. 6 chars" value={form.password}
+                    onChange={e => update("password", e.target.value)} required style={{ paddingRight: "44px" }} />
+                  <button type="button" className={loginStyles.eyeBtn} onClick={() => setShowPass(!showPass)}>
+                    {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
                 </div>
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                <div className={styles.fieldGroup}>
-                  <label htmlFor="reg-password" className={styles.fieldLabel}><Lock size={14} /> Password</label>
-                  <div className={styles.fieldWrap}>
-                    <input id="reg-password" type={showPass ? "text" : "password"} className={styles.fieldInput}
-                      placeholder="Min. 6 chars" value={form.password}
-                      onChange={e => update("password", e.target.value)} required />
-                    <button type="button" className={styles.eyeBtn} onClick={() => setShowPass(!showPass)}>
-                      {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                </div>
-
-                <div className={styles.fieldGroup}>
-                  <label htmlFor="reg-confirm" className={styles.fieldLabel}><Lock size={14} /> Confirm</label>
-                  <div className={styles.fieldWrap}>
-                    <input id="reg-confirm" type={showPass ? "text" : "password"} className={styles.fieldInput}
-                      placeholder="Repeat password" value={form.confirmPassword}
-                      onChange={e => update("confirmPassword", e.target.value)} required />
-                  </div>
-                </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}><Lock size={13} /> Confirm</label>
+                <input id="reg-confirm" type={showPass ? "text" : "password"} className={loginStyles.input}
+                  placeholder="Repeat password" value={form.confirmPassword}
+                  onChange={e => update("confirmPassword", e.target.value)} required />
               </div>
+            </div>
 
-              <button id="register-btn" type="submit" className={styles.submitBtn} disabled={loading} style={{ marginTop: '8px' }}>
-                {loading
-                  ? <><span className={styles.btnSpinner} /> Creating account…</>
-                  : <><UserPlus size={17} /> Create Account</>}
-              </button>
+            <button id="register-btn" type="submit" className={loginStyles.submitBtn} disabled={loading} style={{ marginTop: "8px" }}>
+              {loading ? "Creating account..." : "Create Account"}
+            </button>
+          </form>
 
-              <p className={styles.formTopBarLink} style={{ textAlign: "center", marginTop: "16px", marginBottom: "0" }}>
-                Already have an account?&nbsp;
-                <Link href="/login" className={styles.formTopBarAction}>
-                  <ArrowLeft size={12} /> Sign In
-                </Link>
-              </p>
-
-              <div className={styles.divider}><span>secured by</span></div>
-              <div className={styles.trustBadges}>
-                <div className={styles.trustBadge}><ShieldCheck size={13} /> End-to-End Encrypted</div>
-                <div className={styles.trustBadge}><Globe size={13} /> DA Intranet</div>
-                <div className={styles.trustBadge}><Zap size={13} /> Data Privacy Act</div>
-              </div>
-            </form>
-
-            <p className={styles.formFooter}>
-              For authorized DA CALABARZON employees only. Unauthorized access is prohibited.
-              &nbsp;<a href="#" className={styles.formFooterLink}>Data Privacy Act</a>&nbsp;applies.
-            </p>
+          <div className={loginStyles.divider}>
+            <div className={loginStyles.dividerLine} />
+            <span className={loginStyles.dividerText}>Secured by</span>
+            <div className={loginStyles.dividerLine} />
           </div>
-        </main>
+          <div className={loginStyles.badges}>
+            <div className={loginStyles.badge}><ShieldCheck size={12} /> End-to-End Encrypted</div>
+            <div className={loginStyles.badge}><Globe size={12} /> DA Intranet</div>
+            <div className={loginStyles.badge}><Zap size={12} /> Data Privacy Act</div>
+          </div>
+          <p className={loginStyles.footer}>For authorized DA CALABARZON employees only.</p>
+        </div>
+
+        <div className={loginStyles.subCard}>
+          <span>Already have an account?</span>
+          <Link href="/login" className={loginStyles.registerLink}>Sign In</Link>
+        </div>
       </div>
-    </>
+    </div>
   );
 }

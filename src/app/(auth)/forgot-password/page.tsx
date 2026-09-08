@@ -1,16 +1,14 @@
-"use client";
-
+﻿"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import daLogo from "../../../../public/New Logo.png";
-import { Mail, ShieldCheck, ArrowLeft } from "lucide-react";
-import styles from "../login/auth.module.css";
+import { Mail, ShieldCheck, ArrowLeft, KeyRound } from "lucide-react";
+import loginStyles from "../login/login.module.css";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
@@ -18,7 +16,6 @@ export default function ForgotPasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email) return;
-
     setStatus("loading");
     setMessage("");
 
@@ -28,7 +25,6 @@ export default function ForgotPasswordPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-
       const data = await res.json();
 
       if (!res.ok) {
@@ -36,122 +32,83 @@ export default function ForgotPasswordPage() {
         setMessage(data.error || "Failed to request reset code.");
       } else {
         setStatus("success");
-        setMessage(data.message || "Reset code sent! Redirecting...");
-        setTimeout(() => {
-          router.push("/reset-password");
-        }, 1500);
+        setMessage(data.message || "Reset code sent! Check your email inbox.");
+        setTimeout(() => router.push("/reset-password"), 2000);
       }
-    } catch (err: any) {
+    } catch {
       setStatus("error");
       setMessage("An unexpected connection error occurred.");
     }
   }
 
   return (
-    <div className={styles.splitPage}>
-      {/* ── LEFT PANEL ── */}
-      <aside className={styles.leftPanel}>
-        <div className={styles.blob1} />
-        <div className={styles.blob2} />
-        <div className={styles.blob3} />
-        <div className={styles.leftGrid} />
+    <div className={loginStyles.page}>
+      <div className={loginStyles.container}>
+        <div className={loginStyles.mainCard}>
+          {/* Logo */}
+          <div className={loginStyles.logoWrap}>
+            <div className={loginStyles.logoImgWrap}>
+              <Image src={daLogo} alt="DA CALABARZON Logo" className={loginStyles.logoImg} width={100} height={100} />
+            </div>
+            <div className={loginStyles.logoText}>DA CALABARZON</div>
+            <div className={loginStyles.logoSub}>Password Recovery</div>
+          </div>
 
-        <div className={styles.leftInner}>
-          <div className={styles.leftLogo}>
-            <div className={styles.leftDaLogoWrap}>
-              <Image
-                src={daLogo}
-                alt="Department of Agriculture CALABARZON"
-                className={`${styles.leftDaLogoImg} theme-logo`}
-                width={260}
-                height={260}
+          {/* Icon accent */}
+          <div style={{
+            width: 56, height: 56, borderRadius: "16px",
+            background: "linear-gradient(135deg, rgba(16,185,129,0.2), rgba(6,182,212,0.2))",
+            border: "1px solid rgba(16,185,129,0.35)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            marginBottom: "20px", boxShadow: "0 0 20px rgba(16,185,129,0.2)"
+          }}>
+            <KeyRound size={24} color="#10b981" />
+          </div>
+
+          <h2 style={{ color: "#f0f9ff", fontWeight: 700, fontSize: "20px", margin: "0 0 8px", textAlign: "center" }}>
+            Forgot your password?
+          </h2>
+          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "13px", textAlign: "center", marginBottom: "24px", lineHeight: 1.6 }}>
+            Enter your registered email address and we will send you a 6-digit reset code.
+          </p>
+
+          {status === "error" && <div className={loginStyles.errorBox}>{message}</div>}
+          {status === "success" && <div className={loginStyles.successBox}>{message}</div>}
+
+          <form className={loginStyles.form} onSubmit={handleSubmit} noValidate>
+            <div className={loginStyles.inputWrap}>
+              <input
+                id="reset-email"
+                type="email"
+                className={loginStyles.input}
+                placeholder="you@da.gov.ph"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                autoFocus
+                required
               />
             </div>
-            <div>
-              <span className={styles.leftLogoText}>DA CALABARZON</span>
-              <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center", justifyContent: "center" }}>
-                <span className={styles.leftLogoBadge}>Official</span>
-                <span className={styles.leftLogoBadge} style={{ background: "rgba(6,182,212,.12)", borderColor: "rgba(6,182,212,.3)", color: "#06b6d4" }}>Region IV-A</span>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.leftHero}>
-            <div className={styles.leftTagline}>🌾 Department of Agriculture · Region IV-A</div>
-            <h2 className={styles.leftHeading}>
-              The official<br />
-              <span className={styles.leftHeadingAccent}>employee portal</span><br />
-              for DA CALABARZON
-            </h2>
-            <p className={styles.leftDesc}>
-              AGRI COMM is the secure internal communication platform for all employees
-              of the Department of Agriculture CALABARZON — connecting the regional
-              office and all five provincial offices.
-            </p>
-          </div>
-        </div>
-      </aside>
-
-      {/* ── RIGHT PANEL ── */}
-      <main className={styles.rightPanel}>
-        <div className={styles.rightBlob1} />
-        <div className={styles.rightBlob2} />
-        <div className={styles.rightGrid} />
-
-        <div className={styles.formCard}>
-          <div className={styles.formHeadingBlock}>
-            <div className={styles.formHeadingBadge}><ShieldCheck size={14} /> Password Recovery</div>
-            <h1 className={styles.formTitle}>Forgot Password?</h1>
-            <p className={styles.formSub}>Enter your registered email and we will send you a 6-digit reset code.</p>
-          </div>
-
-          {status === "error" && (
-            <div className={styles.formError} role="alert">
-              <span className={styles.formErrorDot} />
-              {message}
-            </div>
-          )}
-          
-          {status === "success" && (
-            <div className={styles.formError} style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#15803d', border: '1px solid rgba(34, 197, 94, 0.2)' }} role="alert">
-              <span className={styles.formErrorDot} style={{ background: '#22c55e' }} />
-              {message}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className={styles.formBody} noValidate>
-            <div className={styles.fieldGroup}>
-              <label htmlFor="reset-email" className={styles.fieldLabel}>
-                <Mail size={14} /> Email address
-              </label>
-              <div className={styles.fieldWrap}>
-                <input
-                  id="reset-email"
-                  type="email"
-                  placeholder="you@da.gov.ph"
-                  className={styles.fieldInput}
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  autoFocus
-                  required
-                />
-              </div>
-            </div>
-
-            <button type="submit" className={styles.btnPrimary} disabled={status === "loading"}>
-              {status === "loading" ? "Sending..." : "Send Reset Code"}
+            <button type="submit" className={loginStyles.submitBtn} disabled={status === "loading"}>
+              {status === "loading" ? "Sending reset code..." : "Send Reset Code"}
             </button>
-
-            <div className={styles.registerPrompt}>
-              Remembered your password?{" "}
-              <Link href="/login" className={styles.registerLink}>
-                <ArrowLeft size={12} style={{ display: 'inline', marginRight: 4 }} />
-                Back to Login
-              </Link>
-            </div>
           </form>
+
+          <div className={loginStyles.divider}>
+            <div className={loginStyles.dividerLine} />
+            <span className={loginStyles.dividerText}>Secured by DA</span>
+            <div className={loginStyles.dividerLine} />
+          </div>
+
+          <p className={loginStyles.footer}>
+            For authorized DA CALABARZON employees only.
+          </p>
         </div>
-      </main>
+
+        <div className={loginStyles.subCard}>
+          <span>Remembered your password?</span>
+          <Link href="/login" className={loginStyles.registerLink}>Back to Sign In</Link>
+        </div>
+      </div>
     </div>
   );
 }
