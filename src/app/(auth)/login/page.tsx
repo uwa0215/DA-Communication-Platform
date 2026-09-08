@@ -7,7 +7,7 @@ import Image from "next/image";
 import { Suspense } from "react";
 import daLogo from "../../../../public/New Logo.png";
 import { Eye, EyeOff, ShieldCheck, Globe, Zap } from "lucide-react";
-import loginStyles from "./login.module.css";
+import s from "./login.module.css";
 
 function LoginContent() {
   const router = useRouter();
@@ -20,11 +20,9 @@ function LoginContent() {
   const [showPass, setShowPass] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState(
-    authError === "CredentialsSignin"
-      ? "Invalid email or password. Please try again."
-      : authError === "pending_approval"
-        ? "Your account is pending admin approval."
-        : authError ? "Authentication failed." : ""
+    authError === "CredentialsSignin" ? "Invalid email or password. Please try again."
+    : authError === "pending_approval" ? "Your account is pending admin approval."
+    : authError ? "Authentication failed." : ""
   );
   const [loading, setLoading] = useState(false);
 
@@ -36,106 +34,81 @@ function LoginContent() {
   }
 
   return (
-    <div className={loginStyles.page}>
-      <div className={loginStyles.container}>
-        <div className={loginStyles.mainCard}>
-          {/* Logo */}
-          <div className={loginStyles.logoWrap}>
-            <div className={loginStyles.logoImgWrap}>
-              <Image
-                src={daLogo}
-                alt="DA CALABARZON Logo"
-                className={loginStyles.logoImg}
-                width={100}
-                height={100}
-              />
+    <div className={s.page}>
+      {/* Background decorations */}
+      <div className={s.bgOrb1} />
+      <div className={s.bgOrb2} />
+      <div className={s.bgOrb3} />
+      <div className={s.ring1} />
+      <div className={s.ring2} />
+      <div className={s.sparkle1} />
+      <div className={s.sparkle2} />
+      <div className={s.sparkle3} />
+      <div className={s.sparkle4} />
+      <div className={s.sparkle5} />
+      <div className={s.sparkle6} />
+      <div className={s.sparkle7} />
+      <div className={s.sparkle8} />
+      <div className={s.leaf1}>🌿</div>
+      <div className={s.leaf2}>🌾</div>
+      <div className={s.leaf3}>🍃</div>
+
+      <div className={s.container}>
+        <div className={s.mainCard}>
+          <div className={s.logoWrap}>
+            <div className={s.logoImgWrap}>
+              <Image src={daLogo} alt="DA CALABARZON Logo" className={s.logoImg} width={100} height={100} />
             </div>
-            <div className={loginStyles.logoText}>DA CALABARZON</div>
-            <div className={loginStyles.logoSub}>Employee Portal · AGRI COMM</div>
+            <div className={s.logoText}>DA CALABARZON</div>
+            <div className={s.logoSub}>Employee Portal · AGRI COMM</div>
           </div>
 
-          {/* Alerts */}
-          {error && <div className={loginStyles.errorBox}>{error}</div>}
-          {isApproved && !error && (
-            <div className={loginStyles.successBox}>
-              Your account has been approved! You can now log in.
-            </div>
-          )}
+          {error && <div className={s.errorBox}>{error}</div>}
+          {isApproved && !error && <div className={s.successBox}>Your account has been approved! You can now log in.</div>}
 
-          {/* Form */}
-          <form className={loginStyles.form} onSubmit={handleSubmit} noValidate>
-            <div className={loginStyles.inputWrap}>
-              <input
-                id="login-email"
-                type="email"
-                className={loginStyles.input}
-                placeholder="Email address"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-              />
+          <form className={s.form} onSubmit={handleSubmit} noValidate>
+            <div className={s.inputWrap}>
+              <input id="login-email" type="email" className={s.input}
+                placeholder="Email address" value={email}
+                onChange={e => setEmail(e.target.value)} required autoComplete="email" />
             </div>
-            <div className={loginStyles.inputWrap}>
-              <input
-                id="login-password"
-                type={showPass ? "text" : "password"}
-                className={loginStyles.input}
-                placeholder="Password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-                style={{ paddingRight: "44px" }}
-              />
-              <button
-                type="button"
-                className={loginStyles.eyeBtn}
-                onClick={() => setShowPass(!showPass)}
-                aria-label="Toggle password visibility"
-              >
+            <div className={s.inputWrap}>
+              <input id="login-password" type={showPass ? "text" : "password"} className={s.input}
+                placeholder="Password" value={password}
+                onChange={e => setPassword(e.target.value)} required autoComplete="current-password"
+                style={{ paddingRight: "44px" }} />
+              <button type="button" className={s.eyeBtn} onClick={() => setShowPass(!showPass)} aria-label="Toggle password visibility">
                 {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
-            <div className={loginStyles.optionsRow}>
-              <label className={loginStyles.rememberLabel}>
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={e => setRememberMe(e.target.checked)}
-                />
+            <div className={s.optionsRow}>
+              <label className={s.rememberLabel}>
+                <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} />
                 Keep me signed in for 30 days
               </label>
-              <Link href="/forgot-password" className={loginStyles.forgotLink}>
-                Forgot password?
-              </Link>
+              <Link href="/forgot-password" className={s.forgotLink}>Forgot password?</Link>
             </div>
-            <button type="submit" className={loginStyles.submitBtn} disabled={loading}>
+            <button type="submit" className={s.submitBtn} disabled={loading}>
               {loading ? "Signing in..." : "Sign In to Workspace"}
             </button>
           </form>
 
-          {/* Divider + badges */}
-          <div className={loginStyles.divider}>
-            <div className={loginStyles.dividerLine} />
-            <span className={loginStyles.dividerText}>Secured by</span>
-            <div className={loginStyles.dividerLine} />
+          <div className={s.divider}>
+            <div className={s.dividerLine} />
+            <span className={s.dividerText}>Secured by</span>
+            <div className={s.dividerLine} />
           </div>
-          <div className={loginStyles.badges}>
-            <div className={loginStyles.badge}><ShieldCheck size={12} /> End-to-End Encrypted</div>
-            <div className={loginStyles.badge}><Globe size={12} /> DA Intranet</div>
-            <div className={loginStyles.badge}><Zap size={12} /> Data Privacy Act</div>
+          <div className={s.badges}>
+            <div className={s.badge}><ShieldCheck size={12} /> End-to-End Encrypted</div>
+            <div className={s.badge}><Globe size={12} /> DA Intranet</div>
+            <div className={s.badge}><Zap size={12} /> Data Privacy Act</div>
           </div>
-
-          <p className={loginStyles.footer}>
-            For authorized DA CALABARZON employees only. Unauthorized access is prohibited.
-          </p>
+          <p className={s.footer}>For authorized DA CALABARZON employees only. Unauthorized access is prohibited.</p>
         </div>
 
-        {/* Register sub-card */}
-        <div className={loginStyles.subCard}>
+        <div className={s.subCard}>
           <span>Do not have an account?</span>
-          <Link href="/register" className={loginStyles.registerLink}>Register</Link>
+          <Link href="/register" className={s.registerLink}>Register</Link>
         </div>
       </div>
     </div>
