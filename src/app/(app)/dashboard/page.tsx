@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+﻿import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users, channels, meetings, meetingParticipants, messages } from "@/lib/schema";
 import { sql, eq, ne, and, gte, lte } from "drizzle-orm";
@@ -85,10 +85,10 @@ export default async function DashboardPage() {
               <ShieldCheck size={14} /> DA CALABARZON Employee Portal
             </div>
             <h1 className={styles.heroTitle} style={{ opacity: 1, visibility: 'visible' }}>
-              {greeting}, <span className={styles.heroName}>{firstName}</span> 👋
+              {greeting}, <span className={styles.heroName}>{firstName}</span> ðŸ‘‹
             </h1>
             <p className={styles.heroSub} style={{ opacity: 1, visibility: 'visible' }}>
-              Welcome to your AGRI COMM workspace. Here's what's happening today.
+              Welcome to your Trellis workspace. Here's what's happening today.
             </p>
           </div>
           <div className={styles.heroLogo}>
@@ -194,7 +194,7 @@ export default async function DashboardPage() {
                   <div className={styles.upcomingInfo}>
                     <span className={styles.upcomingTitle}>{m.title}</span>
                     <span className={styles.upcomingMeta}>
-                      <Clock size={12} /> {dateStr} · {timeStr} · {m.participants.length} attendee{m.participants.length !== 1 ? 's' : ''}
+                      <Clock size={12} /> {dateStr} Â· {timeStr} Â· {m.participants.length} attendee{m.participants.length !== 1 ? 's' : ''}
                     </span>
                   </div>
                 </Link>
@@ -207,8 +207,8 @@ export default async function DashboardPage() {
                 <div key={`holiday-${i}`} className={styles.upcomingItem} style={{ cursor: 'default' }}>
                   <div className={`${styles.upcomingDot} ${styles.upcomingDotHoliday}`} />
                   <div className={styles.upcomingInfo}>
-                    <span className={styles.upcomingTitle}>🇵🇭 {h.name}</span>
-                    <span className={styles.upcomingMeta}>{dateStr} · {h.type === 'regular' ? 'Regular Holiday' : 'Special Non-Working'}</span>
+                    <span className={styles.upcomingTitle}>ðŸ‡µðŸ‡­ {h.name}</span>
+                    <span className={styles.upcomingMeta}>{dateStr} Â· {h.type === 'regular' ? 'Regular Holiday' : 'Special Non-Working'}</span>
                   </div>
                 </div>
               );
@@ -250,3 +250,4 @@ export default async function DashboardPage() {
     </div>
   );
 }
+

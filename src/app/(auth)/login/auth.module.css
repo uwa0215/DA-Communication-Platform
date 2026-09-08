@@ -1,8 +1,8 @@
-/* ================================================================
-   AgriTalk – Auth Module CSS  (login / register shared styles)
+﻿/* ================================================================
+   Trellis â€“ Auth Module CSS  (login / register shared styles)
    ================================================================ */
 
-/* ── SPLIT PAGE LAYOUT ── */
+/* â”€â”€ SPLIT PAGE LAYOUT â”€â”€ */
 .splitPage {
   min-height: 100vh;
   display: grid;
@@ -13,9 +13,9 @@
   .splitPage { grid-template-columns: 1fr; }
 }
 
-/* ════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    LEFT PANEL
-════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .leftPanel {
   position: relative;
   background: transparent;
@@ -230,9 +230,9 @@
 .testimonialRole { font-size: 11px; color: rgba(255,255,255,.4); }
 
 
-/* ════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    RIGHT PANEL
-════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .rightPanel {
   position: relative;
   display: flex; align-items: center; justify-content: center;
@@ -502,10 +502,10 @@
 .formFooterLink:hover { text-decoration: underline; }
 
 
-/* ════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    WELCOME ANIMATION OVERLAY
    (unchanged from previous version)
-════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .welcomeOverlay {
   position: fixed; inset: 0; z-index: 9999;
   display: flex; align-items: center; justify-content: center;
@@ -699,9 +699,9 @@
 .fadeInScale { opacity: 1 !important; transform: scale(1) !important; }
 
 
-/* ════════════════════════════════════════
-   LEGACY — kept for /register page
-════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   LEGACY â€” kept for /register page
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .authPage {
   min-height: 100vh; display: flex; align-items: center;
   justify-content: center; position: relative; overflow: hidden;
@@ -767,3 +767,4 @@
 .authFooter { text-align: center; margin-top: 20px; color: var(--text-secondary); font-size: 13px; }
 .authLink { color: var(--brand); text-decoration: none; font-weight: 500; transition: color var(--t-fast); }
 .authLink:hover { color: var(--brand-hover); }
+

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
@@ -99,22 +99,22 @@ export default function Sidebar({ currentUser }: SidebarProps) {
 
   useEffect(() => {
     try {
-      const p = localStorage.getItem("agritalk_pinnedDMs");
+      const p = localStorage.getItem("trellis_pinnedDMs");
       if (p) setPinnedDMs(JSON.parse(p));
-      const m = localStorage.getItem("agritalk_mutedDMs");
+      const m = localStorage.getItem("trellis_mutedDMs");
       if (m) setMutedDMs(JSON.parse(m));
-      const b = localStorage.getItem("agritalk_blockedUsers");
+      const b = localStorage.getItem("trellis_blockedUsers");
       if (b) setBlockedUsers(JSON.parse(b));
-      const a = localStorage.getItem("agritalk_archivedDMs");
+      const a = localStorage.getItem("trellis_archivedDMs");
       if (a) setArchivedDMs(JSON.parse(a));
-      const w = localStorage.getItem("agritalk_sidebar_width");
+      const w = localStorage.getItem("trellis_sidebar_width");
       if (w) setSidebarWidth(parseInt(w, 10));
     } catch(e) {}
   }, []);
 
   useEffect(() => {
     if (!isResizing && sidebarWidth !== 280) {
-      localStorage.setItem("agritalk_sidebar_width", sidebarWidth.toString());
+      localStorage.setItem("trellis_sidebar_width", sidebarWidth.toString());
     }
   }, [isResizing, sidebarWidth]);
 
@@ -146,7 +146,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
   const togglePin = (id: string) => {
     setPinnedDMs(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-      localStorage.setItem("agritalk_pinnedDMs", JSON.stringify(next));
+      localStorage.setItem("trellis_pinnedDMs", JSON.stringify(next));
       return next;
     });
   };
@@ -154,7 +154,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
   const toggleMute = (id: string) => {
     setMutedDMs(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-      localStorage.setItem("agritalk_mutedDMs", JSON.stringify(next));
+      localStorage.setItem("trellis_mutedDMs", JSON.stringify(next));
       return next;
     });
   };
@@ -162,7 +162,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
   const blockUser = (id: string) => {
     setBlockedUsers(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-      localStorage.setItem("agritalk_blockedUsers", JSON.stringify(next));
+      localStorage.setItem("trellis_blockedUsers", JSON.stringify(next));
       return next;
     });
   };
@@ -170,7 +170,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
   const toggleArchive = (id: string) => {
     setArchivedDMs(prev => {
       const next = prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id];
-      localStorage.setItem("agritalk_archivedDMs", JSON.stringify(next));
+      localStorage.setItem("trellis_archivedDMs", JSON.stringify(next));
       return next;
     });
   };
@@ -723,7 +723,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">New Channel</h2>
-              <button className="btn-icon" onClick={() => setShowCreate(false)}>✕</button>
+              <button className="btn-icon" onClick={() => setShowCreate(false)}>âœ•</button>
             </div>
             <div className="form-group">
               <label className="form-label">Channel Name</label>
@@ -750,7 +750,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">New Group Chat</h2>
-              <button className="btn-icon" onClick={() => setShowCreateGroup(false)}>✕</button>
+              <button className="btn-icon" onClick={() => setShowCreateGroup(false)}>âœ•</button>
             </div>
             <div className="form-group">
               <label className="form-label">Group Name</label>
@@ -852,3 +852,4 @@ export default function Sidebar({ currentUser }: SidebarProps) {
     </>
   );
 }
+

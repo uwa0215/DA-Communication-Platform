@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -69,7 +69,7 @@ export default function ResetPasswordPage() {
 
   return (
     <div className={styles.splitPage}>
-      {/* ── LEFT PANEL ── */}
+      {/* â”€â”€ LEFT PANEL â”€â”€ */}
       <aside className={styles.leftPanel}>
         <div className={styles.blob1} />
         <div className={styles.blob2} />
@@ -97,22 +97,22 @@ export default function ResetPasswordPage() {
           </div>
 
           <div className={styles.leftHero}>
-            <div className={styles.leftTagline}>🌾 Department of Agriculture · Region IV-A</div>
+            <div className={styles.leftTagline}>ðŸŒ¾ Department of Agriculture Â· Region IV-A</div>
             <h2 className={styles.leftHeading}>
               The official<br />
               <span className={styles.leftHeadingAccent}>employee portal</span><br />
               for DA CALABARZON
             </h2>
             <p className={styles.leftDesc}>
-              AGRI COMM is the secure internal communication platform for all employees
-              of the Department of Agriculture CALABARZON — connecting the regional
+              Trellis is the secure internal communication platform for all employees
+              of the Department of Agriculture CALABARZON â€” connecting the regional
               office and all five provincial offices.
             </p>
           </div>
         </div>
       </aside>
 
-      {/* ── RIGHT PANEL ── */}
+      {/* â”€â”€ RIGHT PANEL â”€â”€ */}
       <main className={styles.rightPanel}>
         <div className={styles.rightBlob1} />
         <div className={styles.rightBlob2} />
@@ -230,3 +230,4 @@ export default function ResetPasswordPage() {
     </div>
   );
 }
+

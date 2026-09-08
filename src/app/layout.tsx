@@ -1,10 +1,10 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "CompanyChat — Company Communication Platform",
-  description: "Real-time messaging, channels, and direct messages for your entire company. Like Microsoft Teams, built free.",
+  title: "Trellis – DA CALABARZON Communication Platform",
+  description: "Trellis is the official internal communication platform for DA CALABARZON employees.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -35,3 +35,4 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     </html>
   );
 }
+

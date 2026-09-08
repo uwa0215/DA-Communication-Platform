@@ -75,7 +75,7 @@ export default function RegisterPage() {
               <Image src={daLogo} alt="DA CALABARZON Logo" className={s.logoImg} width={100} height={100} />
             </div>
             <div className={s.logoText}>DA CALABARZON</div>
-            <div className={s.logoSub}>Create your employee account</div>
+            <div className={s.logoSub}>Create your Trellis account</div>
           </div>
 
           {error && <div className={s.errorBox}>{error}</div>}
@@ -168,3 +168,5 @@ export default function RegisterPage() {
     </div>
   );
 }
+
+

@@ -36,13 +36,13 @@ export async function POST(req: Request) {
     const emailUser = process.env.EMAIL_USER || "";
 
     const mailOptions = {
-      from: `"AGRI COMM Support" <${emailUser}>`,
+      from: `"Trellis Support" <${emailUser}>`,
       to: email,
       subject: "Your Password Reset Code",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2 style="color: #10b981;">Password Reset Request</h2>
-          <p>You recently requested to reset your password for your AGRI COMM account.</p>
+          <p>You recently requested to reset your password for your Trellis account.</p>
           <p>Your 6-digit verification code is:</p>
           <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; padding: 20px; background-color: #f1f5f9; text-align: center; border-radius: 8px; margin: 20px 0; color: #059669;">
             ${token}
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
       });
       await transporter.sendMail(mailOptions);
     } else {
-      console.log("[AGRI COMM] No email credentials. OTP:", token);
+      console.log("[Trellis] No email credentials. OTP:", token);
     }
 
     return NextResponse.json({ message: "Reset code sent! Check your email inbox." }, { status: 200 });
@@ -74,3 +74,4 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Failed to send reset code. Please try again." }, { status: 500 });
   }
 }
+

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -128,7 +128,7 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
         <div className={styles.logoWrap}>
           <Image src={agriLogo} alt="Agri Logo" width={60} height={60} className="theme-logo" style={{ objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} unoptimized priority />
         </div>
-        <span className={styles.brandName}>AGRI COMM</span>
+        <span className={styles.brandName}>Trellis</span>
       </div>
 
       <div className={styles.center}>
@@ -307,19 +307,19 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
                     <button className={styles.menuItem} style={{ padding: '6px 8px', marginBottom: 2 }} onClick={() => handleStatusChange('online')}>
                       <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--status-online)', marginRight: 4 }} />
                       <span style={{ flex: 1 }}>Active</span>
-                      {myStatus === 'online' && <span style={{ color: 'var(--status-online)', fontSize: 16 }}>✓</span>}
+                      {myStatus === 'online' && <span style={{ color: 'var(--status-online)', fontSize: 16 }}>âœ“</span>}
                     </button>
                     
                     <button className={styles.menuItem} style={{ padding: '6px 8px', marginBottom: 2 }} onClick={() => handleStatusChange('away')}>
                       <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--status-away)', marginRight: 4 }} />
                       <span style={{ flex: 1 }}>Away</span>
-                      {myStatus === 'away' && <span style={{ color: 'var(--status-away)', fontSize: 16 }}>✓</span>}
+                      {myStatus === 'away' && <span style={{ color: 'var(--status-away)', fontSize: 16 }}>âœ“</span>}
                     </button>
                     
                     <button className={styles.menuItem} style={{ padding: '6px 8px', marginBottom: 8 }} onClick={() => handleStatusChange('offline')}>
                       <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--status-offline)', marginRight: 4, border: '2px solid var(--text-muted)' }} />
                       <span style={{ flex: 1 }}>Invisible</span>
-                      {myStatus === 'offline' && <span style={{ color: 'var(--text-muted)', fontSize: 16 }}>✓</span>}
+                      {myStatus === 'offline' && <span style={{ color: 'var(--text-muted)', fontSize: 16 }}>âœ“</span>}
                     </button>
                   </div>
                   
@@ -366,7 +366,7 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
 
                   <div className={styles.divider} />
 
-                  <a href="mailto:support@agricomm.com" className={styles.menuItem} onClick={() => setShowProfileMenu(false)}>
+                  <a href="mailto:support@trellis.da.gov.ph" className={styles.menuItem} onClick={() => setShowProfileMenu(false)}>
                     <HelpCircle size={16} /> Help & Support
                   </a>
                   
@@ -388,3 +388,4 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
     </header>
   );
 }
+

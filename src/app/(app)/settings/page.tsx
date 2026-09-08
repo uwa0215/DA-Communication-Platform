@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
@@ -31,16 +31,16 @@ export default function SettingsPage() {
   useEffect(() => {
     setMounted(true);
     try {
-      const b = localStorage.getItem("agritalk_blockedUsers");
+      const b = localStorage.getItem("trellis_blockedUsers");
       if (b) setBlockedUserIds(JSON.parse(b));
       
-      const pSounds = localStorage.getItem("agritalk_playSounds");
+      const pSounds = localStorage.getItem("trellis_playSounds");
       if (pSounds !== null) setPlaySounds(pSounds === 'true');
       
-      const dNotifs = localStorage.getItem("agritalk_desktopNotifs");
+      const dNotifs = localStorage.getItem("trellis_desktopNotifs");
       if (dNotifs !== null) setDesktopNotifs(dNotifs === 'true');
       
-      const eToSend = localStorage.getItem("agritalk_enterToSend");
+      const eToSend = localStorage.getItem("trellis_enterToSend");
       if (eToSend !== null) setEnterToSend(eToSend === 'true');
       
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -89,7 +89,7 @@ export default function SettingsPage() {
   const handleUnblock = (id: string) => {
     const next = blockedUserIds.filter(userId => userId !== id);
     setBlockedUserIds(next);
-    localStorage.setItem("agritalk_blockedUsers", JSON.stringify(next));
+    localStorage.setItem("trellis_blockedUsers", JSON.stringify(next));
     // Optional: trigger reload to sync sidebar
     setTimeout(() => window.location.reload(), 300);
   };
@@ -118,9 +118,9 @@ export default function SettingsPage() {
 
     try {
       if (activeTab === 'preferences') {
-        localStorage.setItem("agritalk_playSounds", String(playSounds));
-        localStorage.setItem("agritalk_desktopNotifs", String(desktopNotifs));
-        localStorage.setItem("agritalk_enterToSend", String(enterToSend));
+        localStorage.setItem("trellis_playSounds", String(playSounds));
+        localStorage.setItem("trellis_desktopNotifs", String(desktopNotifs));
+        localStorage.setItem("trellis_enterToSend", String(enterToSend));
       }
 
       const res = await fetch("/api/users/me", {
@@ -417,3 +417,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+
