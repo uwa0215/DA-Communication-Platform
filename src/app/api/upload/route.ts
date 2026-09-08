@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         
         try {
           // Determine the filename base (without extension) for Cloudinary
-          const safeName = originalName.replace(/[^a-zA-Z0-9.-]/g, "_").split(".")[0];
+          const safeName = originalName.replace(/[^a-zA-Z0-9.-]/g, "_");
           
           // Upload the file to Cloudinary
           const result = await cloudinary.uploader.upload(file.filepath, {

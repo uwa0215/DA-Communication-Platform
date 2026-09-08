@@ -70,7 +70,7 @@ app.prepare().then(() => {
         const originalName = file.originalFilename || "upload";
         
         try {
-          const safeName = originalName.replace(/[^a-zA-Z0-9.-]/g, "_").split(".")[0];
+          const safeName = originalName.replace(/[^a-zA-Z0-9.-]/g, "_");
           
           const result = await cloudinary.uploader.upload(file.filepath, {
             folder: "companychat/uploads",
