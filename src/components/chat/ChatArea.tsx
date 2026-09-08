@@ -1471,8 +1471,6 @@ export default function ChatArea({
               <img src={previewFile.url} alt="Preview" className={styles.lightboxImg} />
             ) : previewFile.type === 'video' ? (
               <video src={previewFile.url} controls autoPlay style={{ maxWidth: '90%', maxHeight: '80vh', outline: 'none' }} />
-            ) : previewFile.url.match(/\.pdf($|\?)/i) || previewFile.name.endsWith('.pdf') ? (
-              <iframe src={previewFile.url} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: 8, background: 'white' }} />
             ) : (
               <iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile.url)}&embedded=true`} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: 8, background: 'white' }} />
             )}
