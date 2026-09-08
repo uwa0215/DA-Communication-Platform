@@ -41,6 +41,7 @@ function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState(
     authError === "CredentialsSignin" 
       ? "Invalid email or password. Please try again." 
@@ -178,7 +179,7 @@ function LoginContent() {
                   <label htmlFor="login-password" className={styles.fieldLabel}>
                     <Lock size={14} /> Password
                   </label>
-                  <a href="/forgot-password" className={styles.forgotBtn}>Forgot password?</a>
+                  <Link href="/forgot-password" className={styles.forgotBtn}>Forgot password?</Link>
                 </div>
                 <div className={styles.fieldWrap}>
                   <input
@@ -204,7 +205,12 @@ function LoginContent() {
 
               {/* remember me */}
               <label className={styles.rememberRow}>
-                <input type="checkbox" className={styles.rememberCheck} />
+                <input 
+                  type="checkbox" 
+                  className={styles.rememberCheck} 
+                  checked={rememberMe}
+                  onChange={e => setRememberMe(e.target.checked)}
+                />
                 <span className={styles.rememberCustom} />
                 <span className={styles.rememberLabel}>Keep me signed in for 30 days</span>
               </label>
