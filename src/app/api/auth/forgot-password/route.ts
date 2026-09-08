@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
 import { eq } from "drizzle-orm";
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 
     if (!userRecord) {
       // Return success even if user doesn't exist for security reasons
-      return NextResponse.json({ message: "If that email is registered, a reset link has been sent." }, { status: 200 });
+      return NextResponse.json({ message: "If that email is registered, a reset code has been sent." }, { status: 200 });
     }
 
     // Generate a secure 6-digit OTP
@@ -31,45 +31,46 @@ export async function POST(req: Request) {
       .set({ resetToken: token, resetTokenExpiry: expiry })
       .where(eq(users.id, userRecord.id));
 
-    // Send email using nodemailer
-    const transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST || "smtp.gmail.com",
-      port: Number(process.env.EMAIL_PORT) || 465,
-      secure: true,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
+    // Strip spaces from Gmail App Password (Google shows it with spaces but must be used without)
+    const emailPass = (process.env.EMAIL_PASS || "").replace(/\s/g, "");
+    const emailUser = process.env.EMAIL_USER || "";
 
     const mailOptions = {
-      from: `"AGRI COMM Support" <${process.env.EMAIL_USER}>`,
+      from: `"AGRI COMM Support" <${emailUser}>`,
       to: email,
       subject: "Your Password Reset Code",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h2>Password Reset Request</h2>
+          <h2 style="color: #10b981;">Password Reset Request</h2>
           <p>You recently requested to reset your password for your AGRI COMM account.</p>
           <p>Your 6-digit verification code is:</p>
-          <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; padding: 20px; background-color: #f1f5f9; text-align: center; border-radius: 8px; margin: 20px 0;">
+          <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; padding: 20px; background-color: #f1f5f9; text-align: center; border-radius: 8px; margin: 20px 0; color: #059669;">
             ${token}
           </div>
-          <p>This code is valid for 1 hour.</p>
-          <p style="margin-top: 20px; font-size: 12px; color: #666;">If you didn't request a password reset, you can safely ignore this email.</p>
+          <p>This code is valid for <strong>1 hour</strong>.</p>
+          <p style="margin-top: 20px; font-size: 12px; color: #666;">If you did not request a password reset, you can safely ignore this email.</p>
         </div>
       `,
     };
 
-    // Only attempt to send email if credentials exist, otherwise log to console for development
-    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+    if (emailUser && emailPass) {
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false, // STARTTLS on port 587
+        auth: { user: emailUser, pass: emailPass },
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 30000,
+      });
       await transporter.sendMail(mailOptions);
     } else {
-      console.log("No email credentials configured. OTP code:", token);
+      console.log("[AGRI COMM] No email credentials. OTP:", token);
     }
 
-    return NextResponse.json({ message: "If that email is registered, a reset code has been sent." }, { status: 200 });
+    return NextResponse.json({ message: "Reset code sent! Check your email inbox." }, { status: 200 });
   } catch (error: any) {
     console.error("Forgot password error:", error);
-    return NextResponse.json({ error: "Failed to process request" }, { status: 500 });
+    return NextResponse.json({ error: "Failed to send reset code. Please try again." }, { status: 500 });
   }
 }
