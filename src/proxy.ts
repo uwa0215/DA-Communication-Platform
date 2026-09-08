@@ -6,7 +6,7 @@ export default async function middleware(req: NextRequest) {
   const session = await auth();
   const { pathname } = req.nextUrl;
 
-  const publicPaths = ["/login", "/register", "/api/auth"];
+  const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/pending", "/api/auth"];
   const isPublic = publicPaths.some(p => pathname.startsWith(p));
 
   if (!session && !isPublic) {
