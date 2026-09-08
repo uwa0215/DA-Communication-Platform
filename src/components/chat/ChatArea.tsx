@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { Hash, Phone, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import EmojiPicker from "emoji-picker-react";
@@ -1455,7 +1456,7 @@ export default function ChatArea({
       )}
 
       {/* Lightbox Modal */}
-      {previewFile && (
+      {previewFile && typeof document !== 'undefined' && createPortal(
         <div className={styles.lightboxOverlay} onClick={() => setPreviewFile(null)}>
           <div className={styles.lightboxHeader} onClick={e => e.stopPropagation()}>
             <span style={{ color: 'white', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 16, fontSize: 16, fontWeight: 500 }}>{previewFile.name}</span>
@@ -1481,7 +1482,8 @@ export default function ChatArea({
               <iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile.url)}&embedded=true`} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: 8, background: 'white' }} />
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {showChannelSettings && channelId && (
