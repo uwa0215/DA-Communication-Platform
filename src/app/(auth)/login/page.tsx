@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
 import daLogo from "../../../../public/New Logo.png";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck, Globe, Zap } from "lucide-react";
 import loginStyles from "./login.module.css";
 
 function LoginContent() {
@@ -39,16 +39,30 @@ function LoginContent() {
     <div className={loginStyles.page}>
       <div className={loginStyles.container}>
         <div className={loginStyles.mainCard}>
+          {/* Logo */}
           <div className={loginStyles.logoWrap}>
-            <Image src={daLogo} alt="DA Logo" className={loginStyles.logoImg} width={80} height={80} />
+            <div className={loginStyles.logoImgWrap}>
+              <Image
+                src={daLogo}
+                alt="DA CALABARZON Logo"
+                className={loginStyles.logoImg}
+                width={100}
+                height={100}
+              />
+            </div>
             <div className={loginStyles.logoText}>DA CALABARZON</div>
+            <div className={loginStyles.logoSub}>Employee Portal · AGRI COMM</div>
           </div>
+
+          {/* Alerts */}
           {error && <div className={loginStyles.errorBox}>{error}</div>}
           {isApproved && !error && (
             <div className={loginStyles.successBox}>
               Your account has been approved! You can now log in.
             </div>
           )}
+
+          {/* Form */}
           <form className={loginStyles.form} onSubmit={handleSubmit} noValidate>
             <div className={loginStyles.inputWrap}>
               <input
@@ -72,7 +86,7 @@ function LoginContent() {
                 onChange={e => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
-                style={{ paddingRight: "40px" }}
+                style={{ paddingRight: "44px" }}
               />
               <button
                 type="button"
@@ -90,25 +104,35 @@ function LoginContent() {
                   checked={rememberMe}
                   onChange={e => setRememberMe(e.target.checked)}
                 />
-                Keep me signed in
+                Keep me signed in for 30 days
               </label>
               <Link href="/forgot-password" className={loginStyles.forgotLink}>
                 Forgot password?
               </Link>
             </div>
             <button type="submit" className={loginStyles.submitBtn} disabled={loading}>
-              {loading ? "Signing in..." : "Log In"}
+              {loading ? "Signing in..." : "Sign In to Workspace"}
             </button>
           </form>
+
+          {/* Divider + badges */}
           <div className={loginStyles.divider}>
             <div className={loginStyles.dividerLine} />
-            <span className={loginStyles.dividerText}>SECURED BY DA</span>
+            <span className={loginStyles.dividerText}>Secured by</span>
             <div className={loginStyles.dividerLine} />
           </div>
+          <div className={loginStyles.badges}>
+            <div className={loginStyles.badge}><ShieldCheck size={12} /> End-to-End Encrypted</div>
+            <div className={loginStyles.badge}><Globe size={12} /> DA Intranet</div>
+            <div className={loginStyles.badge}><Zap size={12} /> Data Privacy Act</div>
+          </div>
+
           <p className={loginStyles.footer}>
-            For authorized DA CALABARZON employees only.
+            For authorized DA CALABARZON employees only. Unauthorized access is prohibited.
           </p>
         </div>
+
+        {/* Register sub-card */}
         <div className={loginStyles.subCard}>
           <span>Do not have an account?</span>
           <Link href="/register" className={loginStyles.registerLink}>Register</Link>
