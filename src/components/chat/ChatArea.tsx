@@ -84,7 +84,7 @@ export default function ChatArea({
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [showEmoji, setShowEmoji] = useState(false);
-  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<{ url: string, name: string, type: string } | null>(null);
   const [showInputEmoji, setShowInputEmoji] = useState(false);
   const [hoverMsgId, setHoverMsgId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -974,6 +974,7 @@ export default function ChatArea({
                         {msg.fileUrl && (() => {
                           const isImage = msg.fileType?.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|svg)($|\?)/i.test(msg.fileUrl || "");
                           const isAudio = msg.fileType?.startsWith("audio/") || /\.(mp3|wav|webm|ogg)($|\?)/i.test(msg.fileUrl || "");
+                          const isVideo = msg.fileType?.startsWith("video/") || /\.(mp4|webm|ogg)($|\?)/i.test(msg.fileUrl || "");
                           return (
                             <div className={styles.fileAttachment}>
                               {isImage ? (
@@ -981,16 +982,23 @@ export default function ChatArea({
                                   src={msg.fileUrl} 
                                   alt={msg.fileName || "Uploaded image"} 
                                   className={styles.fileImg} 
-                                  onClick={() => setLightboxUrl(msg.fileUrl!)}
+                                  onClick={() => setPreviewFile({ url: msg.fileUrl!, name: msg.fileName || 'file', type: 'image' })}
                                   title="Click to view image"
                                 />
                               ) : isAudio ? (
                                 <audio controls src={msg.fileUrl} style={{ height: 40, outline: 'none', maxWidth: 250 }} />
+                              ) : isVideo ? (
+                                <video 
+                                  src={msg.fileUrl} 
+                                  className={styles.fileImg} 
+                                  onClick={() => setPreviewFile({ url: msg.fileUrl!, name: msg.fileName || 'file', type: 'video' })}
+                                  title="Click to view video"
+                                />
                               ) : (
-                                <a href={msg.fileUrl} download={msg.fileName} target="_blank" rel="noopener noreferrer"
-                                  className={styles.fileLink}>
+                                <button onClick={(e) => { e.preventDefault(); setPreviewFile({ url: msg.fileUrl!, name: msg.fileName || 'file', type: 'document' }); }}
+                                  className={styles.fileLink} style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}>
                                   📎 {msg.fileName}
-                                </a>
+                                </button>
                               )}
                             </div>
                           );
@@ -1202,6 +1210,7 @@ export default function ChatArea({
             currentUserId={currentUserId}
             currentUserName={currentUserName}
             onClose={() => setActiveThreadId(null)}
+            onPreviewFile={setPreviewFile}
           />
         );
       })() : showDetailsPanel && (
@@ -1446,18 +1455,27 @@ export default function ChatArea({
       )}
 
       {/* Lightbox Modal */}
-      {lightboxUrl && (
-        <div className={styles.lightboxOverlay} onClick={() => setLightboxUrl(null)}>
+      {previewFile && (
+        <div className={styles.lightboxOverlay} onClick={() => setPreviewFile(null)}>
           <div className={styles.lightboxHeader} onClick={e => e.stopPropagation()}>
-            <a href={lightboxUrl} download target="_blank" rel="noopener noreferrer" className={styles.lightboxAction} title="Download Image">
+            <span style={{ color: 'white', flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 16, fontSize: 16, fontWeight: 500 }}>{previewFile.name}</span>
+            <a href={previewFile.url} download={previewFile.name} target="_blank" rel="noopener noreferrer" className={styles.lightboxAction} title="Download File">
               <Download size={20} />
             </a>
-            <button className={styles.lightboxAction} onClick={() => setLightboxUrl(null)} title="Close">
+            <button className={styles.lightboxAction} onClick={() => setPreviewFile(null)} title="Close">
               <X size={20} />
             </button>
           </div>
           <div className={styles.lightboxContent} onClick={e => e.stopPropagation()}>
-            <img src={lightboxUrl} alt="Preview" className={styles.lightboxImg} />
+            {previewFile.type === 'image' ? (
+              <img src={previewFile.url} alt="Preview" className={styles.lightboxImg} />
+            ) : previewFile.type === 'video' ? (
+              <video src={previewFile.url} controls autoPlay style={{ maxWidth: '90%', maxHeight: '80vh', outline: 'none' }} />
+            ) : previewFile.url.match(/\.pdf($|\?)/i) || previewFile.name.endsWith('.pdf') ? (
+              <iframe src={previewFile.url} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: 8, background: 'white' }} />
+            ) : (
+              <iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile.url)}&embedded=true`} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: 8, background: 'white' }} />
+            )}
           </div>
         </div>
       )}

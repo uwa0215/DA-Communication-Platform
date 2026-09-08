@@ -44,6 +44,7 @@ interface ThreadPanelProps {
   currentUserId: string;
   currentUserName: string;
   onClose: () => void;
+  onPreviewFile?: (file: { url: string; name: string; type: string }) => void;
 }
 
 export default function ThreadPanel({
@@ -53,7 +54,8 @@ export default function ThreadPanel({
   dmUserId,
   currentUserId,
   currentUserName,
-  onClose
+  onClose,
+  onPreviewFile
 }: ThreadPanelProps) {
   const { socket } = useSocket();
   const [replies, setReplies] = useState<Message[]>([]);
@@ -182,17 +184,22 @@ export default function ThreadPanel({
           <div className={styles.msgContent} dangerouslySetInnerHTML={{ __html: parentMessage.content }} />
           {parentMessage.fileUrl && (() => {
             const isImage = parentMessage.fileType?.startsWith("image/") || /\.(jpg|jpeg|png|gif|webp|svg)($|\?)/i.test(parentMessage.fileUrl || "");
+            const isVideo = parentMessage.fileType?.startsWith("video/") || /\.(mp4|webm|ogg)($|\?)/i.test(parentMessage.fileUrl || "");
             return (
               <div style={{ marginTop: 8 }}>
                 {isImage ? (
-                  <a href={parentMessage.fileUrl} target="_blank" rel="noopener noreferrer" title="Click to view full image">
+                  <button onClick={(e) => { e.preventDefault(); onPreviewFile?.({ url: parentMessage.fileUrl!, name: parentMessage.fileName || 'file', type: 'image' }); }} style={{ border: 'none', background: 'transparent', padding: 0 }}>
                     <img src={parentMessage.fileUrl} alt={parentMessage.fileName} style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "8px", objectFit: "contain", cursor: "pointer" }} />
-                  </a>
+                  </button>
+                ) : isVideo ? (
+                  <button onClick={(e) => { e.preventDefault(); onPreviewFile?.({ url: parentMessage.fileUrl!, name: parentMessage.fileName || 'file', type: 'video' }); }} style={{ border: 'none', background: 'transparent', padding: 0 }}>
+                    <video src={parentMessage.fileUrl} style={{ maxWidth: "100%", maxHeight: "200px", borderRadius: "8px", objectFit: "contain", cursor: "pointer" }} />
+                  </button>
                 ) : (
-                  <a href={parentMessage.fileUrl} download={parentMessage.fileName} target="_blank" rel="noopener noreferrer"
-                     style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "var(--bg-elevated)", border: "1px solid var(--border)", borderRadius: "var(--r-md)", color: "var(--brand)", textDecoration: "none", fontSize: "12px" }}>
+                  <button onClick={(e) => { e.preventDefault(); onPreviewFile?.({ url: parentMessage.fileUrl!, name: parentMessage.fileName || 'file', type: 'document' }); }}
+                     style={{ display: "inline-flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "var(--bg-elevated)", border: "1px solid var(--border)", borderRadius: "var(--r-md)", color: "var(--brand)", textDecoration: "none", fontSize: "12px", cursor: "pointer" }}>
                     📎 {parentMessage.fileName}
-                  </a>
+                  </button>
                 )}
               </div>
             );
