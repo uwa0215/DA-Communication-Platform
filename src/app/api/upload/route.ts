@@ -3,8 +3,14 @@ import { Readable } from "stream";
 // @ts-ignore
 import formidable from "formidable";
 import fs from "fs";
-import path from "path";
+import os from "os";
 import { auth } from "@/lib/auth";
+import { v2 as cloudinary } from "cloudinary";
+
+// Ensure cloudinary is configured. It will automatically pick up the CLOUDINARY_URL env variable.
+cloudinary.config({
+  secure: true
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,10 +23,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No request body provided" }, { status: 400 });
     }
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+    // Use os.tmpdir() for temporary file storage to avoid EACCES issues on serverless environments
+    const uploadDir = os.tmpdir();
 
     // Convert Web ReadableStream to Node.js Readable stream to bypass Next.js body limits
     const nodeStream = Readable.fromWeb(req.body as any);
@@ -38,7 +42,7 @@ export async function POST(req: NextRequest) {
     });
 
     const data = await new Promise<{ url: string; fileName: string; fileType: string }>((resolve, reject) => {
-      form.parse(mockReq as any, (err: any, fields: any, files: any) => {
+      form.parse(mockReq as any, async (err: any, fields: any, files: any) => {
         if (err) {
           return reject(err);
         }
@@ -51,18 +55,36 @@ export async function POST(req: NextRequest) {
         }
 
         const originalName = file.originalFilename || "upload";
-        const uniqueName = `${Date.now()}-${originalName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-        const newPath = path.join(uploadDir, uniqueName);
-
+        
         try {
-          fs.renameSync(file.filepath, newPath);
+          // Determine the filename base (without extension) for Cloudinary
+          const safeName = originalName.replace(/[^a-zA-Z0-9.-]/g, "_").split(".")[0];
+          
+          // Upload the file to Cloudinary
+          const result = await cloudinary.uploader.upload(file.filepath, {
+            folder: "companychat/uploads",
+            resource_type: "auto", // Automatically detects image, video, or raw file types
+            public_id: `${Date.now()}-${safeName}`
+          });
+          
+          // Delete the temporary file from the local disk
+          fs.unlinkSync(file.filepath);
+
           resolve({
-            url: `/uploads/${uniqueName}`,
+            url: result.secure_url,
             fileName: originalName,
             fileType: file.mimetype || "application/octet-stream"
           });
-        } catch (renameErr) {
-          reject(renameErr);
+        } catch (uploadErr) {
+          // Attempt to clean up temp file even if upload fails
+          try {
+            if (fs.existsSync(file.filepath)) {
+              fs.unlinkSync(file.filepath);
+            }
+          } catch (cleanupErr) {
+            console.error("Cleanup error:", cleanupErr);
+          }
+          reject(uploadErr);
         }
       });
     });

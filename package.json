@@ -31,6 +31,7 @@
     "@types/pg": "^8.20.4",
     "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
+    "cloudinary": "^2.11.0",
     "drizzle-orm": "^0.45.2",
     "emoji-picker-react": "^4.19.1",
     "formidable": "^3.5.4",
