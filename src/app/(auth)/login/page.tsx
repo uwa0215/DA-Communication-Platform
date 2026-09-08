@@ -179,7 +179,14 @@ function LoginContent() {
                   <label htmlFor="login-password" className={styles.fieldLabel}>
                     <Lock size={14} /> Password
                   </label>
-                  <Link href="/forgot-password" className={styles.forgotBtn}>Forgot password?</Link>
+                  <button 
+                    type="button" 
+                    className={styles.forgotBtn} 
+                    onClick={() => router.push("/forgot-password")}
+                    style={{ pointerEvents: 'auto', zIndex: 50 }}
+                  >
+                    Forgot password?
+                  </button>
                 </div>
                 <div className={styles.fieldWrap}>
                   <input
