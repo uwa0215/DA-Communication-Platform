@@ -35,11 +35,14 @@ app.prepare().then(() => {
           const formidable = require("formidable");
           const fs = require("fs");
           const path = require("path");
+          const os = require("os");
+          const { v2: cloudinary } = require("cloudinary");
           
-          const uploadDir = path.join(__dirname, "public", "uploads");
-          if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-          }
+          cloudinary.config({
+            secure: true
+          });
+          
+          const uploadDir = os.tmpdir();
 
           const form = new formidable.IncomingForm({
             uploadDir: uploadDir,
@@ -65,52 +68,32 @@ app.prepare().then(() => {
         }
 
         const originalName = file.originalFilename || "upload";
-        const uniqueName = `${Date.now()}-${originalName.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-        const newPath = path.join(uploadDir, uniqueName);
-
+        
         try {
-          fs.renameSync(file.filepath, newPath);
+          const safeName = originalName.replace(/[^a-zA-Z0-9.-]/g, "_").split(".")[0];
           
-          if (process.env.AWS_S3_BUCKET_NAME && process.env.AWS_S3_BUCKET_NAME !== "your_bucket_name") {
-            // Upload to S3
-            const s3Client = new S3Client({
-              region: process.env.AWS_REGION || "us-east-1",
-              credentials: {
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-              }
-            });
-            const fileStream = fs.createReadStream(newPath);
-            await s3Client.send(new PutObjectCommand({
-              Bucket: process.env.AWS_S3_BUCKET_NAME,
-              Key: uniqueName,
-              Body: fileStream,
-              ContentType: file.mimetype,
-            }));
-            
-            const fileUrl = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION || "us-east-1"}.amazonaws.com/${uniqueName}`;
-            
-            // Cleanup local temp file
-            fs.unlinkSync(newPath);
+          const result = await cloudinary.uploader.upload(file.filepath, {
+            folder: "companychat/uploads",
+            resource_type: "auto",
+            public_id: `${Date.now()}-${safeName}`
+          });
+          
+          try {
+             if (fs.existsSync(file.filepath)) fs.unlinkSync(file.filepath);
+          } catch(e) {}
 
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({
-              url: fileUrl,
-              fileName: originalName,
-              fileType: file.mimetype
-            }));
-          } else {
-            // Fallback to local file serving
-            const fileUrl = `/uploads/${uniqueName}`;
-            res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({
-              url: fileUrl,
-              fileName: originalName,
-              fileType: file.mimetype
-            }));
-          }
-        } catch (renameErr) {
-          console.error("Upload processing error:", renameErr);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({
+            url: result.secure_url,
+            fileName: originalName,
+            fileType: file.mimetype || "application/octet-stream"
+          }));
+
+        } catch (uploadErr) {
+          console.error("Upload processing error:", uploadErr);
+          try {
+             if (fs.existsSync(file.filepath)) fs.unlinkSync(file.filepath);
+          } catch(e) {}
           res.writeHead(500, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Failed to store uploaded file" }));
         }
