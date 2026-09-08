@@ -1471,6 +1471,12 @@ export default function ChatArea({
               <img src={previewFile.url} alt="Preview" className={styles.lightboxImg} />
             ) : previewFile.type === 'video' ? (
               <video src={previewFile.url} controls autoPlay style={{ maxWidth: '90%', maxHeight: '80vh', outline: 'none' }} />
+            ) : previewFile.url.startsWith('blob:') ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh', width: '80vw', background: 'white', borderRadius: 8, color: '#333' }}>
+                <div className="spinner" style={{ width: 40, height: 40, marginBottom: 16, borderTopColor: 'var(--brand)' }} />
+                <h3 style={{ margin: '0 0 8px 0', fontSize: 18 }}>Uploading file...</h3>
+                <p style={{ margin: 0, color: '#666' }}>Preview will be available once the upload is complete.</p>
+              </div>
             ) : (
               <iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(previewFile.url)}&embedded=true`} style={{ width: '80vw', height: '80vh', border: 'none', borderRadius: 8, background: 'white' }} />
             )}
