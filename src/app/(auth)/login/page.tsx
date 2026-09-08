@@ -1,41 +1,18 @@
-"use client";
-import { useState, useEffect, useRef } from "react";
+﻿"use client";
+import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import daLogo from "../../../../public/New Logo.png";
-import {
-  Mail, Lock, LogIn, Eye, EyeOff, Sprout,
-  CheckCircle, Leaf, Users, MessageSquare, Zap,
-  ShieldCheck, TrendingUp, Globe, Star, ArrowRight,
-} from "lucide-react";
-import styles from "./auth.module.css";
-
-
-
-const FEATURES = [
-  { icon: <MessageSquare size={16} />, label: "Office Announcements" },
-  { icon: <Users size={16} />,         label: "Division Channels" },
-  { icon: <Leaf size={16} />,          label: "AgriProgram Updates" },
-  { icon: <TrendingUp size={16} />,    label: "Reports & Analytics" },
-  { icon: <Globe size={16} />,         label: "5 Provincial Offices" },
-  { icon: <Zap size={16} />,           label: "Instant Notifications" },
-];
-
-const TESTIMONIAL = {
-  quote: "DAChat has greatly improved coordination between our regional office and all five provincial offices. Information is now shared instantly and securely.",
-  author: "Engr. Ramon Dela Cruz",
-  role: "Regional Director · DA CALABARZON",
-};
-
 import { Suspense } from "react";
+import daLogo from "../../../../public/New Logo.png";
+import { Eye, EyeOff } from "lucide-react";
+import loginStyles from "./login.module.css";
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isApproved = searchParams.get("approved") === "1";
-
   const authError = searchParams.get("error");
 
   const [email, setEmail] = useState("");
@@ -43,8 +20,8 @@ function LoginContent() {
   const [showPass, setShowPass] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState(
-    authError === "CredentialsSignin" 
-      ? "Invalid email or password. Please try again." 
+    authError === "CredentialsSignin"
+      ? "Invalid email or password. Please try again."
       : authError === "pending_approval"
         ? "Your account is pending admin approval."
         : authError ? "Authentication failed." : ""
@@ -55,208 +32,89 @@ function LoginContent() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    
-    // Rely on NextAuth's native HTTP 302 redirect for maximum browser compatibility (iOS Safari/Chrome)
-    await signIn("credentials", { 
-      email, 
-      password, 
-      redirectTo: "/dashboard" 
-    });
-    
-    // If we reach here, it means the redirect is happening or an error occurred. 
-    // We don't need to manually router.push(). 
+    await signIn("credentials", { email, password, redirectTo: "/dashboard" });
   }
 
-
-
   return (
-    <>
-      {/* ════ SIGN-IN PAGE ════ */}
-      <div className={styles.splitPage}>
-
-        {/* ── LEFT PANEL ── */}
-        <aside className={styles.leftPanel}>
-          <div className={styles.blob1} />
-          <div className={styles.blob2} />
-          <div className={styles.blob3} />
-          <div className={styles.leftGrid} />
-
-          <div className={styles.leftInner}>
-            {/* DA Logo + name */}
-            <div className={styles.leftLogo}>
-              <div className={styles.leftDaLogoWrap}>
-                <Image
-                  src={daLogo}
-                  alt="Department of Agriculture CALABARZON"
-                  className={`${styles.leftDaLogoImg} theme-logo`}
-                  width={260}
-                  height={260}
-                />
-              </div>
-              <div>
-                <span className={styles.leftLogoText}>DA CALABARZON</span>
-                <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center", justifyContent: "center" }}>
-                  <span className={styles.leftLogoBadge}>Official</span>
-                  <span className={styles.leftLogoBadge} style={{ background: "rgba(6,182,212,.12)", borderColor: "rgba(6,182,212,.3)", color: "#06b6d4" }}>Region IV-A</span>
-                </div>
-              </div>
-            </div>
-
-            {/* headline */}
-            <div className={styles.leftHero}>
-              <div className={styles.leftTagline}>🌾 Department of Agriculture · Region IV-A</div>
-              <h2 className={styles.leftHeading}>
-                The official<br />
-                <span className={styles.leftHeadingAccent}>employee portal</span><br />
-                for DA CALABARZON
-              </h2>
-              <p className={styles.leftDesc}>
-                AGRI COMM is the secure internal communication platform for all employees
-                of the Department of Agriculture CALABARZON — connecting the regional
-                office and all five provincial offices.
-              </p>
-            </div>
+    <div className={loginStyles.page}>
+      <div className={loginStyles.container}>
+        <div className={loginStyles.mainCard}>
+          <div className={loginStyles.logoWrap}>
+            <Image src={daLogo} alt="DA Logo" className={loginStyles.logoImg} width={80} height={80} />
+            <div className={loginStyles.logoText}>DA CALABARZON</div>
           </div>
-        </aside>
-        {/* ── RIGHT PANEL (dark, matching left) ── */}
-        <main className={styles.rightPanel}>
-          {/* decorative blobs mirroring left */}
-          <div className={styles.rightBlob1} />
-          <div className={styles.rightBlob2} />
-          <div className={styles.rightGrid} />
-
-          <div className={styles.formCard}>
-
-
-            {/* heading */}
-            <div className={styles.formHeadingBlock}>
-              <div className={styles.formHeadingBadge}><ShieldCheck size={14} /> DA CALABARZON Employee Portal</div>
-              <h1 className={styles.formTitle}>Good day! 🌾</h1>
-              <p className={styles.formSub}>Sign in with your official DA CALABARZON employee credentials.</p>
+          {error && <div className={loginStyles.errorBox}>{error}</div>}
+          {isApproved && !error && (
+            <div className={loginStyles.successBox}>
+              Your account has been approved! You can now log in.
             </div>
-
-            {/* error */}
-            {error && (
-              <div className={styles.formError} role="alert">
-                <span className={styles.formErrorDot} />
-                {error}
-              </div>
-            )}
-            
-            {isApproved && !error && (
-              <div className={styles.formError} style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#15803d', border: '1px solid rgba(34, 197, 94, 0.2)' }} role="alert">
-                <span className={styles.formErrorDot} style={{ background: '#22c55e' }} />
-                Your account has been approved! You can now log in.
-              </div>
-            )}
-
-            {/* form */}
-            <form onSubmit={handleSubmit} className={styles.formBody} noValidate>
-
-              {/* email */}
-              <div className={styles.fieldGroup}>
-                <label htmlFor="login-email" className={styles.fieldLabel}>
-                  <Mail size={14} /> Email address
-                </label>
-                <div className={styles.fieldWrap}>
-                  <input
-                    id="login-email"
-                    type="email"
-                    className={styles.fieldInput}
-                    placeholder="you@da.gov.ph"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                  />
-                  {email && <div className={styles.fieldCheck}><CheckCircle size={15} /></div>}
-                </div>
-              </div>
-
-              {/* password */}
-              <div className={styles.fieldGroup}>
-                <div className={styles.fieldLabelRow}>
-                  <label htmlFor="login-password" className={styles.fieldLabel}>
-                    <Lock size={14} /> Password
-                  </label>
-                  <button 
-                    type="button" 
-                    className={styles.forgotBtn} 
-                    onClick={() => router.push("/forgot-password")}
-                    style={{ pointerEvents: 'auto', zIndex: 50 }}
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-                <div className={styles.fieldWrap}>
-                  <input
-                    id="login-password"
-                    type={showPass ? "text" : "password"}
-                    className={styles.fieldInput}
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    required
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    className={styles.eyeBtn}
-                    onClick={() => setShowPass(!showPass)}
-                    aria-label="Toggle password visibility"
-                  >
-                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* remember me */}
-              <label className={styles.rememberRow}>
-                <input 
-                  type="checkbox" 
-                  className={styles.rememberCheck} 
+          )}
+          <form className={loginStyles.form} onSubmit={handleSubmit} noValidate>
+            <div className={loginStyles.inputWrap}>
+              <input
+                id="login-email"
+                type="email"
+                className={loginStyles.input}
+                placeholder="Email address"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+              />
+            </div>
+            <div className={loginStyles.inputWrap}>
+              <input
+                id="login-password"
+                type={showPass ? "text" : "password"}
+                className={loginStyles.input}
+                placeholder="Password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                style={{ paddingRight: "40px" }}
+              />
+              <button
+                type="button"
+                className={loginStyles.eyeBtn}
+                onClick={() => setShowPass(!showPass)}
+                aria-label="Toggle password visibility"
+              >
+                {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+            <div className={loginStyles.optionsRow}>
+              <label className={loginStyles.rememberLabel}>
+                <input
+                  type="checkbox"
                   checked={rememberMe}
                   onChange={e => setRememberMe(e.target.checked)}
                 />
-                <span className={styles.rememberCustom} />
-                <span className={styles.rememberLabel}>Keep me signed in for 30 days</span>
+                Keep me signed in
               </label>
-
-              {/* submit */}
-              <button id="login-btn" type="submit" className={styles.submitBtn} disabled={loading}>
-                {loading
-                  ? <><span className={styles.btnSpinner} /> Signing in…</>
-                  : <><LogIn size={17} /> Sign In to Workspace</>}
-              </button>
-
-              <p className={styles.formTopBarLink} style={{ textAlign: "center", marginTop: "16px", marginBottom: "0" }}>
-                Need an account?&nbsp;
-                <Link href="/register" className={styles.formTopBarAction}>
-                  Register <ArrowRight size={12} />
-                </Link>
-              </p>
-
-              {/* divider */}
-              <div className={styles.divider}><span>secured by</span></div>
-
-              {/* trust badges */}
-              <div className={styles.trustBadges}>
-                <div className={styles.trustBadge}><ShieldCheck size={13} /> End-to-End Encrypted</div>
-                <div className={styles.trustBadge}><Globe size={13} /> DA Intranet</div>
-                <div className={styles.trustBadge}><Zap size={13} /> Data Privacy Act</div>
-              </div>
-
-            </form>
-
-            {/* footer */}
-            <p className={styles.formFooter}>
-              For authorized DA CALABARZON employees only. Unauthorized access is prohibited.
-              &nbsp;<a href="#" className={styles.formFooterLink}>Data Privacy Act</a>&nbsp;applies.
-            </p>
+              <Link href="/forgot-password" className={loginStyles.forgotLink}>
+                Forgot password?
+              </Link>
+            </div>
+            <button type="submit" className={loginStyles.submitBtn} disabled={loading}>
+              {loading ? "Signing in..." : "Log In"}
+            </button>
+          </form>
+          <div className={loginStyles.divider}>
+            <div className={loginStyles.dividerLine} />
+            <span className={loginStyles.dividerText}>SECURED BY DA</span>
+            <div className={loginStyles.dividerLine} />
           </div>
-        </main>
+          <p className={loginStyles.footer}>
+            For authorized DA CALABARZON employees only.
+          </p>
+        </div>
+        <div className={loginStyles.subCard}>
+          <span>Do not have an account?</span>
+          <Link href="/register" className={loginStyles.registerLink}>Register</Link>
+        </div>
       </div>
-    </>
+    </div>
   );
 }
 

@@ -1,0 +1,224 @@
+﻿/* ================================================================
+   Instagram-style login  –  login.module.css
+   ================================================================ */
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #000;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  padding: 20px;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 350px;
+  gap: 12px;
+}
+
+/* ── Main card ── */
+.mainCard {
+  background-color: #000;
+  border: 1px solid #363636;
+  border-radius: 3px;
+  padding: 36px 40px 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* ── Logo block ── */
+.logoWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.logoImg {
+  border-radius: 50%;
+  object-fit: contain;
+}
+
+.logoText {
+  font-size: 19px;
+  font-weight: 900;
+  letter-spacing: -0.3px;
+  background: linear-gradient(to right, #10b981, #06b6d4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Form ── */
+.form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inputWrap {
+  position: relative;
+  width: 100%;
+}
+
+.input {
+  width: 100%;
+  background-color: #1a1a1a;
+  border: 1px solid #363636;
+  border-radius: 3px;
+  padding: 10px 10px;
+  font-size: 13px;
+  color: #fafafa;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.input:focus {
+  border-color: #a8a8a8;
+}
+.input::placeholder {
+  color: #737373;
+}
+
+.eyeBtn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #a8a8a8;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+}
+.eyeBtn:hover { color: #fafafa; }
+
+/* ── Options row (remember + forgot) ── */
+.optionsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 4px 0;
+}
+
+.rememberLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #a8a8a8;
+  cursor: pointer;
+}
+
+/* ── Forgot link ── */
+.forgotLink {
+  color: #e0f2fe;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.forgotLink:hover { text-decoration: underline; }
+
+/* ── Submit button ── */
+.submitBtn {
+  margin-top: 4px;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: opacity 0.2s;
+}
+.submitBtn:hover { opacity: 0.9; }
+.submitBtn:disabled { opacity: 0.6; cursor: default; }
+
+/* ── Divider ── */
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 18px 0 14px;
+  width: 100%;
+  gap: 12px;
+}
+.dividerLine {
+  flex-grow: 1;
+  height: 1px;
+  background-color: #363636;
+}
+.dividerText {
+  font-size: 11px;
+  font-weight: 600;
+  color: #737373;
+  letter-spacing: 1px;
+  white-space: nowrap;
+}
+
+/* ── Footer text ── */
+.footer {
+  font-size: 11px;
+  color: #737373;
+  text-align: center;
+  margin: 0;
+}
+
+/* ── Sub card (register prompt) ── */
+.subCard {
+  background-color: #000;
+  border: 1px solid #363636;
+  border-radius: 3px;
+  padding: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #fafafa;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.registerLink {
+  color: #10b981;
+  font-weight: 700;
+  text-decoration: none;
+}
+.registerLink:hover { text-decoration: underline; }
+
+/* ── Alert boxes ── */
+.errorBox {
+  width: 100%;
+  color: #ef4444;
+  font-size: 12px;
+  text-align: center;
+  margin-bottom: 10px;
+  padding: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  border-radius: 4px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.successBox {
+  width: 100%;
+  color: #10b981;
+  font-size: 12px;
+  text-align: center;
+  margin-bottom: 10px;
+  padding: 8px;
+  background: rgba(16, 185, 129, 0.08);
+  border-radius: 4px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
