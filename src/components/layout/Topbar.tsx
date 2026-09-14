@@ -29,6 +29,30 @@ interface Notification {
   content: string;
   link?: string;
   read: boolean;
+  createdAt?: string;
+}
+
+function formatNotifTime(dateStr?: string) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return "Yesterday";
+  return d.toLocaleDateString([], { month: "short", day: "numeric" });
+}
+
+function getNotifInitials(title: string) {
+  const clean = title.replace(/mentioned you in .*/i, '').replace(/mentioned you/i, '').trim();
+  const parts = clean.split(' ');
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return (clean[0] || 'N').toUpperCase();
 }
 
 export default function Topbar({ currentUser }: { currentUser: User }) {
@@ -235,13 +259,13 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
           {showNotifMenu && (
             <>
               <div className={styles.overlay} onClick={() => setShowNotifMenu(false)} />
-              <div className={styles.menu}>
+              <div className={styles.notifMenu}>
                 <div className={styles.menuHeader} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <p className={styles.menuName}>Notifications</p>
+                  <p className={styles.menuName} style={{ fontSize: '15px' }}>Notifications</p>
                   {unreadCount > 0 && (
                     <button 
                       onClick={() => handleMarkRead()} 
-                      style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', fontSize: '12px' }}
+                      style={{ background: 'none', border: 'none', color: 'var(--brand)', cursor: 'pointer', fontSize: '12px', fontWeight: 600 }}
                     >
                       Mark all as read
                     </button>
@@ -249,25 +273,36 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
                 </div>
                 <div className={styles.notifList}>
                   {notifications.length === 0 ? (
-                    <p style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>No new notifications.</p>
+                    <p style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>No notifications yet.</p>
                   ) : (
-                    notifications.map(n => (
-                      <Link 
-                        key={n.id} 
-                        href={n.link || "#"} 
-                        className={`${styles.notifItem} ${!n.read ? styles.notifUnread : ""}`}
-                        onClick={() => {
-                          handleMarkRead(n.id);
-                          setShowNotifMenu(false);
-                        }}
-                      >
-                        <div className={styles.notifContent}>
-                          <span className={styles.notifTitle}>{n.title}</span>
-                          <span className={styles.notifText}>{n.content}</span>
-                        </div>
-                        {!n.read && <div className={styles.unreadDot} />}
-                      </Link>
-                    ))
+                    notifications.map(n => {
+                      const initialLetters = getNotifInitials(n.title);
+                      const isMention = n.title.toLowerCase().includes("mention");
+
+                      return (
+                        <Link 
+                          key={n.id} 
+                          href={n.link || "#"} 
+                          className={`${styles.notifItem} ${!n.read ? styles.notifUnread : ""}`}
+                          onClick={() => {
+                            handleMarkRead(n.id);
+                            setShowNotifMenu(false);
+                          }}
+                        >
+                          <div className={styles.notifIconWrap}>
+                            {isMention ? <MessageSquare size={16} /> : initialLetters}
+                          </div>
+                          <div className={styles.notifBody}>
+                            <div className={styles.notifHeaderRow}>
+                              <span className={styles.notifTitle}>{n.title}</span>
+                              <span className={styles.notifTime}>{formatNotifTime(n.createdAt)}</span>
+                            </div>
+                            <p className={styles.notifText}>{n.content}</p>
+                          </div>
+                          {!n.read && <div className={styles.unreadDot} />}
+                        </Link>
+                      );
+                    })
                   )}
                 </div>
               </div>

@@ -101,6 +101,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     global.io.to(`channel:${channelId}`).emit("new-message", broadcastMsg);
   }
 
+  // Query channel name for notification link & title
+  const channelObj = await db.query.channels.findFirst({
+    where: (c, { eq }) => eq(c.id, channelId),
+    columns: { name: true }
+  });
+  const chName = channelObj?.name || "channel";
+
+  const rawText = (content || "").replace(/<[^>]*>?/gm, "").trim();
+  const notifPreview = rawText
+    ? (rawText.length > 100 ? rawText.substring(0, 100) + "..." : rawText)
+    : (fileName ? `📎 File: ${fileName}` : "Mentioned you in a message");
+
+  const senderName = fullMessage?.sender?.name || "Someone";
+
   // Handle Mentions
   const mentionRegex = /data-type="mention"[^>]*data-id="([^"]+)"/g;
   let match;
@@ -114,9 +128,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   for (const userId of mentionedUserIds) {
     const [notif] = await db.insert(notifications).values({
       userId,
-      title: "Mentioned you",
-      content: `${fullMessage?.sender?.name} mentioned you in a message`,
-      link: `/channels/${channelId}`,
+      title: `${senderName} mentioned you in #${chName}`,
+      content: notifPreview,
+      link: `/channels/${chName}`,
     }).returning();
     
     if (global.io) {

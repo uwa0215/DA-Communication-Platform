@@ -112,6 +112,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
   await invalidateCachePrefix(`dms_users_${receiverId}`);
   await invalidateCachePrefix(`dms_users_${myId}`);
 
+  // Extract clean text snippet for detailed notifications
+  const rawText = (content || "").replace(/<[^>]*>?/gm, "").trim();
+  const notifPreview = rawText
+    ? (rawText.length > 100 ? rawText.substring(0, 100) + "..." : rawText)
+    : (fileName ? `📎 File: ${fileName}` : "Sent you a message");
+
+  const senderName = fullMessage?.sender?.name || "Someone";
+
   // Broadcast via Socket.io
   if (global.io) {
     global.io.to(`dm:${roomId}`).emit("new-dm", broadcastMsg);
@@ -119,8 +127,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
     
     const [notif] = await db.insert(notifications).values({
       userId: receiverId,
-      title: "New Message",
-      content: `${fullMessage?.sender?.name} sent you a message`,
+      title: senderName,
+      content: notifPreview,
       link: `/dm/${myId}`,
     }).returning();
 
@@ -140,8 +148,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
   for (const userId of mentionedUserIds) {
     const [notif] = await db.insert(notifications).values({
       userId,
-      title: "Mentioned you",
-      content: `${fullMessage?.sender?.name} mentioned you in a DM`,
+      title: `${senderName} mentioned you`,
+      content: notifPreview,
       link: `/dm/${myId}`,
     }).returning();
 
