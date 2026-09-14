@@ -1,4 +1,4 @@
-﻿/* ================================================================
+/* ================================================================
    Trellis â€“ Auth Module CSS  (login / register shared styles)
    ================================================================ */
 
@@ -128,6 +128,7 @@
   font-size: 22px; font-weight: 900; letter-spacing: -0.5px;
   background: linear-gradient(to right, #10b981, #06b6d4);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 .leftLogoBadge {
   font-size: 10px; font-weight: 700; letter-spacing: 1px;
@@ -155,6 +156,7 @@
 .leftHeadingAccent {
   background: linear-gradient(135deg, #10b981 0%, #06b6d4 50%, #8b5cf6 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
   background-size: 200% auto;
   animation: shimmer 4s ease-in-out infinite;
 }
@@ -182,6 +184,7 @@
   letter-spacing: -1px;
   background: linear-gradient(135deg, #10b981, #06b6d4);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 .statLabel { font-size: 11px; color: rgba(255,255,255,.4); font-weight: 500; margin-top: 2px; display: block; }
 .statDivider { width: 1px; height: 36px; background: rgba(255,255,255,.1); }
@@ -644,6 +647,7 @@
 .welcomeName {
   background: linear-gradient(135deg, #10b981, #06b6d4, #8b5cf6);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
   background-size: 200% auto;
   animation: shimmer 3s ease-in-out infinite;
 }
@@ -742,6 +746,7 @@
   font-size: 26px; font-weight: 900; letter-spacing: -.5px;
   background: linear-gradient(to right, var(--brand), #06b6d4);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
   animation: floatY 4s ease-in-out infinite;
 }
 .authTitle { font-size: 28px; font-weight: 900; color: var(--text-primary); letter-spacing: -1px; margin-bottom: 6px; }

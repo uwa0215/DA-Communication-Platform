@@ -200,9 +200,7 @@
   margin: 0 -20px; /* pull to edges */
   animation: slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.messageRow:hover {
-  /* No background change on hover, just show actions */
-}
+
 .messageRowMine {
   flex-direction: row-reverse;
 }
