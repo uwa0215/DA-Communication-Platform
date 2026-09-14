@@ -214,6 +214,59 @@ export default function Sidebar({ currentUser }: SidebarProps) {
     setMyStatus("online");
   }, []);
 
+  // Auto-Away Idle Detector & BeforeUnload Offline Beacon
+  useEffect(() => {
+    let idleTimer: NodeJS.Timeout;
+
+    const resetIdleTimer = () => {
+      clearTimeout(idleTimer);
+
+      if (myStatus === "away" && socket && currentUser.id) {
+        setMyStatus("online");
+        socket.emit("presence-update", { userId: currentUser.id, status: "online" });
+        fetch("/api/users/presence", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: "online" }),
+        }).catch(() => {});
+      }
+
+      idleTimer = setTimeout(() => {
+        if (currentUser.id) {
+          setMyStatus("away");
+          if (socket) {
+            socket.emit("presence-update", { userId: currentUser.id, status: "away" });
+          }
+          fetch("/api/users/presence", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status: "away" }),
+          }).catch(() => {});
+        }
+      }, 5 * 60 * 1000);
+    };
+
+    const activityEvents = ["mousemove", "keydown", "mousedown", "touchstart", "scroll"];
+    activityEvents.forEach(evt => window.addEventListener(evt, resetIdleTimer));
+    resetIdleTimer();
+
+    const handleBeforeUnload = () => {
+      if (currentUser.id) {
+        navigator.sendBeacon(
+          "/api/users/presence",
+          JSON.stringify({ status: "offline" })
+        );
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      clearTimeout(idleTimer);
+      activityEvents.forEach(evt => window.removeEventListener(evt, resetIdleTimer));
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [currentUser.id, myStatus, socket]);
+
   useEffect(() => {
     if (!socket) return;
     socket.emit("join-user", currentUser.id);

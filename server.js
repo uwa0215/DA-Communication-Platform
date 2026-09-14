@@ -7,6 +7,9 @@ const { createClient } = require("redis");
 const { createAdapter } = require("@socket.io/redis-adapter");
 const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
+
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "0.0.0.0";
 const port = process.env.PORT || 3000;
@@ -168,12 +171,34 @@ app.prepare().then(() => {
   // Make io accessible globally
   global.io = io;
 
+  // Active socket tracker: userId => Set of socket.id
+  const activeUserSockets = new Map();
+
   io.on("connection", (socket) => {
     console.log("🔌 Client connected:", socket.id);
 
-    socket.on("join-user", (userId) => {
+    socket.on("join-user", async (userId) => {
+      if (!userId) return;
+      socket.userId = userId;
       socket.join(`user:${userId}`);
-      console.log(`User ${userId} joined their room`);
+
+      if (!activeUserSockets.has(userId)) {
+        activeUserSockets.set(userId, new Set());
+      }
+      const userSocketsSet = activeUserSockets.get(userId);
+      userSocketsSet.add(socket.id);
+
+      if (userSocketsSet.size === 1) {
+        try {
+          await prisma.user.update({
+            where: { id: userId },
+            data: { status: "online" }
+          });
+        } catch (e) {
+          console.error("Failed to update status on connect:", e);
+        }
+        io.emit("user-presence", { userId, status: "online" });
+      }
     });
 
     socket.on("join-channel", (channelId) => {
@@ -192,7 +217,16 @@ app.prepare().then(() => {
       socket.leave(`dm:${roomId}`);
     });
 
-    socket.on("presence-update", ({ userId, status }) => {
+    socket.on("presence-update", async ({ userId, status }) => {
+      if (!userId || !status) return;
+      try {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { status }
+        });
+      } catch (e) {
+        console.error("Failed to update presence status:", e);
+      }
       io.emit("user-presence", { userId, status });
     });
 
@@ -244,8 +278,26 @@ app.prepare().then(() => {
       });
     });
 
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async () => {
       console.log("🔌 Client disconnected:", socket.id);
+      if (socket.userId && activeUserSockets.has(socket.userId)) {
+        const userSocketsSet = activeUserSockets.get(socket.userId);
+        userSocketsSet.delete(socket.id);
+
+        if (userSocketsSet.size === 0) {
+          activeUserSockets.delete(socket.userId);
+          const uId = socket.userId;
+          try {
+            await prisma.user.update({
+              where: { id: uId },
+              data: { status: "offline" }
+            });
+          } catch (e) {
+            console.error("Failed to update status on disconnect:", e);
+          }
+          io.emit("user-presence", { userId: uId, status: "offline" });
+        }
+      }
     });
   });
 
