@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import daLogo from "../../../../public/New Logo.png";
 import { Mail, ShieldCheck, ArrowLeft, KeyRound } from "lucide-react";
 import loginStyles from "../login/login.module.css";
 
@@ -47,7 +48,7 @@ export default function ForgotPasswordPage() {
           {/* Logo */}
           <div className={loginStyles.logoWrap}>
             <div className={loginStyles.logoImgWrap}>
-              <Image src="/logo.png" alt="DA CALABARZON Logo" className={loginStyles.logoImg} width={100} height={100} />
+              <Image src={daLogo} alt="DA CALABARZON Logo" className={loginStyles.logoImg} width={100} height={100} />
             </div>
             <div className={loginStyles.logoText}>DA CALABARZON</div>
             <div className={loginStyles.logoSub}>Password Recovery</div>

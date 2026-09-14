@@ -8,49 +8,27 @@ import styles from "./app.module.css";
 
 import { SessionProvider } from "next-auth/react";
 import { CallProvider } from "@/components/CallProvider";
-import { SWRConfig } from "swr";
-import { fetcher } from "@/lib/fetcher";
-
-export const dynamic = "force-dynamic";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const currentUser = {
-    id: session.user.id || "",
-    name: session.user.name || "User",
-    email: session.user.email || "",
-    image: (session.user as any).image || (session.user as any).avatar || "",
-    status: (session.user as any).status || "online",
-    role: (session.user as any).role || "USER",
-  };
-
   return (
     <SessionProvider session={session}>
-      <SWRConfig
-        value={{
-          fetcher,
-          revalidateOnFocus: false,
-          dedupingInterval: 10000,
-          keepPreviousData: true,
-        }}
-      >
-        <UIProvider>
-          <CallProvider>
-            <div className={styles.appShell}>
-              <Topbar currentUser={currentUser as any} />
-              <div className={styles.appBody}>
-                <Sidebar currentUser={currentUser as any} />
-                <main className={styles.mainContent}>
-                  {children}
-                </main>
-              </div>
-              <GlobalSearchModal />
+      <UIProvider>
+        <CallProvider>
+          <div className={styles.appShell}>
+            <Topbar currentUser={session.user as any} />
+            <div className={styles.appBody}>
+              <Sidebar currentUser={session.user as any} />
+              <main className={styles.mainContent}>
+                {children}
+              </main>
             </div>
-          </CallProvider>
-        </UIProvider>
-      </SWRConfig>
+            <GlobalSearchModal />
+          </div>
+        </CallProvider>
+      </UIProvider>
     </SessionProvider>
   );
 }

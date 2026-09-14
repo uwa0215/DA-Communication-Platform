@@ -1,10 +1,11 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
+import daLogo from "../../../../public/New Logo.png";
 import { Eye, EyeOff, ShieldCheck, Globe, Zap } from "lucide-react";
 import s from "./login.module.css";
 
@@ -29,31 +30,7 @@ function LoginContent() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
-    try {
-      const res = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-        redirectTo: "/dashboard",
-      });
-
-      if (res?.error) {
-        setLoading(false);
-        if (res.error === "CredentialsSignin") {
-          setError("Invalid email or password. Please try again.");
-        } else if (res.error === "pending_approval") {
-          setError("Your account is pending admin approval.");
-        } else {
-          setError("Authentication failed. Please check your credentials.");
-        }
-      } else {
-        window.location.href = "/dashboard";
-      }
-    } catch (err: any) {
-      setLoading(false);
-      setError("An unexpected login error occurred. Please try again.");
-    }
+    await signIn("credentials", { email, password, redirectTo: "/dashboard" });
   }
 
   return (
@@ -80,7 +57,7 @@ function LoginContent() {
         <div className={s.mainCard}>
           <div className={s.logoWrap}>
             <div className={s.logoImgWrap}>
-              <Image src="/logo.png" alt="DA CALABARZON Logo" className={s.logoImg} width={100} height={100} />
+              <Image src={daLogo} alt="DA CALABARZON Logo" className={s.logoImg} width={100} height={100} />
             </div>
             <div className={s.logoText}>DA CALABARZON</div>
             <div className={s.logoSub}>Employee Portal · Trellis</div>

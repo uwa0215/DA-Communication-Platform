@@ -6,6 +6,7 @@ import Link from "next/link";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { Clock, ArrowLeft, CheckCircle2, ShieldAlert } from "lucide-react";
+import daLogo from "../../../../public/New Logo.png";
 import styles from "../login/auth.module.css";
 
 function PendingContent() {
@@ -35,7 +36,7 @@ function PendingContent() {
         <div className={styles.formCard} style={{ maxWidth: 500, textAlign: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
             <Image
-              src="/logo.png"
+              src={daLogo}
               alt="DA Logo"
               className={`${styles.leftDaLogoImg} theme-logo`}
               width={80}

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import agriLogo from "../../../public/New Logo.png";
 import { Search, Bell, Settings, LogOut, ChevronDown, Shield, Menu, Moon, Sun, Monitor, HelpCircle, User, MessageSquare, Check } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useSocket } from "@/hooks/useSocket";
@@ -115,8 +116,8 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
     return () => clearTimeout(delay);
   }, [searchQuery]);
 
-  const initials = (name?: string) =>
-    (name || "").trim().split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) || "U";
+  const initials = (name: string) =>
+    name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
 
   return (
     <header className={styles.topbar}>
@@ -125,7 +126,7 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
           <Menu size={24} />
         </button>
         <div className={styles.logoWrap}>
-          <Image src="/logo.png" alt="Agri Logo" width={60} height={60} className="theme-logo" style={{ objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} unoptimized priority />
+          <Image src={agriLogo} alt="Agri Logo" width={60} height={60} className="theme-logo" style={{ objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} unoptimized priority />
         </div>
         <span className={styles.brandName}>Trellis</span>
       </div>

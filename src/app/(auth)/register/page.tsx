@@ -1,8 +1,9 @@
-"use client";
+﻿"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import daLogo from "../../../../public/New Logo.png";
 import { User, Mail, Lock, Briefcase, Building2, Eye, EyeOff, ShieldCheck, Globe, Zap } from "lucide-react";
 import s from "../login/login.module.css";
 import rs from "./register.module.css";
@@ -71,7 +72,7 @@ export default function RegisterPage() {
           {/* Logo with proper overflow to show rings */}
           <div className={s.logoWrap}>
             <div className={rs.logoImgWrap}>
-              <Image src="/logo.png" alt="DA CALABARZON Logo" className={s.logoImg} width={100} height={100} />
+              <Image src={daLogo} alt="DA CALABARZON Logo" className={s.logoImg} width={100} height={100} />
             </div>
             <div className={s.logoText}>DA CALABARZON</div>
             <div className={s.logoSub}>Create your Trellis account</div>

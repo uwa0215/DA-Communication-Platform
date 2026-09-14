@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import daLogo from "../../../../public/New Logo.png";
 import { Lock, ShieldCheck, ArrowRight, Eye, EyeOff, Hash } from "lucide-react";
 import styles from "../login/auth.module.css";
 
@@ -79,7 +80,7 @@ export default function ResetPasswordPage() {
           <div className={styles.leftLogo}>
             <div className={styles.leftDaLogoWrap}>
               <Image
-                src="/logo.png"
+                src={daLogo}
                 alt="Department of Agriculture CALABARZON"
                 className={`${styles.leftDaLogoImg} theme-logo`}
                 width={260}

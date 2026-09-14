@@ -5,43 +5,14 @@ const next = require("next");
 const { Server } = require("socket.io");
 const { createClient } = require("redis");
 const { createAdapter } = require("@socket.io/redis-adapter");
-const { Pool } = require("pg");
+const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = "localhost";
+const hostname = "0.0.0.0";
 const port = process.env.PORT || 3000;
 
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
-
-// Safe PostgreSQL pool for status updates (lazy initialized, crash-proof)
-let dbPool = null;
-function getDbPool() {
-  if (!dbPool && process.env.DATABASE_URL) {
-    try {
-      dbPool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-        ssl: (process.env.DATABASE_URL || '').includes('sslmode=require') ? { rejectUnauthorized: false } : false,
-        max: 5,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 5000,
-      });
-    } catch (e) {
-      console.error("Failed to initialize PG pool in server.js:", e.message);
-    }
-  }
-  return dbPool;
-}
-
-async function updateUserStatusDB(userId, status) {
-  const pool = getDbPool();
-  if (!pool || !userId) return;
-  try {
-    await pool.query('UPDATE "User" SET "status" = $1, "updatedAt" = NOW() WHERE "id" = $2', [status, userId]);
-  } catch (e) {
-    console.error("Presence DB update error:", e.message);
-  }
-}
 
 app.prepare().then(() => {
   const httpServer = createServer((req, res) => {
@@ -63,6 +34,7 @@ app.prepare().then(() => {
 
           const formidable = require("formidable");
           const fs = require("fs");
+          const path = require("path");
           const os = require("os");
           const { v2: cloudinary } = require("cloudinary");
           
@@ -78,63 +50,63 @@ app.prepare().then(() => {
             maxFileSize: 50 * 1024 * 1024, // 50MB limit
           });
 
-          form.parse(req, async (err, fields, files) => {
-            if (err) {
-              console.error("Formidable upload error:", err);
-              res.writeHead(500, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ error: err.message || "Upload size limit exceeded" }));
-              return;
-            }
-
-            const fileArray = files.file;
-            const file = Array.isArray(fileArray) ? fileArray[0] : fileArray;
-
-            if (!file) {
-              res.writeHead(400, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ error: "No file uploaded" }));
-              return;
-            }
-
-            const originalName = file.originalFilename || "upload";
-            
-            try {
-              const safeName = originalName.replace(/[^a-zA-Z0-9.-]/g, "_");
-              
-              const result = await cloudinary.uploader.upload(file.filepath, {
-                folder: "companychat/uploads",
-                resource_type: "auto",
-                public_id: `${Date.now()}-${safeName}`
-              });
-              
-              try {
-                 if (fs.existsSync(file.filepath)) fs.unlinkSync(file.filepath);
-              } catch(e) {}
-
-              res.writeHead(200, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({
-                url: result.secure_url,
-                fileName: originalName,
-                fileType: file.mimetype || "application/octet-stream"
-              }));
-
-            } catch (uploadErr) {
-              console.error("Upload processing error:", uploadErr);
-              try {
-                 if (fs.existsSync(file.filepath)) fs.unlinkSync(file.filepath);
-              } catch(e) {}
-              res.writeHead(500, { "Content-Type": "application/json" });
-              res.end(JSON.stringify({ error: "Failed to store uploaded file" }));
-            }
-          });
-        }).catch((err) => {
-          console.error("Token verification error:", err);
+      form.parse(req, async (err, fields, files) => {
+        if (err) {
+          console.error("Formidable upload error:", err);
           res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Failed to authenticate request" }));
-        });
+          res.end(JSON.stringify({ error: err.message || "Upload size limit exceeded" }));
+          return;
+        }
+
+        const fileArray = files.file;
+        const file = Array.isArray(fileArray) ? fileArray[0] : fileArray;
+
+        if (!file) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "No file uploaded" }));
+          return;
+        }
+
+        const originalName = file.originalFilename || "upload";
+        
+        try {
+          const safeName = originalName.replace(/[^a-zA-Z0-9.-]/g, "_");
+          
+          const result = await cloudinary.uploader.upload(file.filepath, {
+            folder: "companychat/uploads",
+            resource_type: "auto",
+            public_id: `${Date.now()}-${safeName}`
+          });
+          
+          try {
+             if (fs.existsSync(file.filepath)) fs.unlinkSync(file.filepath);
+          } catch(e) {}
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({
+            url: result.secure_url,
+            fileName: originalName,
+            fileType: file.mimetype || "application/octet-stream"
+          }));
+
+        } catch (uploadErr) {
+          console.error("Upload processing error:", uploadErr);
+          try {
+             if (fs.existsSync(file.filepath)) fs.unlinkSync(file.filepath);
+          } catch(e) {}
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Failed to store uploaded file" }));
+        }
+      });
+      }).catch((err) => {
+        console.error("Token verification error:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Failed to authenticate request" }));
+      });
       return;
     }
 
-    // Serve uploaded files dynamically
+    // Serve uploaded files dynamically (bypasses Next.js static cache limitations in production)
     if (pathname && pathname.startsWith("/uploads/")) {
       const fs = require("fs");
       const path = require("path");
@@ -196,27 +168,12 @@ app.prepare().then(() => {
   // Make io accessible globally
   global.io = io;
 
-  // Active socket tracker: userId => Set of socket.id
-  const activeUserSockets = new Map();
-
   io.on("connection", (socket) => {
     console.log("🔌 Client connected:", socket.id);
 
-    socket.on("join-user", async (userId) => {
-      if (!userId) return;
-      socket.userId = userId;
+    socket.on("join-user", (userId) => {
       socket.join(`user:${userId}`);
-
-      if (!activeUserSockets.has(userId)) {
-        activeUserSockets.set(userId, new Set());
-      }
-      const userSocketsSet = activeUserSockets.get(userId);
-      userSocketsSet.add(socket.id);
-
-      if (userSocketsSet.size === 1) {
-        await updateUserStatusDB(userId, "online");
-        io.emit("user-presence", { userId, status: "online" });
-      }
+      console.log(`User ${userId} joined their room`);
     });
 
     socket.on("join-channel", (channelId) => {
@@ -235,9 +192,7 @@ app.prepare().then(() => {
       socket.leave(`dm:${roomId}`);
     });
 
-    socket.on("presence-update", async ({ userId, status }) => {
-      if (!userId || !status) return;
-      await updateUserStatusDB(userId, status);
+    socket.on("presence-update", ({ userId, status }) => {
       io.emit("user-presence", { userId, status });
     });
 
@@ -289,24 +244,13 @@ app.prepare().then(() => {
       });
     });
 
-    socket.on("disconnect", async () => {
+    socket.on("disconnect", () => {
       console.log("🔌 Client disconnected:", socket.id);
-      if (socket.userId && activeUserSockets.has(socket.userId)) {
-        const userSocketsSet = activeUserSockets.get(socket.userId);
-        userSocketsSet.delete(socket.id);
-
-        if (userSocketsSet.size === 0) {
-          activeUserSockets.delete(socket.userId);
-          const uId = socket.userId;
-          await updateUserStatusDB(uId, "offline");
-          io.emit("user-presence", { userId: uId, status: "offline" });
-        }
-      }
     });
   });
 
-  httpServer.listen(port, "0.0.0.0", () => {
-    console.log(`\n🚀 CompanyChat running at http://0.0.0.0:${port}`);
+  httpServer.listen(port, () => {
+    console.log(`\n🚀 CompanyChat running at http://${hostname}:${port}`);
     console.log(`⚡ Socket.io WebSocket server ready`);
   });
 });

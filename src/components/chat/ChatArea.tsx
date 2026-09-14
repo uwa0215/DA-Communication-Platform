@@ -120,25 +120,6 @@ export default function ChatArea({
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [liveDmStatus, setLiveDmStatus] = useState<string>(dmUser?.status || "offline");
-
-  useEffect(() => {
-    setLiveDmStatus(dmUser?.status || "offline");
-  }, [dmUser?.status, dmUserId]);
-
-  useEffect(() => {
-    if (!socket || !dmUserId) return;
-    const handlePresence = ({ userId, status }: { userId: string; status: string }) => {
-      if (userId === dmUserId) {
-        setLiveDmStatus(status);
-      }
-    };
-    socket.on("user-presence", handlePresence);
-    return () => {
-      socket.off("user-presence", handlePresence);
-    };
-  }, [socket, dmUserId]);
-
   const apiBase = channelId ? `/api/channels/${channelId}/messages` : `/api/dm/${dmUserId}`;
   const roomId = dmUserId ? [currentUserId, dmUserId].sort().join(":") : null;
 
@@ -668,7 +649,7 @@ export default function ChatArea({
           {channelName
             ? <Hash size={20} className={styles.chatHeaderIcon} />
             : <div 
-                className={`avatar avatar-sm status-${liveDmStatus}`}
+                className={`avatar avatar-sm status-${dmUser?.status || "offline"}`}
                 style={{ cursor: "pointer" }}
                 onClick={() => dmUser && setSelectedUserForProfile(dmUser)}
               >
@@ -692,9 +673,9 @@ export default function ChatArea({
                     {dmUser.jobTitle} {dmUser.department || dmUser.unit ? `(${dmUser.department || dmUser.unit})` : ""}
                   </span>
                 )}
-                <span className={`status-${liveDmStatus}`} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <span className={`status-${dmUser.status}`} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                   <span className="status-dot" style={{ position: "relative", width: 8, height: 8, border: "none" }} />
-                  {liveDmStatus}
+                  {dmUser.status}
                 </span>
               </p>
             )}
