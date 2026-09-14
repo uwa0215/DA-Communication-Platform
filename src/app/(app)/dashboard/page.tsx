@@ -8,6 +8,8 @@ import Image from "next/image";
 import styles from "./dashboard.module.css";
 import { getPhilippineHolidays } from "@/lib/philippineHolidays";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   let userCount = 0;
   let channelCount = 0;
