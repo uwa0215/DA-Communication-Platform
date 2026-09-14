@@ -8,7 +8,7 @@ const { createAdapter } = require("@socket.io/redis-adapter");
 const { Pool } = require("pg");
 
 const dev = process.env.NODE_ENV !== "production";
-const hostname = "0.0.0.0";
+const hostname = "localhost";
 const port = process.env.PORT || 3000;
 
 const app = next({ dev, hostname, port });
@@ -305,8 +305,8 @@ app.prepare().then(() => {
     });
   });
 
-  httpServer.listen(port, () => {
-    console.log(`\n🚀 CompanyChat running at http://${hostname}:${port}`);
+  httpServer.listen(port, "0.0.0.0", () => {
+    console.log(`\n🚀 CompanyChat running at http://0.0.0.0:${port}`);
     console.log(`⚡ Socket.io WebSocket server ready`);
   });
 });

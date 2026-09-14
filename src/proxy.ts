@@ -11,11 +11,15 @@ export default async function middleware(req: NextRequest) {
   const isPublic = publicPaths.some(p => pathname.startsWith(p));
 
   if (!token && !isPublic) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    const loginUrl = req.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    return NextResponse.redirect(loginUrl);
   }
 
   if (token && (pathname === "/login" || pathname === "/register")) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
+    const dashboardUrl = req.nextUrl.clone();
+    dashboardUrl.pathname = "/dashboard";
+    return NextResponse.redirect(dashboardUrl);
   }
 
   return NextResponse.next();

@@ -13,6 +13,10 @@ if (!process.env.AUTH_SECRET && !process.env.NEXTAUTH_SECRET) {
   process.env.AUTH_SECRET = "trellis-calabarzon-production-fallback-secret-key-2026";
   process.env.NEXTAUTH_SECRET = "trellis-calabarzon-production-fallback-secret-key-2026";
 }
+if (!process.env.AUTH_URL && !process.env.NEXTAUTH_URL) {
+  process.env.AUTH_URL = "https://da-communication-platform-production.up.railway.app";
+  process.env.NEXTAUTH_URL = "https://da-communication-platform-production.up.railway.app";
+}
 process.env.AUTH_TRUST_HOST = "true";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
