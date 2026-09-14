@@ -5,10 +5,7 @@ const next = require("next");
 const { Server } = require("socket.io");
 const { createClient } = require("redis");
 const { createAdapter } = require("@socket.io/redis-adapter");
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
-
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const { Pool } = require("pg");
 
 const dev = process.env.NODE_ENV !== "production";
 const hostname = "0.0.0.0";
@@ -16,6 +13,35 @@ const port = process.env.PORT || 3000;
 
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
+
+// Safe PostgreSQL pool for status updates (lazy initialized, crash-proof)
+let dbPool = null;
+function getDbPool() {
+  if (!dbPool && process.env.DATABASE_URL) {
+    try {
+      dbPool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+        max: 5,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 5000,
+      });
+    } catch (e) {
+      console.error("Failed to initialize PG pool in server.js:", e.message);
+    }
+  }
+  return dbPool;
+}
+
+async function updateUserStatusDB(userId, status) {
+  const pool = getDbPool();
+  if (!pool || !userId) return;
+  try {
+    await pool.query('UPDATE "User" SET "status" = $1, "updatedAt" = NOW() WHERE "id" = $2', [status, userId]);
+  } catch (e) {
+    console.error("Presence DB update error:", e.message);
+  }
+}
 
 app.prepare().then(() => {
   const httpServer = createServer((req, res) => {
@@ -37,7 +63,6 @@ app.prepare().then(() => {
 
           const formidable = require("formidable");
           const fs = require("fs");
-          const path = require("path");
           const os = require("os");
           const { v2: cloudinary } = require("cloudinary");
           
@@ -53,63 +78,63 @@ app.prepare().then(() => {
             maxFileSize: 50 * 1024 * 1024, // 50MB limit
           });
 
-      form.parse(req, async (err, fields, files) => {
-        if (err) {
-          console.error("Formidable upload error:", err);
-          res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: err.message || "Upload size limit exceeded" }));
-          return;
-        }
+          form.parse(req, async (err, fields, files) => {
+            if (err) {
+              console.error("Formidable upload error:", err);
+              res.writeHead(500, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: err.message || "Upload size limit exceeded" }));
+              return;
+            }
 
-        const fileArray = files.file;
-        const file = Array.isArray(fileArray) ? fileArray[0] : fileArray;
+            const fileArray = files.file;
+            const file = Array.isArray(fileArray) ? fileArray[0] : fileArray;
 
-        if (!file) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "No file uploaded" }));
-          return;
-        }
+            if (!file) {
+              res.writeHead(400, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: "No file uploaded" }));
+              return;
+            }
 
-        const originalName = file.originalFilename || "upload";
-        
-        try {
-          const safeName = originalName.replace(/[^a-zA-Z0-9.-]/g, "_");
-          
-          const result = await cloudinary.uploader.upload(file.filepath, {
-            folder: "companychat/uploads",
-            resource_type: "auto",
-            public_id: `${Date.now()}-${safeName}`
+            const originalName = file.originalFilename || "upload";
+            
+            try {
+              const safeName = originalName.replace(/[^a-zA-Z0-9.-]/g, "_");
+              
+              const result = await cloudinary.uploader.upload(file.filepath, {
+                folder: "companychat/uploads",
+                resource_type: "auto",
+                public_id: `${Date.now()}-${safeName}`
+              });
+              
+              try {
+                 if (fs.existsSync(file.filepath)) fs.unlinkSync(file.filepath);
+              } catch(e) {}
+
+              res.writeHead(200, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({
+                url: result.secure_url,
+                fileName: originalName,
+                fileType: file.mimetype || "application/octet-stream"
+              }));
+
+            } catch (uploadErr) {
+              console.error("Upload processing error:", uploadErr);
+              try {
+                 if (fs.existsSync(file.filepath)) fs.unlinkSync(file.filepath);
+              } catch(e) {}
+              res.writeHead(500, { "Content-Type": "application/json" });
+              res.end(JSON.stringify({ error: "Failed to store uploaded file" }));
+            }
           });
-          
-          try {
-             if (fs.existsSync(file.filepath)) fs.unlinkSync(file.filepath);
-          } catch(e) {}
-
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({
-            url: result.secure_url,
-            fileName: originalName,
-            fileType: file.mimetype || "application/octet-stream"
-          }));
-
-        } catch (uploadErr) {
-          console.error("Upload processing error:", uploadErr);
-          try {
-             if (fs.existsSync(file.filepath)) fs.unlinkSync(file.filepath);
-          } catch(e) {}
+        }).catch((err) => {
+          console.error("Token verification error:", err);
           res.writeHead(500, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Failed to store uploaded file" }));
-        }
-      });
-      }).catch((err) => {
-        console.error("Token verification error:", err);
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Failed to authenticate request" }));
-      });
+          res.end(JSON.stringify({ error: "Failed to authenticate request" }));
+        });
       return;
     }
 
-    // Serve uploaded files dynamically (bypasses Next.js static cache limitations in production)
+    // Serve uploaded files dynamically
     if (pathname && pathname.startsWith("/uploads/")) {
       const fs = require("fs");
       const path = require("path");
@@ -189,14 +214,7 @@ app.prepare().then(() => {
       userSocketsSet.add(socket.id);
 
       if (userSocketsSet.size === 1) {
-        try {
-          await prisma.user.update({
-            where: { id: userId },
-            data: { status: "online" }
-          });
-        } catch (e) {
-          console.error("Failed to update status on connect:", e);
-        }
+        await updateUserStatusDB(userId, "online");
         io.emit("user-presence", { userId, status: "online" });
       }
     });
@@ -219,14 +237,7 @@ app.prepare().then(() => {
 
     socket.on("presence-update", async ({ userId, status }) => {
       if (!userId || !status) return;
-      try {
-        await prisma.user.update({
-          where: { id: userId },
-          data: { status }
-        });
-      } catch (e) {
-        console.error("Failed to update presence status:", e);
-      }
+      await updateUserStatusDB(userId, status);
       io.emit("user-presence", { userId, status });
     });
 
@@ -287,14 +298,7 @@ app.prepare().then(() => {
         if (userSocketsSet.size === 0) {
           activeUserSockets.delete(socket.userId);
           const uId = socket.userId;
-          try {
-            await prisma.user.update({
-              where: { id: uId },
-              data: { status: "offline" }
-            });
-          } catch (e) {
-            console.error("Failed to update status on disconnect:", e);
-          }
+          await updateUserStatusDB(uId, "offline");
           io.emit("user-presence", { userId: uId, status: "offline" });
         }
       }
