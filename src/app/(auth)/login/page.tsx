@@ -29,7 +29,31 @@ function LoginContent() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    await signIn("credentials", { email, password, redirectTo: "/dashboard" });
+
+    try {
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+        redirectTo: "/dashboard",
+      });
+
+      if (res?.error) {
+        setLoading(false);
+        if (res.error === "CredentialsSignin") {
+          setError("Invalid email or password. Please try again.");
+        } else if (res.error === "pending_approval") {
+          setError("Your account is pending admin approval.");
+        } else {
+          setError("Authentication failed. Please check your credentials.");
+        }
+      } else {
+        window.location.href = "/dashboard";
+      }
+    } catch (err: any) {
+      setLoading(false);
+      setError("An unexpected login error occurred. Please try again.");
+    }
   }
 
   return (
