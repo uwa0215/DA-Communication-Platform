@@ -6,6 +6,17 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
+function getSslConfig() {
+  const url = process.env.DATABASE_URL || '';
+  if (url.includes('sslmode=disable') || url.includes('localhost') || url.includes('127.0.0.1') || url.includes('railway.internal')) {
+    return undefined;
+  }
+  if (url.includes('sslmode=require') || url.includes('neon.tech') || url.includes('supabase') || url.includes('render.com')) {
+    return { rejectUnauthorized: false };
+  }
+  return process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined;
+}
+
 function createPrismaClient() {
   const isProduction = process.env.NODE_ENV === 'production';
   const pool = new Pool({ 
@@ -13,7 +24,7 @@ function createPrismaClient() {
     max: isProduction ? 50 : 10,
     idleTimeoutMillis: isProduction ? 60000 : 30000,
     connectionTimeoutMillis: isProduction ? 10000 : 5000,
-    ssl: isProduction ? { rejectUnauthorized: false } : undefined,
+    ssl: getSslConfig(),
   });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter });
@@ -22,3 +33,4 @@ function createPrismaClient() {
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
 globalForPrisma.prisma = prisma;
+

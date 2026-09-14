@@ -4,15 +4,23 @@ import * as schema from './schema';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+function getSslConfig() {
+  const url = process.env.DATABASE_URL || '';
+  if (url.includes('sslmode=disable') || url.includes('localhost') || url.includes('127.0.0.1') || url.includes('railway.internal')) {
+    return undefined;
+  }
+  if (url.includes('sslmode=require') || url.includes('neon.tech') || url.includes('supabase') || url.includes('render.com')) {
+    return { rejectUnauthorized: false };
+  }
+  return isProduction ? { rejectUnauthorized: false } : undefined;
+}
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL || "postgresql://dummy:dummy@dummy/dummy",
-  // Production: more connections, longer timeouts for reliability
-  // Development: fewer connections, shorter timeouts for faster feedback
   max: isProduction ? 50 : 10,
   idleTimeoutMillis: isProduction ? 60000 : 30000,
   connectionTimeoutMillis: isProduction ? 10000 : 5000,
-  // Neon serverless requires SSL in production
-  ssl: isProduction ? { rejectUnauthorized: false } : undefined,
+  ssl: getSslConfig(),
 });
 
 // Graceful shutdown: drain pool on process exit
@@ -24,3 +32,4 @@ process.on('SIGINT', () => {
 });
 
 export const db = drizzle(pool, { schema });
+

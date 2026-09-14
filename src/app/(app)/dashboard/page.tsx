@@ -2,77 +2,107 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users, channels, meetings, meetingParticipants, messages } from "@/lib/schema";
 import { sql, eq, ne, and, gte, lte } from "drizzle-orm";
-import { Megaphone, Link as LinkIcon, Users, FileText, Shield, Zap, ShieldCheck, Globe, MessageSquare, CalendarDays, Hash, UserPlus, ArrowRight, Clock, TrendingUp } from "lucide-react";
+import { Megaphone, Users, ShieldCheck, CalendarDays, Hash, UserPlus, ArrowRight, Clock, TrendingUp, Shield, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import styles from "./dashboard.module.css";
 import { getPhilippineHolidays } from "@/lib/philippineHolidays";
 
 export default async function DashboardPage() {
-  const session = await auth();
-  const user = session?.user as any;
+  let userCount = 0;
+  let channelCount = 0;
+  let meetingCount = 0;
+  let upcomingMeetings: any[] = [];
+  let upcomingHolidays: any[] = [];
+  let recentMessages: any[] = [];
+  let firstName = "there";
 
-  // Get current time for greeting
   const now = new Date();
   const hour = now.getHours();
   let greeting = "Good morning";
   if (hour >= 12 && hour < 17) greeting = "Good afternoon";
   else if (hour >= 17) greeting = "Good evening";
 
-  // Fetch stats using Drizzle count
-  const [userCountRes, channelCountRes, meetingCountRes] = await Promise.all([
-    db.select({ count: sql<number>`cast(count(${users.id}) as integer)` }).from(users).where(ne(users.status, "offline")),
-    db.select({ count: sql<number>`cast(count(${channels.id}) as integer)` }).from(channels),
-    db.select({ count: sql<number>`cast(count(${meetings.id}) as integer)` }).from(meetings).where(
-      and(
-        gte(meetings.startTime, new Date(now.getFullYear(), now.getMonth(), now.getDate())),
-        lte(meetings.endTime, new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1))
-      )
-    )
-  ]);
-  const userCount = userCountRes[0].count;
-  const channelCount = channelCountRes[0].count;
-  const meetingCount = meetingCountRes[0].count;
+  try {
+    const session = await auth();
+    const user = session?.user as any;
+    if (user?.name) {
+      firstName = user.name.split(" ")[0] || "there";
+    }
 
-  // Fetch upcoming meetings for this user
-  const userMeetingIds = (await db.select({ meetingId: meetingParticipants.meetingId })
-    .from(meetingParticipants)
-    .where(eq(meetingParticipants.userId, user?.id))).map(x => x.meetingId);
+    // 1. Fetch Stats
+    try {
+      const [userCountRes, channelCountRes, meetingCountRes] = await Promise.all([
+        db.select({ count: sql<number>`cast(count(${users.id}) as integer)` }).from(users).where(ne(users.status, "offline")),
+        db.select({ count: sql<number>`cast(count(${channels.id}) as integer)` }).from(channels),
+        db.select({ count: sql<number>`cast(count(${meetings.id}) as integer)` }).from(meetings).where(
+          and(
+            gte(meetings.startTime, new Date(now.getFullYear(), now.getMonth(), now.getDate())),
+            lte(meetings.endTime, new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1))
+          )
+        )
+      ]);
+      userCount = userCountRes[0]?.count ?? 0;
+      channelCount = channelCountRes[0]?.count ?? 0;
+      meetingCount = meetingCountRes[0]?.count ?? 0;
+    } catch (err) {
+      console.error("[Dashboard] Error fetching stats:", err);
+    }
 
-  let upcomingMeetings: any[] = [];
-  if (userMeetingIds.length > 0) {
-    upcomingMeetings = await db.query.meetings.findMany({
-      where: (m, { and, gte, inArray }) => and(
-        gte(m.startTime, now),
-        inArray(m.id, userMeetingIds)
-      ),
-      with: {
-        createdBy: { columns: { name: true, avatar: true } },
-        participants: { with: { user: { columns: { name: true, avatar: true } } } }
-      },
-      orderBy: (m, { asc }) => [asc(m.startTime)],
-      limit: 3
-    });
+    // 2. Fetch User Meetings
+    if (user?.id) {
+      try {
+        const userMeetingIds = (await db.select({ meetingId: meetingParticipants.meetingId })
+          .from(meetingParticipants)
+          .where(eq(meetingParticipants.userId, user.id))).map(x => x.meetingId);
+
+        if (userMeetingIds.length > 0) {
+          upcomingMeetings = await db.query.meetings.findMany({
+            where: (m, { and, gte, inArray }) => and(
+              gte(m.startTime, now),
+              inArray(m.id, userMeetingIds)
+            ),
+            with: {
+              createdBy: { columns: { name: true, avatar: true } },
+              participants: { with: { user: { columns: { name: true, avatar: true } } } }
+            },
+            orderBy: (m, { asc }) => [asc(m.startTime)],
+            limit: 3
+          });
+        }
+      } catch (err) {
+        console.error("[Dashboard] Error fetching upcoming meetings:", err);
+      }
+    }
+
+    // 3. Fetch Holidays
+    try {
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      upcomingHolidays = getPhilippineHolidays(now.getFullYear())
+        .filter(h => h.date >= todayStr)
+        .sort((a, b) => a.date.localeCompare(b.date))
+        .slice(0, 3);
+    } catch (err) {
+      console.error("[Dashboard] Error fetching holidays:", err);
+    }
+
+    // 4. Fetch Activity Feed Messages
+    try {
+      recentMessages = await db.query.messages.findMany({
+        with: {
+          sender: { columns: { name: true, avatar: true } },
+          channel: { columns: { name: true } }
+        },
+        orderBy: (msg, { desc }) => [desc(msg.createdAt)],
+        limit: 5
+      });
+    } catch (err) {
+      console.error("[Dashboard] Error fetching recent messages:", err);
+    }
+
+  } catch (globalErr) {
+    console.error("[Dashboard] Unhandled error during server component execution:", globalErr);
   }
-
-  // Get upcoming holidays
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  const upcomingHolidays = getPhilippineHolidays(now.getFullYear())
-    .filter(h => h.date >= todayStr)
-    .sort((a, b) => a.date.localeCompare(b.date))
-    .slice(0, 3);
-
-  // Fetch recent channel messages for activity feed
-  const recentMessages = await db.query.messages.findMany({
-    with: {
-      sender: { columns: { name: true, avatar: true } },
-      channel: { columns: { name: true } }
-    },
-    orderBy: (msg, { desc }) => [desc(msg.createdAt)],
-    limit: 5
-  });
-
-  const firstName = user?.name?.split(' ')[0] || 'there';
 
   return (
     <div className={styles.dashboard}>
@@ -185,16 +215,18 @@ export default async function DashboardPage() {
               <p className={styles.emptyState}>No upcoming events. Enjoy your day!</p>
             )}
             {upcomingMeetings.map(m => {
+              if (!m?.startTime) return null;
               const start = new Date(m.startTime);
-              const timeStr = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-              const dateStr = start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+              const timeStr = isNaN(start.getTime()) ? '' : start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              const dateStr = isNaN(start.getTime()) ? '' : start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+              const participantCount = m.participants?.length || 0;
               return (
                 <Link key={m.id} href="/calendar" className={styles.upcomingItem}>
                   <div className={styles.upcomingDot} />
                   <div className={styles.upcomingInfo}>
-                    <span className={styles.upcomingTitle}>{m.title}</span>
+                    <span className={styles.upcomingTitle}>{m.title || 'Untitled Meeting'}</span>
                     <span className={styles.upcomingMeta}>
-                      <Clock size={12} /> {dateStr} · {timeStr} · {m.participants.length} attendee{m.participants.length !== 1 ? 's' : ''}
+                      <Clock size={12} /> {dateStr} · {timeStr} · {participantCount} attendee{participantCount !== 1 ? 's' : ''}
                     </span>
                   </div>
                 </Link>
@@ -202,7 +234,7 @@ export default async function DashboardPage() {
             })}
             {upcomingHolidays.map((h, i) => {
               const hDate = new Date(h.date + 'T00:00:00');
-              const dateStr = hDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', weekday: 'short' });
+              const dateStr = isNaN(hDate.getTime()) ? h.date : hDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', weekday: 'short' });
               return (
                 <div key={`holiday-${i}`} className={styles.upcomingItem} style={{ cursor: 'default' }}>
                   <div className={`${styles.upcomingDot} ${styles.upcomingDotHoliday}`} />
@@ -226,23 +258,33 @@ export default async function DashboardPage() {
             {recentMessages.length === 0 ? (
               <p className={styles.emptyState}>No recent activity yet.</p>
             ) : (
-              recentMessages.map(m => (
-                <div key={m.id} className={styles.activityItem}>
-                  <div className="avatar avatar-sm" style={{ flexShrink: 0 }}>
-                    {m.sender.avatar ? <Image src={m.sender.avatar} alt="" width={32} height={32} /> : m.sender.name[0]}
-                  </div>
-                  <div className={styles.activityInfo}>
-                    <span className={styles.activityAuthor}>
-                      {m.sender.name}
-                      {m.channel && <span className={styles.activityChannel}> in #{m.channel.name}</span>}
+              recentMessages.map(m => {
+                const senderName = m.sender?.name || 'Unknown User';
+                const senderAvatar = m.sender?.avatar;
+                const initial = senderName[0]?.toUpperCase() || 'U';
+                const channelName = m.channel?.name;
+                const contentSnippet = (m.content || '').substring(0, 80) + ((m.content || '').length > 80 ? '...' : '');
+                const createdAtDate = m.createdAt ? new Date(m.createdAt) : null;
+                const timeStr = createdAtDate && !isNaN(createdAtDate.getTime()) ? createdAtDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+                return (
+                  <div key={m.id} className={styles.activityItem}>
+                    <div className="avatar avatar-sm" style={{ flexShrink: 0 }}>
+                      {senderAvatar ? <Image src={senderAvatar} alt="" width={32} height={32} /> : initial}
+                    </div>
+                    <div className={styles.activityInfo}>
+                      <span className={styles.activityAuthor}>
+                        {senderName}
+                        {channelName && <span className={styles.activityChannel}> in #{channelName}</span>}
+                      </span>
+                      <span className={styles.activityText} dangerouslySetInnerHTML={{ __html: contentSnippet }} />
+                    </div>
+                    <span className={styles.activityTime}>
+                      {timeStr}
                     </span>
-                    <span className={styles.activityText} dangerouslySetInnerHTML={{ __html: (m.content || '').substring(0, 80) + ((m.content || '').length > 80 ? '...' : '') }} />
                   </div>
-                  <span className={styles.activityTime}>
-                    {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </section>
@@ -250,4 +292,5 @@ export default async function DashboardPage() {
     </div>
   );
 }
+
 
