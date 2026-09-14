@@ -8,6 +8,8 @@ import styles from "./app.module.css";
 
 import { SessionProvider } from "next-auth/react";
 import { CallProvider } from "@/components/CallProvider";
+import { SWRConfig } from "swr";
+import { fetcher } from "@/lib/fetcher";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -15,20 +17,29 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <SessionProvider session={session}>
-      <UIProvider>
-        <CallProvider>
-          <div className={styles.appShell}>
-            <Topbar currentUser={session.user as any} />
-            <div className={styles.appBody}>
-              <Sidebar currentUser={session.user as any} />
-              <main className={styles.mainContent}>
-                {children}
-              </main>
+      <SWRConfig
+        value={{
+          fetcher,
+          revalidateOnFocus: false,
+          dedupingInterval: 10000,
+          keepPreviousData: true,
+        }}
+      >
+        <UIProvider>
+          <CallProvider>
+            <div className={styles.appShell}>
+              <Topbar currentUser={session.user as any} />
+              <div className={styles.appBody}>
+                <Sidebar currentUser={session.user as any} />
+                <main className={styles.mainContent}>
+                  {children}
+                </main>
+              </div>
+              <GlobalSearchModal />
             </div>
-            <GlobalSearchModal />
-          </div>
-        </CallProvider>
-      </UIProvider>
+          </CallProvider>
+        </UIProvider>
+      </SWRConfig>
     </SessionProvider>
   );
 }

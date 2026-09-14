@@ -761,3 +761,24 @@ input[type="checkbox"]:hover {
   --chat-font-size: 17px;
 }
 
+/* ===== GPU HARDWARE ACCELERATION & SMOOTH SCROLLING ===== */
+html, body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  scroll-behavior: smooth;
+}
+
+/* Hardware accelerate scroll containers & backdrops */
+main, nav, [class*="chatMessages"], [class*="modal"] {
+  -webkit-overflow-scrolling: touch;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Render containment for high-density lists */
+[class*="chatMessages"], [class*="sectionItems"] {
+  contain: layout style;
+}
+
+
