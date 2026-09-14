@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
@@ -97,7 +97,7 @@ export default function ResetPasswordPage() {
           </div>
 
           <div className={styles.leftHero}>
-            <div className={styles.leftTagline}>ðŸŒ¾ Department of Agriculture Â· Region IV-A</div>
+            <div className={styles.leftTagline}>Department of Agriculture · Region IV-A</div>
             <h2 className={styles.leftHeading}>
               The official<br />
               <span className={styles.leftHeadingAccent}>employee portal</span><br />
