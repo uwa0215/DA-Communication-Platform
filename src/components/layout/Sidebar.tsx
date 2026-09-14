@@ -43,6 +43,7 @@ interface DMUser {
   avatar?: string;
   status: string;
   jobTitle?: string;
+  lastMessageAt?: number;
 }
 
 interface SidebarProps {
@@ -79,6 +80,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
   const [selectedGroupUsers, setSelectedGroupUsers] = useState<string[]>([]);
   const [dmSearch, setDmSearch] = useState("");
   const [unreadDMs, setUnreadDMs] = useState<Record<string, number>>({});
+  const [lastMessageTimes, setLastMessageTimes] = useState<Record<string, number>>({});
   const [presences, setPresences] = useState<Record<string, string>>({});
   const [myStatus, setMyStatus] = useState<string>(currentUser.status || "online");
 
@@ -216,6 +218,16 @@ export default function Sidebar({ currentUser }: SidebarProps) {
         });
         return updated;
       });
+
+      setLastMessageTimes(prev => {
+        const updated = { ...prev };
+        dmUsersData.users.forEach((u: DMUser) => {
+          if (u.lastMessageAt) {
+            updated[u.id] = Math.max(updated[u.id] || 0, u.lastMessageAt);
+          }
+        });
+        return updated;
+      });
     }
   }, [dmUsersData, pathname]);
 
@@ -239,6 +251,8 @@ export default function Sidebar({ currentUser }: SidebarProps) {
     socket.on("dm-notification", ({ from }: { from: string }) => {
       const currentDmMatch = window.location.pathname.match(/\/dm\/(.+)/);
       const currentDmId = currentDmMatch ? currentDmMatch[1] : null;
+
+      setLastMessageTimes(times => ({ ...times, [from]: Date.now() }));
 
       if (currentDmId !== from) {
         setMutedDMs(muted => {
@@ -349,7 +363,22 @@ export default function Sidebar({ currentUser }: SidebarProps) {
       const bPinned = pinnedDMs.includes(b.id);
       if (aPinned && !bPinned) return -1;
       if (!aPinned && bPinned) return 1;
-      return 0;
+
+      // Unread messages placed at the top!
+      const aUnread = unreadDMs[a.id] || 0;
+      const bUnread = unreadDMs[b.id] || 0;
+      if (aUnread > 0 && bUnread === 0) return -1;
+      if (aUnread === 0 && bUnread > 0) return 1;
+      if (aUnread > 0 && bUnread > 0) {
+        if (aUnread !== bUnread) return bUnread - aUnread;
+      }
+
+      // Latest message activity descending
+      const aTime = lastMessageTimes[a.id] || a.lastMessageAt || 0;
+      const bTime = lastMessageTimes[b.id] || b.lastMessageAt || 0;
+      if (aTime !== bTime) return bTime - aTime;
+
+      return a.name.localeCompare(b.name);
     });
 
   const favorites = filteredDmUsers.filter(u => pinnedDMs.includes(u.id));

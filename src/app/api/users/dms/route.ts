@@ -32,26 +32,45 @@ export async function GET(req: NextRequest) {
         status: true,
         jobTitle: true,
         sentDMs: {
-          where: {
-            receiverId: currentUserId,
-            read: false
-          },
-          select: { id: true }
+          where: { receiverId: currentUserId },
+          orderBy: { createdAt: 'desc' },
+          select: { id: true, read: true, createdAt: true }
+        },
+        receivedDMs: {
+          where: { senderId: currentUserId },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: { createdAt: true }
         }
-      },
-      orderBy: {
-        name: 'asc'
       }
     });
 
-    const formattedUsers = distinctUsers.map(u => ({
-      id: u.id,
-      name: u.name,
-      avatar: u.avatar,
-      status: u.status,
-      jobTitle: u.jobTitle,
-      unreadCount: u.sentDMs.length,
-    }));
+    const formattedUsers = distinctUsers.map(u => {
+      const unreadCount = u.sentDMs.filter(m => !m.read).length;
+      const latestSent = u.sentDMs[0]?.createdAt ? new Date(u.sentDMs[0].createdAt).getTime() : 0;
+      const latestReceived = u.receivedDMs[0]?.createdAt ? new Date(u.receivedDMs[0].createdAt).getTime() : 0;
+      const lastMessageAt = Math.max(latestSent, latestReceived);
+
+      return {
+        id: u.id,
+        name: u.name,
+        avatar: u.avatar,
+        status: u.status,
+        jobTitle: u.jobTitle,
+        unreadCount,
+        lastMessageAt,
+      };
+    });
+
+    // Sort: Unread first, then by most recent message timestamp descending
+    formattedUsers.sort((a, b) => {
+      if (a.unreadCount > 0 && b.unreadCount === 0) return -1;
+      if (a.unreadCount === 0 && b.unreadCount > 0) return 1;
+      if (a.unreadCount > 0 && b.unreadCount > 0) {
+        if (a.unreadCount !== b.unreadCount) return b.unreadCount - a.unreadCount;
+      }
+      return b.lastMessageAt - a.lastMessageAt;
+    });
 
     await setCache(cacheKey, formattedUsers, 5);
 
