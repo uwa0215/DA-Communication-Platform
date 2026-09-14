@@ -1,19 +1,20 @@
-import { auth } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export default async function middleware(req: NextRequest) {
-  const session = await auth();
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "trellis-calabarzon-production-fallback-secret-key-2026";
+  const token = await getToken({ req, secret, secureCookie: process.env.NODE_ENV === "production" });
   const { pathname } = req.nextUrl;
 
   const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/pending", "/api/auth"];
   const isPublic = publicPaths.some(p => pathname.startsWith(p));
 
-  if (!session && !isPublic) {
+  if (!token && !isPublic) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  if (session && (pathname === "/login" || pathname === "/register")) {
+  if (token && (pathname === "/login" || pathname === "/register")) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
@@ -21,5 +22,6 @@ export default async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|public).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|public|uploads).*)"],
 };
+

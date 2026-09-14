@@ -11,14 +11,10 @@ import { CallProvider } from "@/components/CallProvider";
 import { SWRConfig } from "swr";
 import { fetcher } from "@/lib/fetcher";
 
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  let session = null;
-  try {
-    session = await auth();
-  } catch (err) {
-    console.error("[AppLayout] Auth session error:", err);
-  }
+export const dynamic = "force-dynamic";
 
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const session = await auth();
   if (!session?.user) redirect("/login");
 
   const currentUser = {
