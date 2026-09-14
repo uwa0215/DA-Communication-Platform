@@ -1,11 +1,11 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import agriLogo from "../../../public/New Logo.png";
-import { Search, Bell, Settings, LogOut, ChevronDown, Shield, Menu, Moon, Sun, Monitor, HelpCircle, User, MessageSquare } from "lucide-react";
+import { Search, Bell, Settings, LogOut, ChevronDown, Shield, Menu, Moon, Sun, Monitor, HelpCircle, User, MessageSquare, Check } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useSocket } from "@/hooks/useSocket";
 import { useUI } from "@/components/UIProvider";
@@ -307,19 +307,19 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
                     <button className={styles.menuItem} style={{ padding: '6px 8px', marginBottom: 2 }} onClick={() => handleStatusChange('online')}>
                       <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--status-online)', marginRight: 4 }} />
                       <span style={{ flex: 1 }}>Active</span>
-                      {myStatus === 'online' && <span style={{ color: 'var(--status-online)', fontSize: 16 }}>âœ“</span>}
+                      {myStatus === 'online' && <Check size={16} style={{ color: 'var(--status-online)' }} />}
                     </button>
                     
                     <button className={styles.menuItem} style={{ padding: '6px 8px', marginBottom: 2 }} onClick={() => handleStatusChange('away')}>
                       <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--status-away)', marginRight: 4 }} />
                       <span style={{ flex: 1 }}>Away</span>
-                      {myStatus === 'away' && <span style={{ color: 'var(--status-away)', fontSize: 16 }}>âœ“</span>}
+                      {myStatus === 'away' && <Check size={16} style={{ color: 'var(--status-away)' }} />}
                     </button>
                     
                     <button className={styles.menuItem} style={{ padding: '6px 8px', marginBottom: 8 }} onClick={() => handleStatusChange('offline')}>
                       <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--status-offline)', marginRight: 4, border: '2px solid var(--text-muted)' }} />
                       <span style={{ flex: 1 }}>Invisible</span>
-                      {myStatus === 'offline' && <span style={{ color: 'var(--text-muted)', fontSize: 16 }}>âœ“</span>}
+                      {myStatus === 'offline' && <Check size={16} style={{ color: 'var(--text-muted)' }} />}
                     </button>
                   </div>
                   

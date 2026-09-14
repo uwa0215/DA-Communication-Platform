@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
@@ -723,7 +723,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">New Channel</h2>
-              <button className="btn-icon" onClick={() => setShowCreate(false)}>âœ•</button>
+              <button className="btn-icon" onClick={() => setShowCreate(false)}><X size={18} /></button>
             </div>
             <div className="form-group">
               <label className="form-label">Channel Name</label>
@@ -750,7 +750,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h2 className="modal-title">New Group Chat</h2>
-              <button className="btn-icon" onClick={() => setShowCreateGroup(false)}>âœ•</button>
+              <button className="btn-icon" onClick={() => setShowCreateGroup(false)}><X size={18} /></button>
             </div>
             <div className="form-group">
               <label className="form-label">Group Name</label>
