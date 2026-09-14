@@ -1,11 +1,10 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
-import daLogo from "../../../../public/New Logo.png";
 import { Eye, EyeOff, ShieldCheck, Globe, Zap } from "lucide-react";
 import s from "./login.module.css";
 
@@ -57,7 +56,7 @@ function LoginContent() {
         <div className={s.mainCard}>
           <div className={s.logoWrap}>
             <div className={s.logoImgWrap}>
-              <Image src={daLogo} alt="DA CALABARZON Logo" className={s.logoImg} width={100} height={100} />
+              <Image src="/logo.png" alt="DA CALABARZON Logo" className={s.logoImg} width={100} height={100} />
             </div>
             <div className={s.logoText}>DA CALABARZON</div>
             <div className={s.logoSub}>Employee Portal · Trellis</div>

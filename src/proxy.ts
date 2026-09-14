@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 
 export default async function middleware(req: NextRequest) {
   const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || "trellis-calabarzon-production-fallback-secret-key-2026";
-  const token = await getToken({ req, secret, secureCookie: process.env.NODE_ENV === "production" });
+  const token = await getToken({ req, secret });
   const { pathname } = req.nextUrl;
 
   const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/pending", "/api/auth"];
