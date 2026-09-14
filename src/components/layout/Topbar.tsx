@@ -116,8 +116,8 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
     return () => clearTimeout(delay);
   }, [searchQuery]);
 
-  const initials = (name: string) =>
-    name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+  const initials = (name?: string) =>
+    (name || "").trim().split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) || "U";
 
   return (
     <header className={styles.topbar}>

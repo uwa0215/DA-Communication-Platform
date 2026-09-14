@@ -392,8 +392,8 @@ export default function Sidebar({ currentUser }: SidebarProps) {
   const standardChannels = channels.filter(ch => !ch.isGroup);
   const groupChannels = channels.filter(ch => ch.isGroup);
 
-  const initials = (name: string) =>
-    name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+  const initials = (name?: string) =>
+    (name || "").trim().split(" ").filter(Boolean).map(n => n[0]).join("").toUpperCase().slice(0, 2) || "U";
 
   const totalUnreadCount = Object.values(unreadDMs).reduce((acc, count) => acc + count, 0);
 

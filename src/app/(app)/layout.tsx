@@ -21,6 +21,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!session?.user) redirect("/login");
 
+  const currentUser = {
+    id: session.user.id || "",
+    name: session.user.name || "User",
+    email: session.user.email || "",
+    image: (session.user as any).image || (session.user as any).avatar || "",
+    status: (session.user as any).status || "online",
+    role: (session.user as any).role || "USER",
+  };
+
   return (
     <SessionProvider session={session}>
       <SWRConfig
@@ -34,9 +43,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <UIProvider>
           <CallProvider>
             <div className={styles.appShell}>
-              <Topbar currentUser={session.user as any} />
+              <Topbar currentUser={currentUser as any} />
               <div className={styles.appBody}>
-                <Sidebar currentUser={session.user as any} />
+                <Sidebar currentUser={currentUser as any} />
                 <main className={styles.mainContent}>
                   {children}
                 </main>
