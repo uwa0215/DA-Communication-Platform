@@ -551,6 +551,78 @@
   box-shadow: 0 0 8px rgba(52, 211, 153, 0.3);
 }
 
+/* ===== UNREAD vs READ CHAT VISUAL EFFECTS ===== */
+.navItemUnread {
+  background: linear-gradient(90deg, rgba(var(--brand-rgb), 0.14), rgba(var(--brand-rgb), 0.03)) !important;
+  font-weight: 700;
+  position: relative;
+}
+:global(.dark) .navItemUnread {
+  background: linear-gradient(90deg, rgba(52, 211, 153, 0.16), rgba(52, 211, 153, 0.03)) !important;
+}
+
+.navItemUnread::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  height: 70%;
+  width: 4px;
+  background: var(--chat-accent, var(--brand));
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+}
+:global(.dark) .navItemUnread::before {
+  box-shadow: 0 0 12px rgba(52, 211, 153, 0.7);
+}
+
+.dmNameUnread {
+  font-weight: 800 !important;
+  color: var(--text-primary) !important;
+}
+
+.badgeUnread {
+  background: linear-gradient(135deg, var(--chat-accent, var(--brand)), #06b6d4) !important;
+  color: #ffffff !important;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 12px;
+  line-height: 1;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.8);
+  }
+}
+
+.unreadPulseDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--chat-accent, var(--brand));
+  box-shadow: 0 0 8px var(--chat-accent, var(--brand));
+  margin-left: 6px;
+  flex-shrink: 0;
+  animation: badgePulse 2s ease-in-out infinite;
+}
+
+.readCheckmark {
+  color: var(--text-muted);
+  opacity: 0.6;
+  margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
 /* ===== MOBILE RESPONSIVE SIDEBAR ===== */
 .mobileBackdrop {
   display: none;

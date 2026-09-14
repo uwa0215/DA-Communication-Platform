@@ -11,7 +11,7 @@ import {
   Hash, MessageCircle, Users, Plus, ChevronDown, ChevronRight,
   Settings, LogOut, Search, Bell, BellOff, Sprout, Shield, MoreVertical,
   User as UserIcon, Pin, Video, Ban, Phone,
-  Filter, SquarePen, AtSign, Compass, Calendar, Trash2, Archive, AlertTriangle, UserX, X
+  Filter, SquarePen, AtSign, Compass, Calendar, Trash2, Archive, AlertTriangle, UserX, X, CheckCheck
 } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import UserProfileModal from "@/components/chat/UserProfileModal";
@@ -342,29 +342,38 @@ export default function Sidebar({ currentUser }: SidebarProps) {
   const initials = (name: string) =>
     name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
 
+  const totalUnreadCount = Object.values(unreadDMs).reduce((acc, count) => acc + count, 0);
+
   const renderDmUser = (user: DMUser) => {
     const status = presences[user.id] || user.status || "offline";
     const unread = unreadDMs[user.id] || 0;
+    const isUnread = unread > 0;
     
     // Check if we should render based on activeFilter
-    if (activeFilter === "Unread" && unread === 0) return null;
+    if (activeFilter === "Unread" && !isUnread) return null;
 
     return (
       <div key={user.id} className={styles.dmItemWrap}>
         <Link
           href={`/dm/${user.id}`}
-          className={`${styles.navItem} ${pathname === `/dm/${user.id}` ? styles.navItemActive : ""}`}
+          className={`${styles.navItem} ${isUnread ? styles.navItemUnread : ""} ${pathname === `/dm/${user.id}` ? styles.navItemActive : ""}`}
           onClick={() => { setUnreadDMs(u => ({ ...u, [user.id]: 0 })); setMobileSidebarOpen(false); }}
         >
           <span className={`avatar avatar-sm ${styles.dmAvatar} status-${status}`}>
             {user.avatar ? <Image src={user.avatar} alt={user.name} width={32} height={32} /> : initials(user.name)}
             <span className={styles.statusDotInner} />
           </span>
-          <span className={`truncate ${styles.dmName}`}>
+          <span className={`truncate ${styles.dmName} ${isUnread ? styles.dmNameUnread : ""}`}>
             {user.name}
             {mutedDMs.includes(user.id) && <BellOff size={12} style={{marginLeft: 4, opacity: 0.5}} />}
+            {!isUnread && <CheckCheck size={12} className={styles.readCheckmark} />}
           </span>
-          {unread > 0 && <span className={styles.badge}>{unread}</span>}
+          {isUnread ? (
+            <>
+              <span className={styles.badgeUnread}>{unread}</span>
+              <span className={styles.unreadPulseDot} />
+            </>
+          ) : null}
           
           <span 
             className={`btn-icon ${styles.dmActionBtn}`}
@@ -545,15 +554,18 @@ export default function Sidebar({ currentUser }: SidebarProps) {
 
       {/* Filter Pills */}
       <div className={styles.filterPills}>
-        {['Unread', 'Channels', 'Chats'].map(f => (
-          <button 
-            key={f}
-            className={`${styles.filterPill} ${activeFilter === f ? styles.filterPillActive : ''}`}
-            onClick={() => setActiveFilter(activeFilter === f ? 'All' : f)}
-          >
-            {f}
-          </button>
-        ))}
+        {['Unread', 'Channels', 'Chats'].map(f => {
+          const pillLabel = f === 'Unread' && totalUnreadCount > 0 ? `Unread (${totalUnreadCount})` : f;
+          return (
+            <button 
+              key={f}
+              className={`${styles.filterPill} ${activeFilter === f ? styles.filterPillActive : ''}`}
+              onClick={() => setActiveFilter(activeFilter === f ? 'All' : f)}
+            >
+              {pillLabel}
+            </button>
+          );
+        })}
       </div>
 
       {/* Connection Warning */}
