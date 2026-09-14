@@ -6,13 +6,13 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 function getSslConfig() {
   const url = process.env.DATABASE_URL || '';
-  if (url.includes('sslmode=disable') || url.includes('localhost') || url.includes('127.0.0.1') || url.includes('railway.internal')) {
+  if (url.includes('sslmode=disable') || url.includes('localhost') || url.includes('127.0.0.1') || url.includes('railway.internal') || (url.includes('railway') && !url.includes('sslmode=require'))) {
     return undefined;
   }
   if (url.includes('sslmode=require') || url.includes('neon.tech') || url.includes('supabase') || url.includes('render.com')) {
     return { rejectUnauthorized: false };
   }
-  return isProduction ? { rejectUnauthorized: false } : undefined;
+  return undefined;
 }
 
 const pool = new Pool({
