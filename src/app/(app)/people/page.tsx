@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Search, MessageCircle, Mail, Briefcase, Building2, Users } from "lucide-react";
+import { useSocket } from "@/hooks/useSocket";
 import styles from "./people.module.css";
 
 interface User {
@@ -19,6 +20,7 @@ interface User {
 }
 
 export default function PeoplePage() {
+  const { socket } = useSocket();
   const [users, setUsers] = useState<User[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -35,6 +37,26 @@ export default function PeoplePage() {
     const t = setTimeout(load, 300);
     return () => clearTimeout(t);
   }, [search]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handlePresence = ({ userId, status }: { userId: string; status: string }) => {
+      setUsers(prev => prev.map(u => u.id === userId ? { ...u, status } : u));
+    };
+
+    const handleInitialPresences = (initialMap: Record<string, string>) => {
+      setUsers(prev => prev.map(u => initialMap[u.id] ? { ...u, status: initialMap[u.id] } : u));
+    };
+
+    socket.on("user-presence", handlePresence);
+    socket.on("initial-presences", handleInitialPresences);
+
+    return () => {
+      socket.off("user-presence", handlePresence);
+      socket.off("initial-presences", handleInitialPresences);
+    };
+  }, [socket]);
 
   const initials = (name: string) =>
     name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);

@@ -168,12 +168,34 @@ app.prepare().then(() => {
   // Make io accessible globally
   global.io = io;
 
+  // Track user socket connections for real-time presence
+  const userSockets = new Map(); // userId -> Set(socket.id)
+  const userStatuses = new Map(); // userId -> status string
+
   io.on("connection", (socket) => {
     console.log("🔌 Client connected:", socket.id);
 
     socket.on("join-user", (userId) => {
+      if (!userId) return;
+      socket.userId = userId;
       socket.join(`user:${userId}`);
-      console.log(`User ${userId} joined their room`);
+      console.log(`User ${userId} joined room`);
+
+      if (!userSockets.has(userId)) {
+        userSockets.set(userId, new Set());
+      }
+      userSockets.get(userId).add(socket.id);
+
+      const currentStatus = userStatuses.get(userId) || "online";
+      userStatuses.set(userId, currentStatus);
+
+      // Broadcast user presence to all connected clients
+      io.emit("user-presence", { userId, status: currentStatus });
+
+      // Emit initial presences map to the newly connected client
+      const initialMap = {};
+      userStatuses.forEach((st, uid) => { initialMap[uid] = st; });
+      socket.emit("initial-presences", initialMap);
     });
 
     socket.on("join-channel", (channelId) => {
@@ -193,6 +215,8 @@ app.prepare().then(() => {
     });
 
     socket.on("presence-update", ({ userId, status }) => {
+      if (!userId) return;
+      userStatuses.set(userId, status);
       io.emit("user-presence", { userId, status });
     });
 
@@ -246,6 +270,16 @@ app.prepare().then(() => {
 
     socket.on("disconnect", () => {
       console.log("🔌 Client disconnected:", socket.id);
+      const userId = socket.userId;
+      if (userId && userSockets.has(userId)) {
+        const sockets = userSockets.get(userId);
+        sockets.delete(socket.id);
+        if (sockets.size === 0) {
+          userSockets.delete(userId);
+          userStatuses.delete(userId);
+          io.emit("user-presence", { userId, status: "offline" });
+        }
+      }
     });
   });
 

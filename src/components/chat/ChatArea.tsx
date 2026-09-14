@@ -346,6 +346,38 @@ export default function ChatArea({
     }
   }, [messages, roomId, dmUser]);
 
+  const [liveStatus, setLiveStatus] = useState<string>(dmUser?.status || "offline");
+
+  useEffect(() => {
+    if (dmUser) {
+      setLiveStatus(dmUser.status || "offline");
+    }
+  }, [dmUser]);
+
+  useEffect(() => {
+    if (!socket || !dmUserId) return;
+
+    const handlePresence = ({ userId, status }: { userId: string; status: string }) => {
+      if (userId === dmUserId) {
+        setLiveStatus(status);
+      }
+    };
+
+    const handleInitialPresences = (initialMap: Record<string, string>) => {
+      if (initialMap[dmUserId]) {
+        setLiveStatus(initialMap[dmUserId]);
+      }
+    };
+
+    socket.on("user-presence", handlePresence);
+    socket.on("initial-presences", handleInitialPresences);
+
+    return () => {
+      socket.off("user-presence", handlePresence);
+      socket.off("initial-presences", handleInitialPresences);
+    };
+  }, [socket, dmUserId]);
+
   useEffect(() => {
     if (!socket || !roomId) return;
     socket.on("messages-read", ({ readerId }: { readerId: string }) => {
@@ -649,9 +681,9 @@ export default function ChatArea({
           {channelName
             ? <Hash size={20} className={styles.chatHeaderIcon} />
             : <div 
-                className={`avatar avatar-sm status-${dmUser?.status || "offline"}`}
+                className={`avatar avatar-sm status-${liveStatus}`}
                 style={{ cursor: "pointer" }}
-                onClick={() => dmUser && setSelectedUserForProfile(dmUser)}
+                onClick={() => dmUser && setSelectedUserForProfile({ ...dmUser, status: liveStatus })}
               >
                 {dmUser?.avatar ? <Image src={dmUser.avatar} alt={dmUser.name} width={32} height={32} /> : initials(dmUser?.name || "U")}
                 <span className="status-dot" />
@@ -661,7 +693,7 @@ export default function ChatArea({
             <h2 
               className={styles.chatHeaderTitle}
               style={{ cursor: dmUser ? "pointer" : "default" }}
-              onClick={() => dmUser && setSelectedUserForProfile(dmUser)}
+              onClick={() => dmUser && setSelectedUserForProfile({ ...dmUser, status: liveStatus })}
             >
               {title}
             </h2>
@@ -673,9 +705,9 @@ export default function ChatArea({
                     {dmUser.jobTitle} {dmUser.department || dmUser.unit ? `(${dmUser.department || dmUser.unit})` : ""}
                   </span>
                 )}
-                <span className={`status-${dmUser.status}`} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                <span className={`status-${liveStatus}`} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
                   <span className="status-dot" style={{ position: "relative", width: 8, height: 8, border: "none" }} />
-                  {dmUser.status}
+                  {liveStatus}
                 </span>
               </p>
             )}

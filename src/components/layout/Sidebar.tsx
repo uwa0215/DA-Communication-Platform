@@ -248,6 +248,10 @@ export default function Sidebar({ currentUser }: SidebarProps) {
       setPresences(p => ({ ...p, [userId]: status }));
     });
 
+    socket.on("initial-presences", (initialMap: Record<string, string>) => {
+      setPresences(p => ({ ...p, ...initialMap }));
+    });
+
     socket.on("dm-notification", ({ from }: { from: string }) => {
       const currentDmMatch = window.location.pathname.match(/\/dm\/(.+)/);
       const currentDmId = currentDmMatch ? currentDmMatch[1] : null;
@@ -267,6 +271,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
 
     return () => {
       socket.off("user-presence");
+      socket.off("initial-presences");
       socket.off("dm-notification");
     };
   }, [socket, currentUser.id, mutateDmUsers]);
