@@ -202,8 +202,22 @@ export default function Sidebar({ currentUser }: SidebarProps) {
   useEffect(() => {
     if (dmUsersData?.users) {
       setDmUsers(dmUsersData.users);
+      setUnreadDMs(prev => {
+        const updated = { ...prev };
+        const currentDmMatch = pathname.match(/\/dm\/(.+)/);
+        const currentDmId = currentDmMatch ? currentDmMatch[1] : null;
+
+        dmUsersData.users.forEach((u: DMUser & { unreadCount?: number }) => {
+          if (u.id === currentDmId) {
+            updated[u.id] = 0;
+          } else if (typeof u.unreadCount === "number") {
+            updated[u.id] = u.unreadCount;
+          }
+        });
+        return updated;
+      });
     }
-  }, [dmUsersData]);
+  }, [dmUsersData, pathname]);
 
   useEffect(() => {
     fetch("/api/users/presence", {
@@ -223,19 +237,25 @@ export default function Sidebar({ currentUser }: SidebarProps) {
     });
 
     socket.on("dm-notification", ({ from }: { from: string }) => {
-      setMutedDMs(muted => {
-        if (!muted.includes(from)) {
-          setUnreadDMs(u => ({ ...u, [from]: (u[from] || 0) + 1 }));
-        }
-        return muted;
-      });
+      const currentDmMatch = window.location.pathname.match(/\/dm\/(.+)/);
+      const currentDmId = currentDmMatch ? currentDmMatch[1] : null;
+
+      if (currentDmId !== from) {
+        setMutedDMs(muted => {
+          if (!muted.includes(from)) {
+            setUnreadDMs(u => ({ ...u, [from]: (u[from] || 0) + 1 }));
+          }
+          return muted;
+        });
+      }
+      mutateDmUsers();
     });
 
     return () => {
       socket.off("user-presence");
       socket.off("dm-notification");
     };
-  }, [socket, currentUser.id]);
+  }, [socket, currentUser.id, mutateDmUsers]);
 
   useEffect(() => {
     const match = pathname.match(/\/dm\/(.+)/);

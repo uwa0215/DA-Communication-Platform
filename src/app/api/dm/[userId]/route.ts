@@ -66,6 +66,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
       eq(directMessages.read, false)
     ));
 
+  await invalidateCachePrefix(`dms_users_${myId}`);
+
   await setCache(cacheKey, responseMessages, 5); // Cache for 5 seconds
 
   return NextResponse.json({ messages: responseMessages });
@@ -107,10 +109,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
 
   const roomId = [myId, receiverId].sort().join(":");
   await invalidateCachePrefix(`dm:${roomId}`);
+  await invalidateCachePrefix(`dms_users_${receiverId}`);
+  await invalidateCachePrefix(`dms_users_${myId}`);
 
   // Broadcast via Socket.io
   if (global.io) {
     global.io.to(`dm:${roomId}`).emit("new-dm", broadcastMsg);
+    global.io.to(`user:${receiverId}`).emit("dm-notification", { from: myId });
     
     const [notif] = await db.insert(notifications).values({
       userId: receiverId,
@@ -165,6 +170,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ u
 
   const roomId = [myId, otherId].sort().join(":");
   await invalidateCachePrefix(`dm:${roomId}`);
+  await invalidateCachePrefix(`dms_users_${otherId}`);
+  await invalidateCachePrefix(`dms_users_${myId}`);
 
   return NextResponse.json({ success: true });
 }

@@ -31,15 +31,31 @@ export async function GET(req: NextRequest) {
         avatar: true,
         status: true,
         jobTitle: true,
+        sentDMs: {
+          where: {
+            receiverId: currentUserId,
+            read: false
+          },
+          select: { id: true }
+        }
       },
       orderBy: {
         name: 'asc'
       }
     });
 
-    await setCache(cacheKey, distinctUsers, 60);
+    const formattedUsers = distinctUsers.map(u => ({
+      id: u.id,
+      name: u.name,
+      avatar: u.avatar,
+      status: u.status,
+      jobTitle: u.jobTitle,
+      unreadCount: u.sentDMs.length,
+    }));
 
-    return NextResponse.json({ users: distinctUsers });
+    await setCache(cacheKey, formattedUsers, 5);
+
+    return NextResponse.json({ users: formattedUsers });
   } catch (error) {
     console.error("Failed to fetch active DM users:", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

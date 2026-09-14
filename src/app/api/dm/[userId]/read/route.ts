@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { directMessages } from "@/lib/schema";
 import { auth } from "@/lib/auth";
+import { invalidateCachePrefix } from "@/lib/cache";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   const session = await auth();
@@ -21,6 +22,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
         eq(directMessages.read, false)
       )
     );
+
+  await invalidateCachePrefix(`dms_users_${myUserId}`);
 
   const roomId = [myUserId, otherUserId].sort().join(":");
   
