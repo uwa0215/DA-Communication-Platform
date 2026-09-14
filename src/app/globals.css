@@ -39,6 +39,12 @@
   --text-muted:    #64748b;
   --text-inverse:  #ffffff;
 
+  /* Messenger Chat Customization Defaults */
+  --chat-accent: #10b981;
+  --chat-bubble-mine: linear-gradient(135deg, #10b981, #047857);
+  --chat-bubble-mine-text: #ffffff;
+  --chat-font-size: 15px;
+
   /* Status Colors */
   --status-online: #10b981;
   --status-away:   #f59e0b;
@@ -711,3 +717,47 @@ input[type="checkbox"]:hover {
 .dark .noise-overlay::before {
   opacity: 0.025;
 }
+
+/* ===== MESSENGER CHAT THEME OVERRIDES ===== */
+[data-chat-theme="emerald"] {
+  --chat-accent: #10b981;
+  --chat-bubble-mine: linear-gradient(135deg, #10b981, #047857);
+  --chat-bubble-mine-text: #ffffff;
+}
+
+[data-chat-theme="messenger"] {
+  --chat-accent: #0084ff;
+  --chat-bubble-mine: linear-gradient(135deg, #0084ff, #00c6ff);
+  --chat-bubble-mine-text: #ffffff;
+}
+
+[data-chat-theme="violet"] {
+  --chat-accent: #8b5cf6;
+  --chat-bubble-mine: linear-gradient(135deg, #8b5cf6, #ec4899);
+  --chat-bubble-mine-text: #ffffff;
+}
+
+[data-chat-theme="sunset"] {
+  --chat-accent: #f59e0b;
+  --chat-bubble-mine: linear-gradient(135deg, #f59e0b, #ef4444);
+  --chat-bubble-mine-text: #ffffff;
+}
+
+[data-chat-theme="midnight"] {
+  --chat-accent: #38bdf8;
+  --chat-bubble-mine: linear-gradient(135deg, #1e293b, #334155);
+  --chat-bubble-mine-text: #f8fafc;
+}
+
+[data-chat-font="compact"] {
+  --chat-font-size: 13px;
+}
+
+[data-chat-font="normal"] {
+  --chat-font-size: 15px;
+}
+
+[data-chat-font="large"] {
+  --chat-font-size: 17px;
+}
+

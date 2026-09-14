@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useTheme } from "@/components/ThemeProvider";
 import { loadSettings, saveSettings, ChatSettings } from "@/lib/settingsStore";
+import { playMessageChime, playCallRingtone } from "@/lib/audioEffects";
 import styles from "./settings.module.css";
 
 export default function SettingsPage() {
@@ -31,9 +32,11 @@ export default function SettingsPage() {
   // Messenger Settings Store State
   const [messengerSettings, setMessengerSettings] = useState<ChatSettings>(loadSettings());
 
-  // Audio / Mic Test Simulation
+  // Audio / Mic Hardware Stream Test
   const [isMicTesting, setIsMicTesting] = useState(false);
   const [micLevel, setMicLevel] = useState(0);
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -83,22 +86,76 @@ export default function SettingsPage() {
     fetchProfile();
   }, []);
 
-  // Mic test simulation interval
-  useEffect(() => {
-    let timer: any;
+  // Web Audio API Microphone Stream Capture & Level Analysis
+  const toggleMicTest = async () => {
     if (isMicTesting) {
-      timer = setInterval(() => {
-        setMicLevel(Math.floor(Math.random() * 85) + 15);
-      }, 150);
-    } else {
+      // Stop test & release mic hardware
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach(track => track.stop());
+        micStreamRef.current = null;
+      }
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close();
+        audioCtxRef.current = null;
+      }
+      setIsMicTesting(false);
       setMicLevel(0);
+    } else {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        micStreamRef.current = stream;
+
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        const ctx = new AudioCtx();
+        audioCtxRef.current = ctx;
+
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        setIsMicTesting(true);
+
+        const updateMeter = () => {
+          if (!micStreamRef.current) return;
+          analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i];
+          }
+          const average = sum / dataArray.length;
+          const pct = Math.min(100, Math.round((average / 128) * 100));
+          setMicLevel(pct);
+          requestAnimationFrame(updateMeter);
+        };
+        updateMeter();
+      } catch (err) {
+        console.error("Could not access microphone", err);
+        setError("Microphone access permission denied or no audio device found.");
+      }
     }
-    return () => clearInterval(timer);
-  }, [isMicTesting]);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close();
+      }
+    };
+  }, []);
 
   const handleUpdateSetting = (key: keyof ChatSettings, value: any) => {
     const updated = saveSettings({ [key]: value });
     setMessengerSettings(updated);
+    if (key === "playSounds" && value) {
+      playMessageChime();
+    } else if (key === "callRingtone" && value) {
+      playCallRingtone();
+    }
   };
 
   const handleUpdateQuietHours = (field: "enabled" | "start" | "end", val: any) => {
@@ -630,7 +687,7 @@ export default function SettingsPage() {
                   <button
                     type="button"
                     className={`btn ${isMicTesting ? "btn-danger" : "btn-primary"}`}
-                    onClick={() => setIsMicTesting(!isMicTesting)}
+                    onClick={toggleMicTest}
                   >
                     {isMicTesting ? "Stop Test" : "Test Mic"}
                   </button>

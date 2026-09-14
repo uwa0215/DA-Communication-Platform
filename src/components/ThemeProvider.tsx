@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { createContext, useContext, useState, useEffect } from "react";
+import { loadSettings } from "@/lib/settingsStore";
 
 const ThemeContext = createContext<{ theme: string; setTheme: (theme: string) => void; systemTheme: string }>({
   theme: "system",
@@ -9,10 +10,21 @@ const ThemeContext = createContext<{ theme: string; setTheme: (theme: string) =>
   systemTheme: "light",
 });
 
-export function ThemeProvider({ children, ...props }: any) {
+export function ThemeProvider({ children }: any) {
   const [theme, setTheme] = useState("system");
   const [systemTheme, setSystemTheme] = useState("light");
   const [mounted, setMounted] = useState(false);
+
+  const applyChatSettings = (settings: any) => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    if (settings.chatTheme) {
+      root.setAttribute("data-chat-theme", settings.chatTheme);
+    }
+    if (settings.fontSize) {
+      root.setAttribute("data-chat-font", settings.fontSize);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -24,8 +36,23 @@ export function ThemeProvider({ children, ...props }: any) {
     
     const savedTheme = localStorage.getItem("theme") || "system";
     setTheme(savedTheme);
+
+    // Initial load of messenger settings
+    const initialSettings = loadSettings();
+    applyChatSettings(initialSettings);
+
+    // Listen for real-time setting updates
+    const handleSettingsUpdate = (e: any) => {
+      if (e.detail) {
+        applyChatSettings(e.detail);
+      }
+    };
+    window.addEventListener("trellis_settings_updated", handleSettingsUpdate);
     
-    return () => mediaQuery.removeEventListener("change", listener);
+    return () => {
+      mediaQuery.removeEventListener("change", listener);
+      window.removeEventListener("trellis_settings_updated", handleSettingsUpdate);
+    };
   }, []);
 
   useEffect(() => {

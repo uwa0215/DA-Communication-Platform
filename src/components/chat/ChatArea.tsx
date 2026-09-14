@@ -18,6 +18,8 @@ import ThreadPanel from "./ThreadPanel";
 import useSWR from "swr";
 import LinkPreview from "./LinkPreview";
 import { fetcher } from "@/lib/fetcher";
+import { loadSettings } from "@/lib/settingsStore";
+import { playMessageChime } from "@/lib/audioEffects";
 import styles from "./ChatArea.module.css";
 
 const EMOJI_SET = ["👍","❤️","😂","😮","😢","🔥","🎉","✅","👏","🚀"];
@@ -409,6 +411,11 @@ export default function ChatArea({
       
       if (channelId && socket) {
         socket.emit("typing-stop", { channelId, userId: currentUserId });
+      }
+
+      const settings = loadSettings();
+      if (settings.playSounds) {
+        playMessageChime();
       }
     } catch (err) {
       console.error("Error sending message:", err);
