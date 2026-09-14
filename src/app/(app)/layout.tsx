@@ -12,7 +12,13 @@ import { SWRConfig } from "swr";
 import { fetcher } from "@/lib/fetcher";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (err) {
+    console.error("[AppLayout] Auth session error:", err);
+  }
+
   if (!session?.user) redirect("/login");
 
   return (
