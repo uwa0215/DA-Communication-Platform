@@ -1,8 +1,6 @@
 /* ===== SIDEBAR ===== */
 .sidebar {
-  background: rgba(var(--bg-panel-rgb), 0.4);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: var(--bg-panel);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -12,15 +10,9 @@
   transition: background 0.3s ease;
 }
 
-/* Dark mode: glassmorphism sidebar with gradient overlay */
+/* Dark mode: solid opaque dark background */
 :global(.dark) .sidebar {
-  background: linear-gradient(
-    180deg,
-    rgba(15, 22, 40, 0.95) 0%,
-    rgba(10, 15, 26, 0.98) 100%
-  );
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: #0f1628;
   border-right-color: rgba(52, 211, 153, 0.06);
   box-shadow: inset -1px 0 0 rgba(52, 211, 153, 0.04);
 }
@@ -647,8 +639,13 @@
     height: calc(100dvh - var(--header-h, 60px)) !important;
     transform: translateX(-100%);
     z-index: 100;
+    background: var(--bg-panel) !important;
     box-shadow: 8px 0 32px rgba(0, 0, 0, 0.35);
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  }
+
+  :global(.dark) .sidebar {
+    background: #0f1628 !important;
   }
   
   .sidebar.open {

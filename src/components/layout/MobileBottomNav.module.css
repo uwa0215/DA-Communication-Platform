@@ -12,9 +12,7 @@
     left: 0;
     right: 0;
     height: 60px;
-    background: rgba(var(--bg-panel-rgb), 0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: var(--bg-panel);
     border-top: 1px solid var(--border);
     z-index: 80;
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -22,7 +20,7 @@
   }
 
   :global(.dark) .mobileNav {
-    background: rgba(15, 22, 40, 0.95);
+    background: #0f1628;
     border-top-color: rgba(52, 211, 153, 0.1);
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.35);
   }
