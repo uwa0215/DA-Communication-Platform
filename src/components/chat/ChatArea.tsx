@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Hash, Phone, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings, Menu } from "lucide-react";
+import { Hash, Phone, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings, Menu, ArrowLeft } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
+import { useUI } from "@/components/UIProvider";
 import EmojiPicker from "emoji-picker-react";
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -80,6 +81,7 @@ export default function ChatArea({
   currentUserRole = "member",
 }: ChatAreaProps) {
   const { socket } = useSocket();
+  const { toggleMobileSidebar } = useUI();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isEditorEmpty, setIsEditorEmpty] = useState(true);
   const [sending, setSending] = useState(false);
@@ -723,6 +725,14 @@ export default function ChatArea({
       {/* Header */}
       <div className={styles.chatHeader}>
         <div className={styles.chatHeaderLeft}>
+          <button
+            className={styles.mobileBackBtn}
+            onClick={() => toggleMobileSidebar()}
+            title="Open chats list"
+            aria-label="Open chats list"
+          >
+            <ArrowLeft size={20} />
+          </button>
           {channelName
             ? <Hash size={20} className={styles.chatHeaderIcon} />
             : <div 

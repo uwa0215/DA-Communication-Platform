@@ -4,6 +4,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
 import GlobalSearchModal from "@/components/layout/GlobalSearchModal";
 import { UIProvider } from "@/components/UIProvider";
+import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import styles from "./app.module.css";
 
 import { SessionProvider } from "next-auth/react";
@@ -25,6 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 {children}
               </main>
             </div>
+            <MobileBottomNav />
             <GlobalSearchModal />
           </div>
         </CallProvider>

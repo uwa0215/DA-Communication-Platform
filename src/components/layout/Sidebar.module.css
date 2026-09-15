@@ -628,21 +628,27 @@
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-  z-index: 90;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 95;
+  animation: fadeIn 0.2s ease-out;
 }
 
 @media (max-width: 768px) {
   .sidebar {
     position: fixed !important;
-    top: 60px; /* Below topbar */
+    top: var(--header-h, 60px);
     bottom: 0;
     left: 0;
-    width: 300px !important;
+    width: 85vw !important;
+    max-width: 320px !important;
+    min-width: 270px !important;
+    height: calc(100dvh - var(--header-h, 60px)) !important;
     transform: translateX(-100%);
     z-index: 100;
-    box-shadow: 4px 0 24px rgba(0,0,0,0.2);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.35);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
   
   .sidebar.open {
@@ -651,7 +657,7 @@
 
   .mobileBackdrop {
     display: block;
-    top: 60px;
+    top: var(--header-h, 60px);
   }
 
   .resizer {

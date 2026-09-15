@@ -647,20 +647,20 @@ export default function Sidebar({ currentUser }: SidebarProps) {
         {/* Top Static Actions (Copilot / Mentions style) */}
         {(activeFilter === "All" || activeFilter === "Channels") && !dmSearch && (
           <div className={styles.topActions}>
-            <Link href="/dashboard" className={`${styles.navItem} ${styles.navItemStatic} ${pathname === "/dashboard" ? styles.navItemActive : ""}`}>
+            <Link href="/dashboard" onClick={() => setMobileSidebarOpen(false)} className={`${styles.navItem} ${styles.navItemStatic} ${pathname === "/dashboard" ? styles.navItemActive : ""}`}>
               <Sprout size={18} className={styles.navIcon} /> <span className={styles.navStaticText}>Dashboard</span>
             </Link>
-            <Link href="/people" className={`${styles.navItem} ${styles.navItemStatic} ${pathname === "/people" ? styles.navItemActive : ""}`}>
+            <Link href="/people" onClick={() => setMobileSidebarOpen(false)} className={`${styles.navItem} ${styles.navItemStatic} ${pathname === "/people" ? styles.navItemActive : ""}`}>
               <Compass size={18} className={styles.navIcon} /> <span className={styles.navStaticText}>Discover People</span>
             </Link>
-            <Link href="/mentions" className={`${styles.navItem} ${styles.navItemStatic} ${pathname === "/mentions" ? styles.navItemActive : ""}`}>
+            <Link href="/mentions" onClick={() => setMobileSidebarOpen(false)} className={`${styles.navItem} ${styles.navItemStatic} ${pathname === "/mentions" ? styles.navItemActive : ""}`}>
               <AtSign size={18} className={styles.navIcon} /> <span className={styles.navStaticText}>Mentions</span>
             </Link>
-            <Link href="/calendar" className={`${styles.navItem} ${styles.navItemStatic} ${pathname === "/calendar" ? styles.navItemActive : ""}`}>
+            <Link href="/calendar" onClick={() => setMobileSidebarOpen(false)} className={`${styles.navItem} ${styles.navItemStatic} ${pathname === "/calendar" ? styles.navItemActive : ""}`}>
               <Calendar size={18} className={styles.navIcon} /> <span className={styles.navStaticText}>Calendar</span>
             </Link>
             {currentUser.role?.toLowerCase() === "admin" && (
-              <Link href="/admin" className={`${styles.navItem} ${styles.navItemStatic} ${pathname === "/admin" ? styles.navItemActive : ""}`}>
+              <Link href="/admin" onClick={() => setMobileSidebarOpen(false)} className={`${styles.navItem} ${styles.navItemStatic} ${pathname === "/admin" ? styles.navItemActive : ""}`}>
                 <Shield size={18} className={styles.navIcon} /> <span className={styles.navStaticText}>Admin Dashboard</span>
               </Link>
             )}
@@ -702,6 +702,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
                   <Link
                     key={ch.id}
                     href={`/channels/${ch.name}`}
+                    onClick={() => setMobileSidebarOpen(false)}
                     className={`${styles.navItem} ${pathname === `/channels/${ch.name}` ? styles.navItemActive : ""}`}
                   >
                     <Hash size={18} className={styles.navIcon} />
@@ -731,6 +732,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
                   <Link
                     key={ch.id}
                     href={`/group/${ch.id}`}
+                    onClick={() => setMobileSidebarOpen(false)}
                     className={`${styles.navItem} ${pathname === `/group/${ch.id}` ? styles.navItemActive : ""}`}
                   >
                     <span className={`avatar avatar-sm ${styles.dmAvatar} status-online`} style={{ display: 'inline-flex' }}>
