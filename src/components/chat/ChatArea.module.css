@@ -404,6 +404,46 @@
 }
 
 /* Message Actions */
+.msgBubbleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+}
+
+.msgMenuBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.messageRow:hover .msgMenuBtn,
+.msgMenuBtnActive {
+  opacity: 1;
+}
+
+.msgMenuBtn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+@media (hover: none) {
+  .msgMenuBtn {
+    opacity: 0.6;
+  }
+}
+
 .msgActions {
   display: flex;
   gap: 4px;

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Hash, Phone, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings } from "lucide-react";
+import { Hash, Phone, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings, Menu } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import EmojiPicker from "emoji-picker-react";
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -90,6 +90,40 @@ export default function ChatArea({
   const [previewFile, setPreviewFile] = useState<{ url: string, name: string, type: string } | null>(null);
   const [showInputEmoji, setShowInputEmoji] = useState(false);
   const [hoverMsgId, setHoverMsgId] = useState<string | null>(null);
+  const [activeActionsMsgId, setActiveActionsMsgId] = useState<string | null>(null);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isLongPressRef = useRef(false);
+
+  const handleTouchStart = (msgId: string) => {
+    isLongPressRef.current = false;
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = setTimeout(() => {
+      isLongPressRef.current = true;
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        try { navigator.vibrate(40); } catch (e) {}
+      }
+      setActiveActionsMsgId(msgId);
+      setShowEmoji(false);
+    }, 450);
+  };
+
+  const handleTouchMove = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    if (isLongPressRef.current) {
+      e.preventDefault();
+    }
+  };
+
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [replyingToMessage, setReplyingToMessage] = useState<any | null>(null);
   const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
@@ -152,18 +186,29 @@ export default function ChatArea({
   });
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target as Node)) {
         setShowInputEmoji(false);
       }
+      if (activeActionsMsgId) {
+        const target = event.target as HTMLElement;
+        if (
+          !target.closest(`.${styles.msgActions}`) &&
+          !target.closest(`.${styles.msgMenuBtn}`) &&
+          !target.closest(`.${styles.emojiPicker}`)
+        ) {
+          setActiveActionsMsgId(null);
+          setShowEmoji(false);
+        }
+      }
     }
-    if (showInputEmoji) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
-  }, [showInputEmoji]);
+  }, [showInputEmoji, activeActionsMsgId]);
 
   const { data: usersData } = useSWR("/api/users", fetcher);
 
@@ -935,7 +980,31 @@ export default function ChatArea({
                             }
                             return (
                               <>
-                                <div className={`${styles.msgContent} ${isMine ? styles.msgContentMine : styles.msgContentTheirs} ${groupPositionClass}`} dangerouslySetInnerHTML={{ __html: msg.content }} />
+                                <div className={styles.msgBubbleRow} style={{ display: 'flex', alignItems: 'center', gap: 6, flexDirection: isMine ? 'row-reverse' : 'row', maxWidth: '100%' }}>
+                                  <div
+                                    className={`${styles.msgContent} ${isMine ? styles.msgContentMine : styles.msgContentTheirs} ${groupPositionClass}`}
+                                    dangerouslySetInnerHTML={{ __html: msg.content }}
+                                    onTouchStart={() => handleTouchStart(msg.id)}
+                                    onTouchMove={handleTouchMove}
+                                    onTouchEnd={handleTouchEnd}
+                                    onContextMenu={(e) => {
+                                      if (isLongPressRef.current) e.preventDefault();
+                                    }}
+                                  />
+                                  {!(msg as any).isDeleted && (
+                                    <button
+                                      className={`${styles.msgMenuBtn} ${activeActionsMsgId === msg.id ? styles.msgMenuBtnActive : ''}`}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveActionsMsgId(prev => prev === msg.id ? null : msg.id);
+                                        setShowEmoji(false);
+                                      }}
+                                      title="Message options"
+                                    >
+                                      <Menu size={14} />
+                                    </button>
+                                  )}
+                                </div>
                                 {linkMatch && linkMatch[1] && (
                                   <LinkPreview url={linkMatch[1]} />
                                 )}
@@ -943,26 +1012,26 @@ export default function ChatArea({
                             );
                           })()}
                           
-                          {/* Message Actions (on hover) */}
-                          {hoverMsgId === msg.id && !(msg as any).isDeleted && (
-                            <div className={styles.msgActions}>
+                          {/* Message Actions (only when 3 lines clicked or mobile long-pressed) */}
+                          {activeActionsMsgId === msg.id && !(msg as any).isDeleted && (
+                            <div className={styles.msgActions} onClick={(e) => e.stopPropagation()}>
                               <button
                                 className={`btn-icon ${styles.msgActionBtn}`}
-                                onClick={() => setShowEmoji(true)}
+                                onClick={() => setShowEmoji(prev => !prev)}
                                 title="Add reaction"
                               >
                                 <Smile size={15} />
                               </button>
                               <button
                                 className={`btn-icon ${styles.msgActionBtn}`}
-                                onClick={() => setActiveThreadId(msg.id)}
+                                onClick={() => { setActiveThreadId(msg.id); setActiveActionsMsgId(null); }}
                                 title="Reply in thread"
                               >
                                 <MessageSquare size={15} />
                               </button>
                               <button
                                 className={`btn-icon ${styles.msgActionBtn}`}
-                                onClick={() => { setReplyingToMessage(msg); editor?.commands.focus(); }}
+                                onClick={() => { setReplyingToMessage(msg); editor?.commands.focus(); setActiveActionsMsgId(null); }}
                                 title="Quote Reply"
                               >
                                 <MessageCircle size={15} />
@@ -974,6 +1043,7 @@ export default function ChatArea({
                                     editor?.commands.setContent(msg.content);
                                     setEditingMessageId(msg.id);
                                     editor?.commands.focus();
+                                    setActiveActionsMsgId(null);
                                   }}
                                   title="Edit message"
                                 >
@@ -983,7 +1053,7 @@ export default function ChatArea({
                               {(isMine || currentUserRole === "admin" || currentUserRole === "moderator") && (
                                 <button
                                   className={`btn-icon ${styles.msgActionBtn}`}
-                                  onClick={() => setMessageToDelete(msg.id)}
+                                  onClick={() => { setMessageToDelete(msg.id); setActiveActionsMsgId(null); }}
                                   title="Delete message"
                                 >
                                   <Trash2 size={15} />
@@ -993,13 +1063,13 @@ export default function ChatArea({
                           )}
 
                           {/* Inline emoji picker */}
-                          {showEmoji && hoverMsgId === msg.id && (
-                            <div className={styles.emojiPicker}>
+                          {showEmoji && activeActionsMsgId === msg.id && (
+                            <div className={styles.emojiPicker} onClick={(e) => e.stopPropagation()}>
                               {EMOJI_SET.map(e => (
                                 <button
                                   key={e}
                                   className={styles.emojiPickerBtn}
-                                  onClick={() => { toggleReaction(msg.id, e); setShowEmoji(false); }}
+                                  onClick={() => { toggleReaction(msg.id, e); setShowEmoji(false); setActiveActionsMsgId(null); }}
                                 >
                                   {e}
                                 </button>
@@ -1016,7 +1086,15 @@ export default function ChatArea({
                           const isAudio = msg.fileType?.startsWith("audio/") || /\.(mp3|wav|webm|ogg)($|\?)/i.test(msg.fileUrl || "");
                           const isVideo = msg.fileType?.startsWith("video/") || /\.(mp4|webm|ogg)($|\?)/i.test(msg.fileUrl || "");
                           return (
-                            <div className={styles.fileAttachment}>
+                            <div
+                              className={styles.fileAttachment}
+                              onTouchStart={() => handleTouchStart(msg.id)}
+                              onTouchMove={handleTouchMove}
+                              onTouchEnd={handleTouchEnd}
+                              onContextMenu={(e) => {
+                                if (isLongPressRef.current) e.preventDefault();
+                              }}
+                            >
                               {isImage ? (
                                 <img 
                                   src={msg.fileUrl} 
