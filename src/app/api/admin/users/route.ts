@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
+import { getUserPresenceStatus } from "@/lib/presence";
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,15 +11,32 @@ export async function GET(req: NextRequest) {
     }
     const role = (session?.user as any)?.role;
     if (!role || role.toLowerCase() !== "admin") {
-      return NextResponse.json({ error: `Unauthorized: User is not an admin (Current role in session: "${role || 'none'}")` }, { status: 403 });
+      return NextResponse.json({ error: `Unauthorized: User is not an admin` }, { status: 403 });
     }
 
     const users = await prisma.user.findMany({
-      select: { id: true, name: true, email: true, role: true, isApproved: true, createdAt: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        avatar: true,
+        status: true,
+        role: true,
+        jobTitle: true,
+        department: true,
+        unit: true,
+        isApproved: true,
+        createdAt: true
+      },
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(users);
+    const liveUsers = users.map(u => ({
+      ...u,
+      status: getUserPresenceStatus(u.id)
+    }));
+
+    return NextResponse.json(liveUsers);
   } catch (error: any) {
     console.error("GET admin users error:", error);
     return NextResponse.json({ error: error.message || "Database error" }, { status: 500 });
@@ -40,6 +58,15 @@ export async function PATCH(req: NextRequest) {
         where: { id },
         data: { isApproved: true },
       });
+    } else if (action === "toggle-role") {
+      const target = await prisma.user.findUnique({ where: { id } });
+      if (target) {
+        const nextRole = target.role === "admin" ? "member" : "admin";
+        await prisma.user.update({
+          where: { id },
+          data: { role: nextRole },
+        });
+      }
     } else if (action === "reject" || action === "delete") {
       // Prevent admin from deleting themselves
       if (session?.user?.id === id) {
