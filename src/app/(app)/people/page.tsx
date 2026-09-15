@@ -61,6 +61,8 @@ export default function PeoplePage() {
   const initials = (name: string) =>
     name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
 
+  const getFirstName = (name: string) => name.split(" ")[0] || name;
+
   const divisions = [...new Set(users.map(u => u.department).filter(Boolean))];
   const units = [...new Set(users.map(u => u.unit).filter(Boolean))];
   
@@ -70,7 +72,7 @@ export default function PeoplePage() {
     return divMatch && unitMatch;
   });
   
-  const online = users.filter(u => u.status === "online").length;
+  const onlineUsers = users.filter(u => u.status === "online");
 
   return (
     <div className={styles.peoplePage}>
@@ -78,11 +80,11 @@ export default function PeoplePage() {
       <div className={styles.peopleHeader}>
         <div>
           <h1 className={styles.peopleTitle}>
-            <Users size={22} />
+            <Users size={24} style={{ color: "var(--brand)" }} />
             People
           </h1>
           <p className={styles.peopleSub}>
-            {users.length} members · <span className={styles.onlineCount}>{online} online</span>
+            {users.length} members · <span className={styles.onlineCount}>{onlineUsers.length} online</span>
           </p>
         </div>
 
@@ -91,121 +93,161 @@ export default function PeoplePage() {
           <input
             id="people-search"
             className={styles.searchInput}
-            placeholder="Search employees..."
+            placeholder="Search colleagues..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
         </div>
       </div>
 
+      {/* Active Now Carousel (Messenger Style) */}
+      {!loading && onlineUsers.length > 0 && (
+        <div className={styles.activeSection}>
+          <div className={styles.activeSectionHeader}>
+            <span className={styles.activeTitle}>
+              <span className={styles.activeDot} />
+              Active Now ({onlineUsers.length})
+            </span>
+          </div>
+
+          <div className={styles.activeTrack}>
+            {onlineUsers.map(user => (
+              <Link key={user.id} href={`/dm/${user.id}`} className={styles.activeUserCard} title={`Chat with ${user.name}`}>
+                <div className={styles.activeAvatarWrap}>
+                  {user.avatar ? (
+                    <Image src={user.avatar} alt={user.name} width={54} height={54} className={styles.activeAvatar} />
+                  ) : (
+                    <div className={styles.activeAvatarFallback}>{initials(user.name)}</div>
+                  )}
+                  <div className={styles.activeStatusBadge} />
+                </div>
+                <span className={styles.activeUserName}>{getFirstName(user.name)}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Filters */}
-      <div className={styles.filters} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {divisions.length > 0 && (
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', minWidth: '60px' }}>Division:</span>
-            <button
-              className={`${styles.filterBtn} ${filterDiv === "all" ? styles.filterBtnActive : ""}`}
-              onClick={() => setFilterDiv("all")}
-            >
-              All
-            </button>
-            {divisions.map(div => (
+      {(divisions.length > 0 || units.length > 0) && (
+        <div className={styles.filtersSection}>
+          {divisions.length > 0 && (
+            <div className={styles.filterRow}>
+              <span className={styles.filterLabel}>Division:</span>
               <button
-                key={div}
-                className={`${styles.filterBtn} ${filterDiv === div ? styles.filterBtnActive : ""}`}
-                onClick={() => setFilterDiv(div!)}
+                className={`${styles.filterBtn} ${filterDiv === "all" ? styles.filterBtnActive : ""}`}
+                onClick={() => setFilterDiv("all")}
               >
-                {div}
+                All
               </button>
-            ))}
-          </div>
-        )}
-        
-        {units.length > 0 && (
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', minWidth: '60px' }}>Unit:</span>
-            <button
-              className={`${styles.filterBtn} ${filterUnit === "all" ? styles.filterBtnActive : ""}`}
-              onClick={() => setFilterUnit("all")}
-            >
-              All
-            </button>
-            {units.map(unit => (
+              {divisions.map(div => (
+                <button
+                  key={div}
+                  className={`${styles.filterBtn} ${filterDiv === div ? styles.filterBtnActive : ""}`}
+                  onClick={() => setFilterDiv(div!)}
+                >
+                  {div}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {units.length > 0 && (
+            <div className={styles.filterRow}>
+              <span className={styles.filterLabel}>Unit:</span>
               <button
-                key={unit}
-                className={`${styles.filterBtn} ${filterUnit === unit ? styles.filterBtnActive : ""}`}
-                onClick={() => setFilterUnit(unit!)}
+                className={`${styles.filterBtn} ${filterUnit === "all" ? styles.filterBtnActive : ""}`}
+                onClick={() => setFilterUnit("all")}
               >
-                {unit}
+                All
               </button>
-            ))}
-          </div>
-        )}
+              {units.map(unit => (
+                <button
+                  key={unit}
+                  className={`${styles.filterBtn} ${filterUnit === unit ? styles.filterBtnActive : ""}`}
+                  onClick={() => setFilterUnit(unit!)}
+                >
+                  {unit}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Contacts List Header */}
+      <div className={styles.sectionHeader}>
+        All Members ({filtered.length})
       </div>
 
-      {/* Employee Grid */}
+      {/* Employee List Grid */}
       {loading ? (
-        <div className={styles.grid}>
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className={styles.skeletonCard}>
+        <div className={styles.peopleGrid}>
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className={styles.skeletonRow}>
               <div className={`skeleton ${styles.skelAvatar}`} />
-              <div className={`skeleton ${styles.skelName}`} />
-              <div className={`skeleton ${styles.skelTitle}`} />
+              <div className={styles.skelTextWrap}>
+                <div className={`skeleton ${styles.skelLine1}`} />
+                <div className={`skeleton ${styles.skelLine2}`} />
+              </div>
             </div>
           ))}
         </div>
       ) : filtered.length === 0 ? (
         <div className={styles.empty}>
-          <Users size={48} />
-          <p>No employees found</p>
+          <Users size={40} />
+          <p>No members found</p>
         </div>
       ) : (
-        <div className={styles.grid}>
-          {filtered.map(user => (
-            <div key={user.id} className={styles.card}>
-              <div className={`avatar avatar-xl status-${user.status} ${styles.cardAvatar}`}>
-                {user.avatar
-                  ? <Image src={user.avatar} alt={user.name} width={64} height={64} style={{ borderRadius: '50%', objectFit: 'cover' }} />
-                  : initials(user.name)
-                }
-                <span className="status-dot" style={{ width: 14, height: 14 }} />
-              </div>
+        <div className={styles.peopleGrid}>
+          {filtered.map(user => {
+            const statusClass =
+              user.status === "online"
+                ? styles.statusDotOnline
+                : user.status === "away"
+                ? styles.statusDotAway
+                : styles.statusDotOffline;
 
-              <h3 className={styles.cardName}>{user.name}</h3>
+            const details = [user.jobTitle, user.department || user.unit, user.email].filter(Boolean).join(" · ");
 
-              {user.jobTitle && (
-                <p className={styles.cardTitle}>
-                  <Briefcase size={12} /> {user.jobTitle}
-                </p>
-              )}
+            return (
+              <Link key={user.id} href={`/dm/${user.id}`} className={styles.contactRow}>
+                <div className={styles.rowLeft}>
+                  <div className={styles.avatarWrap}>
+                    {user.avatar ? (
+                      <Image src={user.avatar} alt={user.name} width={48} height={48} className={styles.avatarImg} />
+                    ) : (
+                      <div className={styles.avatarFallback}>{initials(user.name)}</div>
+                    )}
+                    <div className={`${styles.statusDot} ${statusClass}`} />
+                  </div>
 
-              {user.department && (
-                <p className={styles.cardDept}>
-                  <Building2 size={12} /> {user.department}
-                </p>
-              )}
-              
-              {user.unit && (
-                <p className={styles.cardDept}>
-                  <Users size={12} /> {user.unit}
-                </p>
-              )}
+                  <div className={styles.contactMeta}>
+                    <div className={styles.nameRow}>
+                      <span className={styles.contactName}>{user.name}</span>
+                      {user.role === "admin" && <span className={styles.roleBadge}>Admin</span>}
+                    </div>
+                    {user.jobTitle ? (
+                      <span className={styles.contactSubtitle}>{user.jobTitle}</span>
+                    ) : (
+                      <span className={styles.contactSubtitle}>{user.email}</span>
+                    )}
+                    {(user.department || user.unit) && (
+                      <span className={styles.contactDetails}>
+                        {[user.department, user.unit].filter(Boolean).join(" • ")}
+                      </span>
+                    )}
+                  </div>
+                </div>
 
-              <p className={styles.cardEmail}>
-                <Mail size={12} /> {user.email}
-              </p>
-
-              <span className={`${styles.statusBadge} ${styles[`status_${user.status}`]}`}>
-                {user.status}
-              </span>
-
-              <div className={styles.cardActions}>
-                <Link href={`/dm/${user.id}`} className="btn btn-primary" style={{ fontSize: 13, padding: "6px 14px" }}>
-                  <MessageCircle size={14} /> Message
-                </Link>
-              </div>
-            </div>
-          ))}
+                <div className={styles.rowRight}>
+                  <div className={styles.messageCircleBtn} title={`Message ${user.name}`}>
+                    <MessageCircle size={18} />
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
     </div>
