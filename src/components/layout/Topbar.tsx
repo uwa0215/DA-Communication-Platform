@@ -61,6 +61,7 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
   const { theme, setTheme } = useTheme();
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifMenu, setShowNotifMenu] = useState(false);
+  const [showAllNotifs, setShowAllNotifs] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [myStatus, setMyStatus] = useState(currentUser.status || 'online');
 
@@ -250,7 +251,10 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
           <button 
             className={`btn-icon ${styles.iconBtn}`} 
             title="Notifications"
-            onClick={() => setShowNotifMenu(!showNotifMenu)}
+            onClick={() => {
+              setShowNotifMenu(!showNotifMenu);
+              setShowAllNotifs(false);
+            }}
           >
             <Bell size={18} />
             {unreadCount > 0 && <span className={styles.badge}>{unreadCount > 99 ? '99+' : unreadCount}</span>}
@@ -272,10 +276,19 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
                   )}
                 </div>
                 <div className={styles.notifList}>
-                  {notifications.length === 0 ? (
-                    <p style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>No notifications yet.</p>
-                  ) : (
-                    notifications.map(n => {
+                  {(() => {
+                    const unreadNotifs = notifications.filter(n => !n.read);
+                    const displayedNotifs = showAllNotifs ? notifications : unreadNotifs;
+
+                    if (displayedNotifs.length === 0) {
+                      return (
+                        <p style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                          {!showAllNotifs && notifications.length > 0 ? "No unread notifications." : "No notifications yet."}
+                        </p>
+                      );
+                    }
+
+                    return displayedNotifs.map(n => {
                       const initialLetters = getNotifInitials(n.title);
                       const isMention = n.title.toLowerCase().includes("mention");
 
@@ -302,9 +315,29 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
                           {!n.read && <div className={styles.unreadDot} />}
                         </Link>
                       );
-                    })
-                  )}
+                    });
+                  })()}
                 </div>
+
+                {notifications.length > 0 && (
+                  <div className={styles.menuFooter}>
+                    {!showAllNotifs ? (
+                      <button 
+                        className={styles.seeMoreBtn}
+                        onClick={() => setShowAllNotifs(true)}
+                      >
+                        See more
+                      </button>
+                    ) : (
+                      <button 
+                        className={styles.seeMoreBtn}
+                        onClick={() => setShowAllNotifs(false)}
+                      >
+                        Show unread only
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </>
           )}

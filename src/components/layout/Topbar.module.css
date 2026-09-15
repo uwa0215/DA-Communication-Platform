@@ -350,6 +350,40 @@
   overflow-y: auto;
 }
 
+.menuFooter {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-sidebar);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+:global(.dark) .menuFooter {
+  background: rgba(15, 22, 40, 0.6);
+  border-top-color: rgba(52, 211, 153, 0.08);
+}
+
+.seeMoreBtn {
+  background: none;
+  border: none;
+  color: var(--brand);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: var(--r-md);
+  transition: all var(--t-fast);
+  width: 100%;
+  text-align: center;
+}
+
+.seeMoreBtn:hover {
+  background: rgba(var(--brand-rgb), 0.08);
+}
+:global(.dark) .seeMoreBtn:hover {
+  background: rgba(52, 211, 153, 0.12);
+}
+
 .notifItem {
   display: flex;
   align-items: flex-start;
