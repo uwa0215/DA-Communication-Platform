@@ -12,9 +12,14 @@ export default async function DashboardPage() {
   const session = await auth();
   const user = session?.user as any;
 
-  // Get current time for greeting
+  // Get current time in Philippine Timezone (Asia/Manila, GMT+8) for accurate greeting
   const now = new Date();
-  const hour = now.getHours();
+  const phHourStr = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Manila",
+    hour: "numeric",
+    hourCycle: "h23"
+  }).format(now);
+  const hour = parseInt(phHourStr, 10);
   let greeting = "Good morning";
   if (hour >= 12 && hour < 17) greeting = "Good afternoon";
   else if (hour >= 17) greeting = "Good evening";
@@ -56,7 +61,7 @@ export default async function DashboardPage() {
   }
 
   // Get upcoming holidays
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(now);
   const upcomingHolidays = getPhilippineHolidays(now.getFullYear())
     .filter(h => h.date >= todayStr)
     .sort((a, b) => a.date.localeCompare(b.date))
