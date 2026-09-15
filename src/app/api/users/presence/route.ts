@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/lib/db";
+import { users } from "@/lib/schema";
+import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 
 // PATCH /api/users/presence — update online status
@@ -13,14 +15,16 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "Invalid status" }, { status: 400 });
   }
 
-  await prisma.user.update({
-    where: { id: session.user.id },
-    data: { status },
-  });
+  await db.update(users).set({ status }).where(eq(users.id, session.user.id));
+
+  const userStatuses = (global as any).userStatuses as Map<string, string> | undefined;
+  if (userStatuses) {
+    userStatuses.set(session.user.id, status);
+  }
 
   // Broadcast to all connected clients
-  if (global.io) {
-    global.io.emit("user-presence", { userId: session.user.id, status });
+  if ((global as any).io) {
+    (global as any).io.emit("user-presence", { userId: session.user.id, status });
   }
 
   return NextResponse.json({ ok: true });

@@ -172,6 +172,9 @@ app.prepare().then(() => {
   const userSockets = new Map(); // userId -> Set(socket.id)
   const userStatuses = new Map(); // userId -> status string
 
+  global.userSockets = userSockets;
+  global.userStatuses = userStatuses;
+
   io.on("connection", (socket) => {
     console.log("🔌 Client connected:", socket.id);
 

@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
 import { or, ilike } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { getCache, setCache } from "@/lib/cache";
+import { getUserPresenceStatus } from "@/lib/presence";
 
 // GET /api/users — get all employees
 export async function GET(req: NextRequest) {
@@ -12,12 +12,6 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const q = searchParams.get("q");
-
-  const cacheKey = `users_list_${q || 'all'}`;
-  const cachedUsers = await getCache(cacheKey);
-  if (cachedUsers) {
-    return NextResponse.json({ users: cachedUsers });
-  }
 
   const usersData = await db.query.users.findMany({
     where: q
@@ -43,10 +37,10 @@ export async function GET(req: NextRequest) {
     limit: 50,
   });
 
-  await setCache(cacheKey, usersData, 60);
+  const liveUsersData = usersData.map(u => ({
+    ...u,
+    status: getUserPresenceStatus(u.id),
+  }));
 
-  return NextResponse.json(
-    { users: usersData },
-    { headers: { "Cache-Control": "s-maxage=60, stale-while-revalidate=300" } }
-  );
+  return NextResponse.json({ users: liveUsersData });
 }

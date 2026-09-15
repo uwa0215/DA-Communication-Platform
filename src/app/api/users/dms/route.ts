@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getCache, setCache } from "@/lib/cache";
+import { getUserPresenceStatus } from "@/lib/presence";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -55,7 +56,7 @@ export async function GET(req: NextRequest) {
         id: u.id,
         name: u.name,
         avatar: u.avatar,
-        status: u.status,
+        status: getUserPresenceStatus(u.id),
         jobTitle: u.jobTitle,
         unreadCount,
         lastMessageAt,
