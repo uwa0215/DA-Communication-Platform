@@ -159,18 +159,20 @@ export default function ChatArea({
   const apiBase = channelId ? `/api/channels/${channelId}/messages` : `/api/dm/${dmUserId}`;
   const roomId = dmUserId ? [currentUserId, dmUserId].sort().join(":") : null;
 
+  const extensions = useMemo(() => [
+    StarterKit,
+    Placeholder.configure({
+      placeholder: `Message ${channelName ? "#" + channelName : dmUser?.name || "someone"}`,
+    }),
+    Link.configure({ openOnClick: false }),
+    Mention.configure({
+      HTMLAttributes: { class: 'mention-tag' },
+      suggestion: getSuggestion(),
+    }),
+  ], [channelName, dmUser?.name]);
+
   const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Placeholder.configure({
-        placeholder: `Message ${channelName ? "#" + channelName : dmUser?.name}`,
-      }),
-      Link.configure({ openOnClick: false }),
-      Mention.configure({
-        HTMLAttributes: { class: 'mention-tag' },
-        suggestion: getSuggestion(),
-      }),
-    ],
+    extensions,
     content: '',
     onUpdate: ({ editor }) => {
       setIsEditorEmpty(editor.isEmpty);

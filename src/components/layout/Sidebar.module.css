@@ -637,12 +637,13 @@
     max-width: 320px !important;
     min-width: 270px !important;
     height: calc(100dvh - var(--header-h, 60px)) !important;
-    transform: translateX(-100%);
+    transform: translateX(-110%) !important;
     z-index: 100;
     background: var(--bg-panel) !important;
+    border-right: none !important;
     box-shadow: none !important;
-    visibility: hidden;
-    pointer-events: none;
+    visibility: hidden !important;
+    pointer-events: none !important;
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s ease !important;
   }
 
@@ -651,7 +652,8 @@
   }
   
   .sidebar.open {
-    transform: translateX(0);
+    transform: translateX(0) !important;
+    border-right: 1px solid var(--border) !important;
     box-shadow: 8px 0 32px rgba(0, 0, 0, 0.35) !important;
     visibility: visible !important;
     pointer-events: auto !important;

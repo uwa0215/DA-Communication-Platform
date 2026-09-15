@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import Image from "next/image";
 import { X, Send } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
@@ -67,16 +67,18 @@ export default function ThreadPanel({
   const apiBase = channelId ? `/api/channels/${channelId}/messages` : `/api/dm/${dmUserId}`;
   const roomId = dmUserId ? [currentUserId, dmUserId].sort().join(":") : null;
 
+  const extensions = useMemo(() => [
+    StarterKit,
+    Placeholder.configure({ placeholder: "Reply..." }),
+    Link.configure({ openOnClick: false }),
+    Mention.configure({
+      HTMLAttributes: { class: 'mention-tag' },
+      suggestion: getSuggestion(),
+    }),
+  ], []);
+
   const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Placeholder.configure({ placeholder: "Reply..." }),
-      Link.configure({ openOnClick: false }),
-      Mention.configure({
-        HTMLAttributes: { class: 'mention-tag' },
-        suggestion: getSuggestion(),
-      }),
-    ],
+    extensions,
     content: '',
     onUpdate: ({ editor }) => {
       setIsEditorEmpty(editor.isEmpty);
