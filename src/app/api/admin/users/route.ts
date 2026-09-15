@@ -68,15 +68,19 @@ export async function PATCH(req: NextRequest) {
         });
       }
     } else if (action === "reject" || action === "delete") {
-      // Prevent admin from deleting themselves
+      // Prevent admin from deleting their own account
       if (session?.user?.id === id) {
         return NextResponse.json({ error: "You cannot delete your own account." }, { status: 400 });
       }
       try {
         await prisma.$transaction([
+          prisma.meetingParticipant.deleteMany({ where: { userId: id } }),
+          prisma.meeting.deleteMany({ where: { createdById: id } }),
+          prisma.notification.deleteMany({ where: { userId: id } }),
+          prisma.dMReaction.deleteMany({ where: { userId: id } }),
+          prisma.reaction.deleteMany({ where: { userId: id } }),
           prisma.channelMember.deleteMany({ where: { userId: id } }),
           prisma.message.deleteMany({ where: { senderId: id } }),
-          prisma.reaction.deleteMany({ where: { userId: id } }),
           prisma.directMessage.deleteMany({ where: { senderId: id } }),
           prisma.directMessage.deleteMany({ where: { receiverId: id } }),
           prisma.channel.deleteMany({ where: { createdById: id } }),
@@ -84,7 +88,7 @@ export async function PATCH(req: NextRequest) {
         ]);
       } catch (e: any) {
         console.error("Delete user transaction error:", e);
-        return NextResponse.json({ error: e.message || "Database transaction error" }, { status: 500 });
+        return NextResponse.json({ error: e.message || "Failed to delete user account" }, { status: 500 });
       }
     }
 

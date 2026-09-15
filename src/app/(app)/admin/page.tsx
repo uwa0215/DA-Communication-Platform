@@ -134,7 +134,7 @@ export default function AdminDashboard() {
       </div>
 
       {errorMsg && (
-        <div style={{ color: "#ef4444", marginBottom: 20, padding: "12px 16px", background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.2)", borderRadius: 12, fontSize: 13.5 }}>
+        <div className={styles.errorAlert}>
           {errorMsg}
         </div>
       )}

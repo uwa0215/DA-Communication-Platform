@@ -2,15 +2,18 @@
 .adminPage {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 24px;
   background: var(--bg-panel);
   transition: background 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 @media (max-width: 768px) {
   .adminPage {
     padding: 16px;
-    padding-bottom: 80px; /* Space for mobile bottom bar */
+    padding-bottom: 84px; /* Space for mobile bottom bar */
   }
 }
 
@@ -22,6 +25,17 @@
   margin-bottom: 24px;
   gap: 16px;
   flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 640px) {
+  .adminHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
 }
 
 .adminTitle {
@@ -44,9 +58,11 @@
   position: relative;
   flex: 1;
   max-width: 320px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 640px) {
   .searchWrap {
     max-width: 100%;
     width: 100%;
@@ -71,6 +87,7 @@
   font-size: 14px;
   font-family: inherit;
   width: 100%;
+  box-sizing: border-box;
   outline: none;
   transition: all 0.2s ease;
 }
@@ -84,9 +101,25 @@
 }
 .searchInput::placeholder { color: var(--text-muted); }
 
+/* Error Alert */
+.errorAlert {
+  color: #ef4444;
+  margin-bottom: 20px;
+  padding: 12px 16px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
 /* Section Headers */
 .section {
   margin-bottom: 28px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .sectionHeader {
@@ -124,12 +157,14 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 @media (max-width: 640px) {
   .contactsGrid {
     grid-template-columns: 1fr;
-    gap: 8px;
+    gap: 10px;
   }
 }
 
@@ -145,6 +180,8 @@
   border-radius: 14px;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
+  width: 100%;
+  box-sizing: border-box;
 }
 :global(.dark) .contactRow {
   background: rgba(19, 27, 46, 0.6);
@@ -163,12 +200,22 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), 0 0 15px rgba(52, 211, 153, 0.06);
 }
 
+@media (max-width: 640px) {
+  .contactRow {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+  }
+}
+
 .rowLeft {
   display: flex;
   align-items: center;
   gap: 14px;
   min-width: 0;
   flex: 1;
+  width: 100%;
 }
 
 .avatarWrap {
@@ -217,6 +264,7 @@
   gap: 2px;
   min-width: 0;
   flex: 1;
+  overflow: hidden;
 }
 
 .nameRow {
@@ -265,6 +313,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  width: 100%;
 }
 
 .contactDetails {
@@ -273,9 +322,10 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  width: 100%;
 }
 
-/* Actions */
+/* Actions Bar */
 .rowRight {
   display: flex;
   align-items: center;
@@ -283,11 +333,26 @@
   flex-shrink: 0;
 }
 
+@media (max-width: 640px) {
+  .rowRight {
+    width: 100%;
+    justify-content: flex-end;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+    margin-top: 2px;
+  }
+  :global(.dark) .rowRight {
+    border-top-color: rgba(52, 211, 153, 0.08);
+  }
+}
+
 .approveBtn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 7px 14px;
   border-radius: 8px;
   background: #22c55e;
   color: white;
@@ -297,16 +362,22 @@
   cursor: pointer;
   transition: all 0.2s ease;
 }
+@media (max-width: 640px) {
+  .approveBtn {
+    flex: 1;
+  }
+}
 .approveBtn:hover {
   background: #16a34a;
-  transform: scale(1.03);
+  transform: scale(1.02);
 }
 
 .rejectBtn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 7px 14px;
   border-radius: 8px;
   background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
@@ -316,17 +387,22 @@
   cursor: pointer;
   transition: all 0.2s ease;
 }
+@media (max-width: 640px) {
+  .rejectBtn {
+    flex: 1;
+  }
+}
 .rejectBtn:hover {
   background: #ef4444;
   color: white;
-  transform: scale(1.03);
 }
 
 .deleteBtn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  padding: 6px 10px;
+  padding: 7px 12px;
   border-radius: 8px;
   background: rgba(239, 68, 68, 0.08);
   color: #ef4444;
@@ -345,8 +421,9 @@
 .roleToggleBtn {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 10px;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
   border-radius: 8px;
   background: var(--bg-hover);
   color: var(--text-secondary);
@@ -355,6 +432,11 @@
   border: 1px solid var(--border);
   cursor: pointer;
   transition: all 0.2s ease;
+}
+@media (max-width: 640px) {
+  .roleToggleBtn {
+    flex: 1;
+  }
 }
 .roleToggleBtn:hover {
   background: rgba(16, 185, 129, 0.1);
@@ -373,6 +455,7 @@
   justify-content: center;
   transition: all 0.2s ease;
   text-decoration: none;
+  flex-shrink: 0;
 }
 :global(.dark) .msgBtn {
   background: rgba(52, 211, 153, 0.12);
@@ -393,4 +476,6 @@
   background: var(--bg-sidebar);
   border: 1px dashed var(--border);
   border-radius: 14px;
+  width: 100%;
+  box-sizing: border-box;
 }
