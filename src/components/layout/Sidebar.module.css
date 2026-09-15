@@ -640,8 +640,10 @@
     transform: translateX(-100%);
     z-index: 100;
     background: var(--bg-panel) !important;
-    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.35);
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: none !important;
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s ease !important;
   }
 
   :global(.dark) .sidebar {
@@ -650,6 +652,9 @@
   
   .sidebar.open {
     transform: translateX(0);
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.35) !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
   }
 
   .mobileBackdrop {
