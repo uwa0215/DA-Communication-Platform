@@ -246,15 +246,6 @@ export default function AdminDashboard() {
 
                   <div className={styles.rowRight}>
                     <button
-                      className={styles.roleToggleBtn}
-                      onClick={() => toggleRole(u.id)}
-                      title={u.role === "admin" ? "Demote to Member" : "Promote to Admin"}
-                    >
-                      <Shield size={13} />
-                      {u.role === "admin" ? "Demote" : "Make Admin"}
-                    </button>
-
-                    <button
                       className={styles.deleteBtn}
                       onClick={() => deleteUser(u.id)}
                       title="Delete User Account"
