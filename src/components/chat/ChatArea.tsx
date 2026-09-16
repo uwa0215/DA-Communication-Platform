@@ -357,7 +357,11 @@ export default function ChatArea({
         if (
           !target.closest(`.${styles.msgActions}`) &&
           !target.closest(`.${styles.msgMenuBtn}`) &&
-          !target.closest(`.${styles.emojiPicker}`)
+          !target.closest(`.${styles.emojiPicker}`) &&
+          !target.closest(`.${styles.longPressModalOverlay}`) &&
+          !target.closest(`.${styles.longPressCardContainer}`) &&
+          !target.closest(`.${styles.messengerQuickReactions}`) &&
+          !target.closest(`.${styles.messengerActionMenu}`)
         ) {
           setActiveActionsMsgId(null);
           setShowEmoji(false);
