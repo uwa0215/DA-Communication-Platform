@@ -252,7 +252,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
       setPresences(p => ({ ...p, ...initialMap }));
     });
 
-    socket.on("dm-notification", ({ from }: { from: string }) => {
+    socket.on("dm-notification", async ({ from, sender }: { from: string; sender?: any }) => {
       const currentDmMatch = window.location.pathname.match(/\/dm\/(.+)/);
       const currentDmId = currentDmMatch ? currentDmMatch[1] : null;
 
@@ -266,7 +266,46 @@ export default function Sidebar({ currentUser }: SidebarProps) {
           return muted;
         });
       }
-      mutateDmUsers();
+
+      // Optimistically add new user account to DM sidebar list instantly
+      if (sender) {
+        setDmUsers(prev => {
+          const existingIndex = prev.findIndex(u => u.id === from);
+          if (existingIndex !== -1) {
+            const updated = [...prev];
+            updated[existingIndex] = {
+              ...updated[existingIndex],
+              lastMessageAt: Date.now(),
+            };
+            return updated;
+          } else {
+            return [
+              {
+                id: sender.id,
+                name: sender.name,
+                avatar: sender.avatar,
+                status: sender.status || "online",
+                jobTitle: sender.jobTitle,
+                unreadCount: currentDmId === from ? 0 : 1,
+                lastMessageAt: Date.now(),
+              },
+              ...prev,
+            ];
+          }
+        });
+      }
+
+      // Re-fetch DM list bypassing SWR deduping
+      try {
+        const res = await fetch("/api/users/dms");
+        if (res.ok) {
+          const data = await res.json();
+          if (data.users) {
+            setDmUsers(data.users);
+            mutateDmUsers(data, false);
+          }
+        }
+      } catch (e) {}
     });
 
     return () => {

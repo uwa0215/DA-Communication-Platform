@@ -123,7 +123,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
   // Broadcast via Socket.io
   if (global.io) {
     global.io.to(`dm:${roomId}`).emit("new-dm", broadcastMsg);
-    global.io.to(`user:${receiverId}`).emit("dm-notification", { from: myId });
+    global.io.to(`user:${receiverId}`).emit("dm-notification", {
+      from: myId,
+      sender: fullMessage?.sender,
+      message: broadcastMsg
+    });
     
     const [notif] = await db.insert(notifications).values({
       userId: receiverId,
