@@ -2,7 +2,7 @@
 
 import { useCall } from "./CallProvider";
 import { Mic, MicOff, PhoneOff, Video, VideoOff } from "lucide-react";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
 export default function ActiveCall() {
@@ -12,121 +12,65 @@ export default function ActiveCall() {
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const remoteAudioRef = useRef<HTMLAudioElement>(null);
-  const jitsiContainerRef = useRef<HTMLDivElement>(null);
-  const jitsiApiRef = useRef<any>(null);
 
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
+  const [callDuration, setCallDuration] = useState(0);
+
+  // Call duration timer
+  useEffect(() => {
+    if (!activeCall) {
+      setCallDuration(0);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setCallDuration(prev => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [activeCall]);
+
+  const formatDuration = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Sync Local PIP Video Stream whenever localStream changes
   useEffect(() => {
-    const videoEl = localVideoRef.current;
-    if (videoEl && localStream) {
-      if (videoEl.srcObject !== localStream) {
-        videoEl.srcObject = localStream;
+    const el = localVideoRef.current;
+    if (el && localStream) {
+      if (el.srcObject !== localStream) {
+        el.srcObject = localStream;
       }
-      videoEl.play().catch(e => console.log("Local video play error:", e));
+      el.play().catch(e => console.log("Local video play error:", e));
     }
   }, [localStream, isCalling, activeCall]);
 
   // Sync Remote Audio Stream whenever remoteStream changes
   useEffect(() => {
-    const audioEl = remoteAudioRef.current;
-    if (audioEl && remoteStream) {
-      if (audioEl.srcObject !== remoteStream) {
-        audioEl.srcObject = remoteStream;
+    const el = remoteAudioRef.current;
+    if (el && remoteStream) {
+      if (el.srcObject !== remoteStream) {
+        el.srcObject = remoteStream;
       }
-      audioEl.play().catch(e => console.log("Remote audio play error:", e));
+      el.play().catch(e => console.log("Remote audio play error:", e));
     }
   }, [remoteStream, activeCall]);
 
   // Sync Remote Video Stream whenever remoteStream changes
   useEffect(() => {
-    const videoEl = remoteVideoRef.current;
-    if (videoEl && remoteStream) {
-      if (videoEl.srcObject !== remoteStream) {
-        videoEl.srcObject = remoteStream;
+    const el = remoteVideoRef.current;
+    if (el && remoteStream) {
+      if (el.srcObject !== remoteStream) {
+        el.srcObject = remoteStream;
       }
-      videoEl.play().catch(e => console.log("Remote video play error:", e));
+      el.play().catch(e => console.log("Remote video play error:", e));
     }
   }, [remoteStream, activeCall]);
 
-  // Initialize high-performance media engine for guaranteed WebRTC connectivity
-  useEffect(() => {
-    if (!activeCall) return;
-
-    const loadJitsiScript = () => {
-      return new Promise<void>((resolve) => {
-        if (typeof window === "undefined") return resolve();
-        if ((window as any).JitsiMeetExternalAPI) {
-          resolve();
-          return;
-        }
-        const script = document.createElement("script");
-        script.src = "https://meet.jit.si/external_api.js";
-        script.async = true;
-        script.onload = () => resolve();
-        script.onerror = () => resolve();
-        document.body.appendChild(script);
-      });
-    };
-
-    let isSubscribed = true;
-
-    loadJitsiScript().then(() => {
-      if (!isSubscribed || !jitsiContainerRef.current || !activeCall) return;
-
-      if (jitsiApiRef.current) {
-        try { jitsiApiRef.current.dispose(); } catch (e) {}
-      }
-
-      const roomName = `companychat_call_${[activeCall.user.id].sort().join('_')}`;
-
-      try {
-        const options = {
-          roomName: roomName,
-          width: "100%",
-          height: "100%",
-          parentNode: jitsiContainerRef.current,
-          configOverwrite: {
-            startWithAudioMuted: false,
-            startWithVideoMuted: activeCall.type === 'audio',
-            disableDeepLinking: true,
-            prejoinPageEnabled: false,
-            enableWelcomePage: false,
-            toolbarButtons: []
-          },
-          interfaceConfigOverwrite: {
-            SHOW_JITSI_WATERMARK: false,
-            SHOW_WATERMARK_FOR_GUESTS: false,
-            SHOW_BRAND_WATERMARK: false,
-            SHOW_POWERED_BY: false,
-            TOOLBAR_BUTTONS: [],
-            MOBILE_APP_PROMO: false,
-            DEFAULT_BACKGROUND: '#090d16'
-          }
-        };
-
-        const api = new (window as any).JitsiMeetExternalAPI("meet.jit.si", options);
-        jitsiApiRef.current = api;
-      } catch (err) {
-        console.error("Jitsi init error:", err);
-      }
-    });
-
-    return () => {
-      isSubscribed = false;
-      if (jitsiApiRef.current) {
-        try { jitsiApiRef.current.dispose(); } catch (e) {}
-        jitsiApiRef.current = null;
-      }
-    };
-  }, [activeCall]);
-
   const toggleMute = () => {
-    if (jitsiApiRef.current) {
-      try { jitsiApiRef.current.executeCommand('toggleAudio'); } catch (e) {}
-    }
     if (localStream) {
       localStream.getAudioTracks().forEach(t => t.enabled = !t.enabled);
     }
@@ -134,22 +78,10 @@ export default function ActiveCall() {
   };
 
   const toggleVideo = () => {
-    if (jitsiApiRef.current) {
-      try { jitsiApiRef.current.executeCommand('toggleVideo'); } catch (e) {}
-    }
     if (localStream) {
       localStream.getVideoTracks().forEach(t => t.enabled = !t.enabled);
     }
     setIsVideoOff(prev => !prev);
-  };
-
-  const handleEndCall = () => {
-    if (jitsiApiRef.current) {
-      try { jitsiApiRef.current.executeCommand('hangup'); } catch (e) {}
-      try { jitsiApiRef.current.dispose(); } catch (e) {}
-      jitsiApiRef.current = null;
-    }
-    endCall();
   };
 
   if (!activeCall && !isCalling) return null;
@@ -170,23 +102,10 @@ export default function ActiveCall() {
       alignItems: 'center'
     }}>
       
-      {/* High-Performance WebRTC Media Room Engine Container */}
-      <div 
-        ref={jitsiContainerRef} 
-        style={{
-          position: 'absolute',
-          top: 0, left: 0, right: 0, bottom: 0,
-          width: '100%', height: '100%',
-          zIndex: 1,
-          opacity: activeCall && !isCalling ? 1 : 0,
-          pointerEvents: 'none'
-        }}
-      />
-
-      {/* Always-mounted Dedicated Audio Element */}
+      {/* Always-mounted Remote Audio tag */}
       <audio ref={remoteAudioRef} autoPlay playsInline />
 
-      {/* Remote Video Element (Full Screen Fallback) */}
+      {/* Remote Video Element (Full Screen for Video Calls) */}
       <video 
         ref={remoteVideoRef} 
         autoPlay 
@@ -195,8 +114,7 @@ export default function ActiveCall() {
           display: remoteStream && isVideoCall && !isVideoOff ? 'block' : 'none', 
           width: '100%', 
           height: '100%', 
-          objectFit: 'cover',
-          zIndex: 2
+          objectFit: 'cover' 
         }} 
       />
 
@@ -217,12 +135,12 @@ export default function ActiveCall() {
           <h2 style={{ margin: '0 0 10px', fontSize: 28, fontWeight: 700 }}>{userName}</h2>
           <p style={{ margin: 0, opacity: 0.85, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ width: 10, height: 10, borderRadius: '50%', background: remoteStream || activeCall ? '#22c55e' : '#f59e0b', display: 'inline-block' }} />
-            {!activeCall ? "Calling..." : (isVideoCall ? "Video Call Connected" : "Voice Call Connected")}
+            {!activeCall ? "Ringing..." : (isVideoCall ? `Video Call • ${formatDuration(callDuration)}` : `Voice Call • ${formatDuration(callDuration)}`)}
           </p>
         </div>
       )}
 
-      {/* Local Video (PIP) */}
+      {/* Local Camera PIP Window */}
       <div style={{
         position: 'absolute',
         bottom: 110,
@@ -246,7 +164,7 @@ export default function ActiveCall() {
         />
       </div>
 
-      {/* Meta Messenger Floating Controls */}
+      {/* Floating Control Bar */}
       <div style={{
         position: 'absolute',
         bottom: 32,
@@ -281,7 +199,7 @@ export default function ActiveCall() {
         )}
 
         <button 
-          onClick={handleEndCall}
+          onClick={endCall}
           title="End call"
           style={{ width: 52, height: 52, borderRadius: '50%', border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)', transition: 'all 0.2s ease' }}
         >
