@@ -491,6 +491,11 @@ export default function ChatArea({
           return [...filtered, msg];
         });
       });
+      socket.on("reaction-update", ({ messageId, reactions }: any) => {
+        setMessages(msgs =>
+          msgs.map(m => m.id === messageId ? { ...m, reactions } : m)
+        );
+      });
       socket.on("message-updated", (msg: Message) => {
         setMessages(m => m.map(x => x.id === msg.id ? { ...x, content: msg.content, edited: true } : x));
       });
@@ -511,6 +516,7 @@ export default function ChatArea({
       } else if (roomId) {
         socket.emit("leave-dm", roomId);
         socket.off("new-dm");
+        socket.off("reaction-update");
         socket.off("message-updated");
         socket.off("message-deleted");
       }
@@ -1080,7 +1086,7 @@ export default function ChatArea({
                     </div>
                   )}
                 <div
-                  className={`${styles.messageRow} ${!showHeader ? styles.messageRowCompact : ""} ${isMine ? styles.messageRowMine : ""}`}
+                  className={`${styles.messageRow} ${!showHeader ? styles.messageRowCompact : ""} ${isMine ? styles.messageRowMine : ""} ${activeActionsMsgId === msg.id ? styles.messageRowActive : ""}`}
                   onMouseEnter={() => setHoverMsgId(msg.id)}
                   onMouseLeave={() => setHoverMsgId(null)}
                 >

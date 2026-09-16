@@ -1121,12 +1121,21 @@
   to { opacity: 1; }
 }
 
+.messageRowActive {
+  z-index: 999 !important;
+  position: relative;
+}
+
 /* Meta Messenger Long Press Overlay & Actions */
 .longPressBackdrop {
   position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   z-index: 998;
   animation: fadeIn 0.15s ease-out;
 }
