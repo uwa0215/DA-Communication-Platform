@@ -2,42 +2,39 @@
 
 import { useCall } from "./CallProvider";
 import { Mic, MicOff, PhoneOff, Video, VideoOff } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 
 export default function ActiveCall() {
   const { state, endCall } = useCall();
   const { activeCall, isCalling, localStream, remoteStream } = state;
 
-  const localVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteVideoRef = useRef<HTMLVideoElement>(null);
-  const remoteAudioRef = useRef<HTMLAudioElement>(null);
-
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
 
-  useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream;
-      localVideoRef.current.play().catch(e => console.log("Local play error:", e));
+  // Callback ref for local PIP camera video — binds immediately on DOM mount
+  const setLocalVideoNode = useCallback((node: HTMLVideoElement | null) => {
+    if (node && localStream) {
+      node.srcObject = localStream;
+      node.play().catch(e => console.log("Local video play error:", e));
     }
-  }, [localStream, isCalling, activeCall]);
+  }, [localStream]);
 
-  // Dedicated Audio output for unblocked real-time WebRTC sound
-  useEffect(() => {
-    if (remoteAudioRef.current && remoteStream) {
-      remoteAudioRef.current.srcObject = remoteStream;
-      remoteAudioRef.current.play().catch(e => console.log("Remote audio play error:", e));
+  // Callback ref for remote video — binds immediately on DOM mount
+  const setRemoteVideoNode = useCallback((node: HTMLVideoElement | null) => {
+    if (node && remoteStream) {
+      node.srcObject = remoteStream;
+      node.play().catch(e => console.log("Remote video play error:", e));
     }
-  }, [remoteStream, activeCall]);
+  }, [remoteStream]);
 
-  // Dedicated Video output for video call stream
-  useEffect(() => {
-    if (remoteVideoRef.current && remoteStream) {
-      remoteVideoRef.current.srcObject = remoteStream;
-      remoteVideoRef.current.play().catch(e => console.log("Remote video play error:", e));
+  // Callback ref for remote audio output — binds immediately on DOM mount
+  const setRemoteAudioNode = useCallback((node: HTMLAudioElement | null) => {
+    if (node && remoteStream) {
+      node.srcObject = remoteStream;
+      node.play().catch(e => console.log("Remote audio play error:", e));
     }
-  }, [remoteStream, activeCall]);
+  }, [remoteStream]);
 
   const toggleMute = () => {
     if (localStream) {
@@ -49,7 +46,8 @@ export default function ActiveCall() {
   const toggleVideo = () => {
     if (localStream) {
       localStream.getVideoTracks().forEach(t => t.enabled = !t.enabled);
-      setIsVideoOff(!localStream.getVideoTracks()[0]?.enabled);
+      const isEnabled = localStream.getVideoTracks()[0]?.enabled;
+      setIsVideoOff(!isEnabled);
     }
   };
 
@@ -63,7 +61,7 @@ export default function ActiveCall() {
     <div style={{
       position: 'fixed',
       top: 0, left: 0, right: 0, bottom: 0,
-      background: '#0b132b',
+      background: '#090d16',
       zIndex: 99997,
       display: 'flex',
       flexDirection: 'column',
@@ -71,61 +69,62 @@ export default function ActiveCall() {
       alignItems: 'center'
     }}>
       
-      {/* Always-mounted Dedicated Audio Element to ensure audio is output through speakers during calls */}
-      <audio ref={remoteAudioRef} autoPlay playsInline />
+      {/* Always-mounted Dedicated Audio Element */}
+      <audio ref={setRemoteAudioNode} autoPlay playsInline />
 
-      {/* Remote Video Element for video call streams */}
-      {remoteStream && isVideoCall && (
-        <video 
-          ref={remoteVideoRef} 
-          autoPlay 
-          playsInline 
-          style={{ 
-            width: '100%', 
-            height: '100%', 
-            objectFit: 'cover' 
-          }} 
-        />
-      )}
+      {/* Remote Video Element (Full Screen) */}
+      <video 
+        ref={setRemoteVideoNode} 
+        autoPlay 
+        playsInline 
+        style={{ 
+          display: remoteStream && isVideoCall && !isVideoOff ? 'block' : 'none', 
+          width: '100%', 
+          height: '100%', 
+          objectFit: 'cover' 
+        }} 
+      />
 
-      {/* Voice Call Avatar & Status UI */}
-      {(!remoteStream || !isVideoCall) && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white' }}>
+      {/* Voice Call / Waiting Avatar & Status UI */}
+      {(!remoteStream || !isVideoCall || isVideoOff) && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', zIndex: 10 }}>
           <div style={{ 
-            width: 130, height: 130, borderRadius: '50%', background: '#1c2541', marginBottom: 24, 
+            width: 140, height: 140, borderRadius: '50%', background: '#1e293b', marginBottom: 24, 
             overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 30px rgba(59, 130, 246, 0.3)', border: '4px solid rgba(255, 255, 255, 0.1)' 
+            boxShadow: '0 0 40px rgba(59, 130, 246, 0.4)', border: '4px solid rgba(255, 255, 255, 0.15)' 
           }}>
             {userAvatar ? (
-              <Image src={userAvatar} alt={userName} width={130} height={130} style={{ objectFit: 'cover' }} unoptimized />
+              <Image src={userAvatar} alt={userName} width={140} height={140} style={{ objectFit: 'cover' }} unoptimized />
             ) : (
-              <span style={{ fontSize: 52, fontWeight: 'bold', color: '#60a5fa' }}>{userName.charAt(0).toUpperCase()}</span>
+              <span style={{ fontSize: 56, fontWeight: 'bold', color: '#60a5fa' }}>{userName.charAt(0).toUpperCase()}</span>
             )}
           </div>
-          <h2 style={{ margin: '0 0 10px', fontSize: 28, fontWeight: 600 }}>{userName}</h2>
-          <p style={{ margin: 0, opacity: 0.8, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: remoteStream ? '#22c55e' : '#f59e0b', display: 'inline-block' }} />
-            {!remoteStream ? "Ringing..." : (isVideoCall ? "Connecting Video..." : "Voice Call Connected")}
+          <h2 style={{ margin: '0 0 10px', fontSize: 28, fontWeight: 700 }}>{userName}</h2>
+          <p style={{ margin: 0, opacity: 0.85, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 10, height: 10, borderRadius: '50%', background: remoteStream ? '#22c55e' : '#f59e0b', display: 'inline-block' }} />
+            {!remoteStream ? "Calling..." : (isVideoCall ? "Video Connected" : "Voice Call Connected")}
           </p>
         </div>
       )}
 
       {/* Local Video (PIP) */}
-      {(localStream && (activeCall?.type === 'video' || isCalling)) && (
+      {localStream && (
         <div style={{
           position: 'absolute',
-          bottom: 100,
+          bottom: 110,
           right: 24,
-          width: 160,
-          height: 240,
-          background: '#222',
-          borderRadius: 12,
+          width: 150,
+          height: 220,
+          background: '#0f172a',
+          borderRadius: 16,
           overflow: 'hidden',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-          border: '2px solid rgba(255,255,255,0.1)'
+          boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
+          border: '2px solid rgba(255,255,255,0.2)',
+          zIndex: 20,
+          display: isVideoOff ? 'none' : 'block'
         }}>
           <video 
-            ref={localVideoRef} 
+            ref={setLocalVideoNode} 
             autoPlay 
             playsInline 
             muted 
@@ -141,33 +140,39 @@ export default function ActiveCall() {
         left: '50%',
         transform: 'translateX(-50%)',
         display: 'flex',
-        gap: 16,
-        padding: '12px 24px',
-        background: 'rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(10px)',
-        borderRadius: 32,
+        gap: 20,
+        padding: '14px 28px',
+        background: 'rgba(15, 23, 42, 0.85)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderRadius: 40,
+        border: '1px solid rgba(255,255,255,0.1)',
+        zIndex: 30
       }}>
         <button 
           onClick={toggleMute}
-          style={{ width: 48, height: 48, borderRadius: '50%', border: 'none', background: isMuted ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.2)', color: isMuted ? '#000' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          title={isMuted ? "Unmute" : "Mute"}
+          style={{ width: 52, height: 52, borderRadius: '50%', border: 'none', background: isMuted ? '#ffffff' : 'rgba(255,255,255,0.15)', color: isMuted ? '#000' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }}
         >
-          {isMuted ? <MicOff size={20} /> : <Mic size={20} />}
+          {isMuted ? <MicOff size={22} /> : <Mic size={22} />}
         </button>
         
-        {activeCall?.type === 'video' && (
+        {isVideoCall && (
           <button 
             onClick={toggleVideo}
-            style={{ width: 48, height: 48, borderRadius: '50%', border: 'none', background: isVideoOff ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.2)', color: isVideoOff ? '#000' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            title={isVideoOff ? "Turn on camera" : "Turn off camera"}
+            style={{ width: 52, height: 52, borderRadius: '50%', border: 'none', background: isVideoOff ? '#ffffff' : 'rgba(255,255,255,0.15)', color: isVideoOff ? '#000' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }}
           >
-            {isVideoOff ? <VideoOff size={20} /> : <Video size={20} />}
+            {isVideoOff ? <VideoOff size={22} /> : <Video size={22} />}
           </button>
         )}
 
         <button 
           onClick={endCall}
-          style={{ width: 48, height: 48, borderRadius: '50%', border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          title="End call"
+          style={{ width: 52, height: 52, borderRadius: '50%', border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)', transition: 'all 0.2s ease' }}
         >
-          <PhoneOff size={20} />
+          <PhoneOff size={22} />
         </button>
       </div>
 
