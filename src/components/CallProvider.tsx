@@ -346,8 +346,15 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     };
 
     pc.ontrack = (event) => {
+      console.log("WebRTC track received:", event.track.kind, event.streams);
       if (event.streams && event.streams[0]) {
         setRemoteStream(event.streams[0]);
+      } else if (event.track) {
+        setRemoteStream(prev => {
+          const stream = prev ? new MediaStream(prev.getTracks()) : new MediaStream();
+          stream.addTrack(event.track);
+          return stream;
+        });
       }
     };
 

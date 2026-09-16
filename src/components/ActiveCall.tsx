@@ -2,39 +2,52 @@
 
 import { useCall } from "./CallProvider";
 import { Mic, MicOff, PhoneOff, Video, VideoOff } from "lucide-react";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
 export default function ActiveCall() {
   const { state, endCall } = useCall();
   const { activeCall, isCalling, localStream, remoteStream } = state;
 
+  const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
+
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
 
-  // Callback ref for local PIP camera video — binds immediately on DOM mount
-  const setLocalVideoNode = useCallback((node: HTMLVideoElement | null) => {
-    if (node && localStream) {
-      node.srcObject = localStream;
-      node.play().catch(e => console.log("Local video play error:", e));
+  // Sync Local PIP Video Stream whenever localStream changes
+  useEffect(() => {
+    const videoEl = localVideoRef.current;
+    if (videoEl && localStream) {
+      if (videoEl.srcObject !== localStream) {
+        videoEl.srcObject = localStream;
+      }
+      videoEl.play().catch(e => console.log("Local video play error:", e));
     }
-  }, [localStream]);
+  }, [localStream, isCalling, activeCall]);
 
-  // Callback ref for remote video — binds immediately on DOM mount
-  const setRemoteVideoNode = useCallback((node: HTMLVideoElement | null) => {
-    if (node && remoteStream) {
-      node.srcObject = remoteStream;
-      node.play().catch(e => console.log("Remote video play error:", e));
+  // Sync Remote Audio Stream whenever remoteStream changes
+  useEffect(() => {
+    const audioEl = remoteAudioRef.current;
+    if (audioEl && remoteStream) {
+      if (audioEl.srcObject !== remoteStream) {
+        audioEl.srcObject = remoteStream;
+      }
+      audioEl.play().catch(e => console.log("Remote audio play error:", e));
     }
-  }, [remoteStream]);
+  }, [remoteStream, activeCall]);
 
-  // Callback ref for remote audio output — binds immediately on DOM mount
-  const setRemoteAudioNode = useCallback((node: HTMLAudioElement | null) => {
-    if (node && remoteStream) {
-      node.srcObject = remoteStream;
-      node.play().catch(e => console.log("Remote audio play error:", e));
+  // Sync Remote Video Stream whenever remoteStream changes
+  useEffect(() => {
+    const videoEl = remoteVideoRef.current;
+    if (videoEl && remoteStream) {
+      if (videoEl.srcObject !== remoteStream) {
+        videoEl.srcObject = remoteStream;
+      }
+      videoEl.play().catch(e => console.log("Remote video play error:", e));
     }
-  }, [remoteStream]);
+  }, [remoteStream, activeCall]);
 
   const toggleMute = () => {
     if (localStream) {
@@ -70,11 +83,11 @@ export default function ActiveCall() {
     }}>
       
       {/* Always-mounted Dedicated Audio Element */}
-      <audio ref={setRemoteAudioNode} autoPlay playsInline />
+      <audio ref={remoteAudioRef} autoPlay playsInline />
 
       {/* Remote Video Element (Full Screen) */}
       <video 
-        ref={setRemoteVideoNode} 
+        ref={remoteVideoRef} 
         autoPlay 
         playsInline 
         style={{ 
@@ -108,30 +121,28 @@ export default function ActiveCall() {
       )}
 
       {/* Local Video (PIP) */}
-      {localStream && (
-        <div style={{
-          position: 'absolute',
-          bottom: 110,
-          right: 24,
-          width: 150,
-          height: 220,
-          background: '#0f172a',
-          borderRadius: 16,
-          overflow: 'hidden',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
-          border: '2px solid rgba(255,255,255,0.2)',
-          zIndex: 20,
-          display: isVideoOff ? 'none' : 'block'
-        }}>
-          <video 
-            ref={setLocalVideoNode} 
-            autoPlay 
-            playsInline 
-            muted 
-            style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} 
-          />
-        </div>
-      )}
+      <div style={{
+        position: 'absolute',
+        bottom: 110,
+        right: 24,
+        width: 150,
+        height: 220,
+        background: '#0f172a',
+        borderRadius: 16,
+        overflow: 'hidden',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
+        border: '2px solid rgba(255,255,255,0.2)',
+        zIndex: 20,
+        display: localStream && isVideoCall && !isVideoOff ? 'block' : 'none'
+      }}>
+        <video 
+          ref={localVideoRef} 
+          autoPlay 
+          playsInline 
+          muted 
+          style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }} 
+        />
+      </div>
 
       {/* Controls */}
       <div style={{
