@@ -1154,14 +1154,14 @@
 .messengerQuickReactions {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  padding: 8px 14px;
+  padding: 6px 12px;
   border-radius: 30px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  width: 100%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  width: fit-content;
 }
 
 .quickReactionBtn {
@@ -1209,9 +1209,10 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 16px;
-  padding: 8px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
-  width: 100%;
+  padding: 6px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+  width: 220px;
+  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .messengerMenuItem {
