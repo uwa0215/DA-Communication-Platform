@@ -150,10 +150,12 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
         <button className={styles.mobileMenuBtn} onClick={toggleMobileSidebar} aria-label="Toggle mobile menu">
           <Menu size={24} />
         </button>
-        <div className={styles.logoWrap}>
-          <Image src={agriLogo} alt="Agri Logo" width={60} height={60} className="theme-logo" style={{ objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} unoptimized priority />
-        </div>
-        <span className={styles.brandName}>Trellis</span>
+        <Link href="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: 'inherit', cursor: 'pointer' }} title="Go to Dashboard">
+          <div className={styles.logoWrap}>
+            <Image src={agriLogo} alt="Agri Logo" width={60} height={60} className="theme-logo" style={{ objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} unoptimized priority />
+          </div>
+          <span className={styles.brandName}>Trellis</span>
+        </Link>
       </div>
 
       <div className={styles.center}>

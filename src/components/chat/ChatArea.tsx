@@ -1619,11 +1619,16 @@ export default function ChatArea({
                 <Smile size={20} />
               </button>
               {showInputEmoji && (
-                <div style={{ position: "absolute", bottom: "100%", right: 0, marginBottom: "8px", zIndex: 9999 }}>
-                  <EmojiPicker onEmojiClick={(e) => {
-                    editor?.chain().focus().insertContent(e.emoji).run();
-                    setShowInputEmoji(false);
-                  }} />
+                <div style={{ position: "absolute", bottom: "calc(100% + 8px)", right: 0, zIndex: 9999, boxShadow: "0 12px 36px rgba(0, 0, 0, 0.3)", borderRadius: 16, overflow: "hidden" }}>
+                  <EmojiPicker 
+                    width={typeof window !== "undefined" && window.innerWidth < 450 ? Math.min(300, window.innerWidth - 32) : 340}
+                    height={340}
+                    previewConfig={{ showPreview: false }}
+                    onEmojiClick={(e) => {
+                      editor?.chain().focus().insertContent(e.emoji).run();
+                      setShowInputEmoji(false);
+                    }} 
+                  />
                 </div>
               )}
             </div>
