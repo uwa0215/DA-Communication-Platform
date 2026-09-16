@@ -1901,31 +1901,43 @@ export default function ChatArea({
           const windowW = typeof window !== "undefined" ? window.innerWidth : 800;
           const windowH = typeof window !== "undefined" ? window.innerHeight : 600;
 
-          let reactionStyle: React.CSSProperties = { position: 'fixed', zIndex: 100000 };
-          let menuStyle: React.CSSProperties = { position: 'fixed', zIndex: 100000 };
+          let popoverStyle: React.CSSProperties = {
+            position: 'fixed',
+            zIndex: 100000,
+          };
 
           if (popoverTargetRect) {
-            const isNearBottom = popoverTargetRect.bottom > windowH - 280;
+            const popoverH = isMineMsg ? 350 : 310;
+            let topPos = popoverTargetRect.top - 40;
+            if (topPos + popoverH > windowH - 16) {
+              topPos = windowH - popoverH - 16;
+            }
+            topPos = Math.max(16, topPos);
+
+            popoverStyle = {
+              position: 'fixed',
+              top: topPos,
+              zIndex: 100000,
+            };
 
             if (isMineMsg) {
               const rightVal = Math.max(16, windowW - popoverTargetRect.right);
-              if (isNearBottom) {
-                reactionStyle = { position: 'fixed', bottom: Math.max(16, windowH - popoverTargetRect.top + 10), right: rightVal, zIndex: 100000 };
-                menuStyle = { position: 'fixed', bottom: Math.max(70, windowH - popoverTargetRect.top + 68), right: rightVal, zIndex: 100000 };
-              } else {
-                reactionStyle = { position: 'fixed', top: Math.max(12, popoverTargetRect.top - 54), right: rightVal, zIndex: 100000 };
-                menuStyle = { position: 'fixed', top: Math.min(windowH - 300, popoverTargetRect.bottom + 8), right: rightVal, zIndex: 100000 };
-              }
+              popoverStyle.right = rightVal;
+              popoverStyle.alignItems = 'flex-end';
             } else {
               const leftVal = Math.max(16, popoverTargetRect.left);
-              if (isNearBottom) {
-                reactionStyle = { position: 'fixed', bottom: Math.max(16, windowH - popoverTargetRect.top + 10), left: leftVal, zIndex: 100000 };
-                menuStyle = { position: 'fixed', bottom: Math.max(70, windowH - popoverTargetRect.top + 68), left: leftVal, zIndex: 100000 };
-              } else {
-                reactionStyle = { position: 'fixed', top: Math.max(12, popoverTargetRect.top - 54), left: leftVal, zIndex: 100000 };
-                menuStyle = { position: 'fixed', top: Math.min(windowH - 300, popoverTargetRect.bottom + 8), left: leftVal, zIndex: 100000 };
-              }
+              popoverStyle.left = leftVal;
+              popoverStyle.alignItems = 'flex-start';
             }
+          } else {
+            popoverStyle = {
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 100000,
+              alignItems: 'center',
+            };
           }
 
           return (
@@ -1937,164 +1949,164 @@ export default function ChatArea({
                 setShowEmoji(false);
               }}
             >
-              {/* Floating Quick Reaction Bar */}
               <div 
-                className={styles.messengerQuickReactions}
-                style={reactionStyle}
+                className={styles.longPressCardContainer}
+                style={popoverStyle}
                 onClick={(e) => e.stopPropagation()}
               >
-                {["❤️", "😂", "😮", "😢", "🙏", "👍"].map(e => (
-                  <button
-                    key={e}
-                    className={styles.quickReactionBtn}
-                    onClick={(evt) => {
-                      evt.stopPropagation();
-                      toggleReaction(activeMsg.id, e);
-                      setActiveActionsMsgId(null);
-                    }}
-                  >
-                    {e}
-                  </button>
-                ))}
-                <button
-                  className={styles.quickReactionBtnMore}
-                  onClick={(evt) => {
-                    evt.stopPropagation();
-                    setShowEmoji(prev => !prev);
-                  }}
-                  title="More reactions"
-                >
-                  <Plus size={16} />
-                </button>
-              </div>
-
-              {/* Expanded Inline Emoji Picker if + clicked */}
-              {showEmoji && (
-                <div 
-                  className={styles.emojiPicker} 
-                  style={{
-                    ...reactionStyle,
-                    top: typeof reactionStyle.top === 'number' ? reactionStyle.top - 50 : undefined,
-                    bottom: typeof reactionStyle.bottom === 'number' ? (typeof reactionStyle.bottom === 'number' ? reactionStyle.bottom + 50 : undefined) : undefined
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {EMOJI_SET.map(e => (
+                {/* 1. Quick Reaction Bar */}
+                <div className={styles.messengerQuickReactions}>
+                  {["❤️", "😂", "😮", "😢", "🙏", "👍"].map(e => (
                     <button
                       key={e}
-                      className={styles.emojiPickerBtn}
+                      className={styles.quickReactionBtn}
                       onClick={(evt) => {
                         evt.stopPropagation();
                         toggleReaction(activeMsg.id, e);
-                        setShowEmoji(false);
                         setActiveActionsMsgId(null);
                       }}
                     >
                       {e}
                     </button>
                   ))}
-                  <button className={styles.emojiClose} onClick={() => setShowEmoji(false)}>
-                    <X size={12} />
+                  <button
+                    className={styles.quickReactionBtnMore}
+                    onClick={(evt) => {
+                      evt.stopPropagation();
+                      setShowEmoji(prev => !prev);
+                    }}
+                    title="More reactions"
+                  >
+                    <Plus size={16} />
                   </button>
                 </div>
-              )}
 
-              {/* Meta Messenger Context Menu */}
-              <div 
-                className={styles.messengerActionMenu}
-                style={menuStyle}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  className={styles.messengerMenuItem}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setReplyingToMessage(activeMsg);
-                    editor?.commands.focus();
-                    setActiveActionsMsgId(null);
-                  }}
-                >
-                  <MessageCircle size={16} />
-                  <span>Reply</span>
-                </button>
+                {/* Expanded Inline Emoji Picker if + clicked */}
+                {showEmoji && (
+                  <div className={styles.emojiPicker} onClick={(e) => e.stopPropagation()}>
+                    {EMOJI_SET.map(e => (
+                      <button
+                        key={e}
+                        className={styles.emojiPickerBtn}
+                        onClick={(evt) => {
+                          evt.stopPropagation();
+                          toggleReaction(activeMsg.id, e);
+                          setShowEmoji(false);
+                          setActiveActionsMsgId(null);
+                        }}
+                      >
+                        {e}
+                      </button>
+                    ))}
+                    <button className={styles.emojiClose} onClick={() => setShowEmoji(false)}>
+                      <X size={12} />
+                    </button>
+                  </div>
+                )}
 
-                <button
-                  className={styles.messengerMenuItem}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setActiveThreadId(activeMsg.id);
-                    setActiveActionsMsgId(null);
-                  }}
-                >
-                  <MessageSquare size={16} />
-                  <span>Reply in thread</span>
-                </button>
+                {/* 2. Target Message Bubble Preview (Elevated Meta Messenger Style) */}
+                <div className={`${styles.popoverMsgPreview} ${isMineMsg ? styles.popoverMsgPreviewMine : styles.popoverMsgPreviewTheirs}`}>
+                  <div dangerouslySetInnerHTML={{ __html: activeMsg.content || "" }} />
+                  {activeMsg.fileUrl && (
+                    <div style={{ marginTop: 4, fontSize: 12, opacity: 0.9 }}>
+                      📎 {activeMsg.fileName || "File attachment"}
+                    </div>
+                  )}
+                </div>
 
-                <button
-                  className={styles.messengerMenuItem}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleCopyMessageText(activeMsg);
-                    setActiveActionsMsgId(null);
-                  }}
-                >
-                  <Copy size={16} />
-                  <span>Copy text</span>
-                </button>
-
-                <button
-                  className={styles.messengerMenuItem}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setForwardingMsg(activeMsg);
-                    setActiveActionsMsgId(null);
-                  }}
-                >
-                  <Share2 size={16} />
-                  <span>Forward</span>
-                </button>
-
-                <button
-                  className={styles.messengerMenuItem}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    togglePinMessage(activeMsg.id);
-                    setActiveActionsMsgId(null);
-                  }}
-                >
-                  <Pin size={16} />
-                  <span>{pinnedMessageIds.includes(activeMsg.id) ? "Unpin message" : "Pin message"}</span>
-                </button>
-
-                {activeMsg.sender.id === currentUserId && (
+                {/* 3. Meta Messenger Context Action Menu */}
+                <div className={styles.messengerActionMenu}>
                   <button
                     className={styles.messengerMenuItem}
                     onClick={(e) => {
                       e.stopPropagation();
-                      editor?.commands.setContent(activeMsg.content);
-                      setEditingMessageId(activeMsg.id);
+                      setReplyingToMessage(activeMsg);
                       editor?.commands.focus();
                       setActiveActionsMsgId(null);
                     }}
                   >
-                    <Edit3 size={16} />
-                    <span>Edit</span>
+                    <MessageCircle size={16} />
+                    <span>Reply</span>
                   </button>
-                )}
 
-                {(activeMsg.sender.id === currentUserId || currentUserRole === "admin" || currentUserRole === "moderator") && (
                   <button
-                    className={`${styles.messengerMenuItem} ${styles.messengerMenuItemDanger}`}
+                    className={styles.messengerMenuItem}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setMessageToDelete(activeMsg.id);
+                      setActiveThreadId(activeMsg.id);
                       setActiveActionsMsgId(null);
                     }}
                   >
-                    <Trash2 size={16} />
-                    <span>Remove</span>
+                    <MessageSquare size={16} />
+                    <span>Reply in thread</span>
                   </button>
-                )}
+
+                  <button
+                    className={styles.messengerMenuItem}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCopyMessageText(activeMsg);
+                      setActiveActionsMsgId(null);
+                    }}
+                  >
+                    <Copy size={16} />
+                    <span>Copy text</span>
+                  </button>
+
+                  <button
+                    className={styles.messengerMenuItem}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setForwardingMsg(activeMsg);
+                      setActiveActionsMsgId(null);
+                    }}
+                  >
+                    <Share2 size={16} />
+                    <span>Forward</span>
+                  </button>
+
+                  <button
+                    className={styles.messengerMenuItem}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      togglePinMessage(activeMsg.id);
+                      setActiveActionsMsgId(null);
+                    }}
+                  >
+                    <Pin size={16} />
+                    <span>{pinnedMessageIds.includes(activeMsg.id) ? "Unpin message" : "Pin message"}</span>
+                  </button>
+
+                  {activeMsg.sender.id === currentUserId && (
+                    <button
+                      className={styles.messengerMenuItem}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        editor?.commands.setContent(activeMsg.content);
+                        setEditingMessageId(activeMsg.id);
+                        editor?.commands.focus();
+                        setActiveActionsMsgId(null);
+                      }}
+                    >
+                      <Edit3 size={16} />
+                      <span>Edit</span>
+                    </button>
+                  )}
+
+                  {(activeMsg.sender.id === currentUserId || currentUserRole === "admin" || currentUserRole === "moderator") && (
+                    <button
+                      className={`${styles.messengerMenuItem} ${styles.messengerMenuItemDanger}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMessageToDelete(activeMsg.id);
+                        setActiveActionsMsgId(null);
+                      }}
+                    >
+                      <Trash2 size={16} />
+                      <span>Remove</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           );
