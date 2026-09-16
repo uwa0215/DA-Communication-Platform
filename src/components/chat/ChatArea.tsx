@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Hash, Phone, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings, Menu, ArrowLeft } from "lucide-react";
+import { Hash, Phone, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings, Menu, ArrowLeft, Copy, Share2, Pin, User as UserIcon } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import { useUI } from "@/components/UIProvider";
 import EmojiPicker from "emoji-picker-react";
@@ -145,6 +145,117 @@ export default function ChatArea({
   const [showChannelSettings, setShowChannelSettings] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [forwardingMsg, setForwardingMsg] = useState<Message | null>(null);
+  const [forwardSearch, setForwardSearch] = useState("");
+  const [forwardDestinations, setForwardDestinations] = useState<{ id: string; name: string; type: 'channel' | 'dm' }[]>([]);
+  const [forwardingSending, setForwardingSending] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [pinnedMessageIds, setPinnedMessageIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("companychat_pinned_msgs");
+      if (saved) {
+        try { setPinnedMessageIds(JSON.parse(saved)); } catch (e) {}
+      }
+    }
+  }, []);
+
+  const togglePinMessage = (msgId: string) => {
+    setPinnedMessageIds(prev => {
+      const isPinned = prev.includes(msgId);
+      const updated = isPinned ? prev.filter(id => id !== msgId) : [...prev, msgId];
+      if (typeof window !== "undefined") {
+        localStorage.setItem("companychat_pinned_msgs", JSON.stringify(updated));
+      }
+      setToastMessage(isPinned ? "Message unpinned" : "Message pinned");
+      setTimeout(() => setToastMessage(null), 2500);
+      return updated;
+    });
+  };
+
+  const handleCopyMessageText = (msg: Message) => {
+    try {
+      let plainText = msg.content || "";
+      if (typeof document !== "undefined") {
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = plainText;
+        plainText = tempDiv.textContent || tempDiv.innerText || "";
+      } else {
+        plainText = plainText.replace(/<[^>]+>/g, "");
+      }
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(plainText);
+        setToastMessage("Copied text to clipboard");
+        setTimeout(() => setToastMessage(null), 2500);
+      }
+    } catch (err) {
+      console.error("Failed to copy text:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (!forwardingMsg) return;
+    const loadDestinations = async () => {
+      try {
+        const [channelsData, usersData] = await Promise.all([
+          fetcher("/api/channels").catch(() => []),
+          fetcher("/api/users").catch(() => [])
+        ]);
+        const list: { id: string; name: string; type: 'channel' | 'dm' }[] = [];
+        if (Array.isArray(channelsData)) {
+          channelsData.forEach((c: any) => {
+            list.push({ id: c.id, name: c.name || "Channel", type: 'channel' });
+          });
+        }
+        if (Array.isArray(usersData)) {
+          usersData.forEach((u: any) => {
+            if (u.id !== currentUserId) {
+              list.push({ id: u.id, name: u.name || u.email || "User", type: 'dm' });
+            }
+          });
+        }
+        setForwardDestinations(list);
+      } catch (e) {
+        console.error("Failed to load forward destinations:", e);
+      }
+    };
+    loadDestinations();
+  }, [forwardingMsg, currentUserId]);
+
+  const handleSendForward = async (dest: { id: string; name: string; type: 'channel' | 'dm' }) => {
+    if (!forwardingMsg) return;
+    setForwardingSending(dest.id);
+    try {
+      const url = dest.type === 'channel' ? `/api/channels/${dest.id}/messages` : `/api/dm/${dest.id}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: forwardingMsg.content,
+          fileUrl: forwardingMsg.fileUrl,
+          fileName: forwardingMsg.fileName,
+          fileType: forwardingMsg.fileType,
+        })
+      });
+      if (res.ok) {
+        setToastMessage(`Forwarded to ${dest.name}`);
+        setTimeout(() => setToastMessage(null), 3000);
+        setForwardingMsg(null);
+      }
+    } catch (err) {
+      console.error("Forward error:", err);
+    } finally {
+      setForwardingSending(null);
+    }
+  };
+
+  const filteredForwardDestinations = useMemo(() => {
+    if (!forwardSearch.trim()) return forwardDestinations;
+    const q = forwardSearch.toLowerCase();
+    return forwardDestinations.filter(d => d.name.toLowerCase().includes(q));
+  }, [forwardDestinations, forwardSearch]);
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
@@ -1024,71 +1135,136 @@ export default function ChatArea({
                             );
                           })()}
                           
-                          {/* Message Actions (only when 3 lines clicked or mobile long-pressed) */}
+                          {/* Meta Messenger Long Press Popover */}
                           {activeActionsMsgId === msg.id && !(msg as any).isDeleted && (
-                            <div className={styles.msgActions} onClick={(e) => e.stopPropagation()}>
-                              <button
-                                className={`btn-icon ${styles.msgActionBtn}`}
-                                onClick={() => setShowEmoji(prev => !prev)}
-                                title="Add reaction"
-                              >
-                                <Smile size={15} />
-                              </button>
-                              <button
-                                className={`btn-icon ${styles.msgActionBtn}`}
-                                onClick={() => { setActiveThreadId(msg.id); setActiveActionsMsgId(null); }}
-                                title="Reply in thread"
-                              >
-                                <MessageSquare size={15} />
-                              </button>
-                              <button
-                                className={`btn-icon ${styles.msgActionBtn}`}
-                                onClick={() => { setReplyingToMessage(msg); editor?.commands.focus(); setActiveActionsMsgId(null); }}
-                                title="Quote Reply"
-                              >
-                                <MessageCircle size={15} />
-                              </button>
-                              {isMine && (
+                            <div className={styles.messengerPopoverWrapper} onClick={(e) => e.stopPropagation()}>
+                              {/* Floating Quick Reaction Bar */}
+                              <div className={styles.messengerQuickReactions}>
+                                {["❤️", "😂", "😮", "😢", "🙏", "👍"].map(e => (
+                                  <button
+                                    key={e}
+                                    className={styles.quickReactionBtn}
+                                    onClick={() => {
+                                      toggleReaction(msg.id, e);
+                                      setActiveActionsMsgId(null);
+                                    }}
+                                  >
+                                    {e}
+                                  </button>
+                                ))}
                                 <button
-                                  className={`btn-icon ${styles.msgActionBtn}`}
+                                  className={styles.quickReactionBtnMore}
+                                  onClick={() => setShowEmoji(prev => !prev)}
+                                  title="More reactions"
+                                >
+                                  <Plus size={16} />
+                                </button>
+                              </div>
+
+                              {/* Expanded Inline Emoji Picker if + clicked */}
+                              {showEmoji && (
+                                <div className={styles.emojiPicker} onClick={(e) => e.stopPropagation()}>
+                                  {EMOJI_SET.map(e => (
+                                    <button
+                                      key={e}
+                                      className={styles.emojiPickerBtn}
+                                      onClick={() => { toggleReaction(msg.id, e); setShowEmoji(false); setActiveActionsMsgId(null); }}
+                                    >
+                                      {e}
+                                    </button>
+                                  ))}
+                                  <button className={styles.emojiClose} onClick={() => setShowEmoji(false)}>
+                                    <X size={12} />
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* Meta Messenger Context Menu */}
+                              <div className={styles.messengerActionMenu}>
+                                <button
+                                  className={styles.messengerMenuItem}
                                   onClick={() => {
-                                    editor?.commands.setContent(msg.content);
-                                    setEditingMessageId(msg.id);
+                                    setReplyingToMessage(msg);
                                     editor?.commands.focus();
                                     setActiveActionsMsgId(null);
                                   }}
-                                  title="Edit message"
                                 >
-                                  <Edit3 size={15} />
+                                  <MessageCircle size={16} />
+                                  <span>Reply</span>
                                 </button>
-                              )}
-                              {(isMine || currentUserRole === "admin" || currentUserRole === "moderator") && (
-                                <button
-                                  className={`btn-icon ${styles.msgActionBtn}`}
-                                  onClick={() => { setMessageToDelete(msg.id); setActiveActionsMsgId(null); }}
-                                  title="Delete message"
-                                >
-                                  <Trash2 size={15} />
-                                </button>
-                              )}
-                            </div>
-                          )}
 
-                          {/* Inline emoji picker */}
-                          {showEmoji && activeActionsMsgId === msg.id && (
-                            <div className={styles.emojiPicker} onClick={(e) => e.stopPropagation()}>
-                              {EMOJI_SET.map(e => (
                                 <button
-                                  key={e}
-                                  className={styles.emojiPickerBtn}
-                                  onClick={() => { toggleReaction(msg.id, e); setShowEmoji(false); setActiveActionsMsgId(null); }}
+                                  className={styles.messengerMenuItem}
+                                  onClick={() => {
+                                    setActiveThreadId(msg.id);
+                                    setActiveActionsMsgId(null);
+                                  }}
                                 >
-                                  {e}
+                                  <MessageSquare size={16} />
+                                  <span>Reply in thread</span>
                                 </button>
-                              ))}
-                              <button className={styles.emojiClose} onClick={() => setShowEmoji(false)}>
-                                <X size={12} />
-                              </button>
+
+                                <button
+                                  className={styles.messengerMenuItem}
+                                  onClick={() => {
+                                    handleCopyMessageText(msg);
+                                    setActiveActionsMsgId(null);
+                                  }}
+                                >
+                                  <Copy size={16} />
+                                  <span>Copy text</span>
+                                </button>
+
+                                <button
+                                  className={styles.messengerMenuItem}
+                                  onClick={() => {
+                                    setForwardingMsg(msg);
+                                    setActiveActionsMsgId(null);
+                                  }}
+                                >
+                                  <Share2 size={16} />
+                                  <span>Forward</span>
+                                </button>
+
+                                <button
+                                  className={styles.messengerMenuItem}
+                                  onClick={() => {
+                                    togglePinMessage(msg.id);
+                                    setActiveActionsMsgId(null);
+                                  }}
+                                >
+                                  <Pin size={16} />
+                                  <span>{pinnedMessageIds.includes(msg.id) ? "Unpin message" : "Pin message"}</span>
+                                </button>
+
+                                {isMine && (
+                                  <button
+                                    className={styles.messengerMenuItem}
+                                    onClick={() => {
+                                      editor?.commands.setContent(msg.content);
+                                      setEditingMessageId(msg.id);
+                                      editor?.commands.focus();
+                                      setActiveActionsMsgId(null);
+                                    }}
+                                  >
+                                    <Edit3 size={16} />
+                                    <span>Edit</span>
+                                  </button>
+                                )}
+
+                                {(isMine || currentUserRole === "admin" || currentUserRole === "moderator") && (
+                                  <button
+                                    className={`${styles.messengerMenuItem} ${styles.messengerMenuItemDanger}`}
+                                    onClick={() => {
+                                      setMessageToDelete(msg.id);
+                                      setActiveActionsMsgId(null);
+                                    }}
+                                  >
+                                    <Trash2 size={16} />
+                                    <span>Remove</span>
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>
@@ -1621,6 +1797,77 @@ export default function ChatArea({
           currentUserId={currentUserId}
           onClose={() => setShowChannelSettings(false)}
         />
+      )}
+
+      {/* Long Press Dimming Backdrop */}
+      {activeActionsMsgId && (
+        <div
+          className={styles.longPressBackdrop}
+          onClick={() => {
+            setActiveActionsMsgId(null);
+            setShowEmoji(false);
+          }}
+        />
+      )}
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className={styles.toastNotification}>
+          <Check size={16} />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Forward Message Modal */}
+      {forwardingMsg && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 999999, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn 0.2s ease' }} onClick={() => setForwardingMsg(null)}>
+          <div style={{ background: 'var(--bg-panel)', padding: 20, borderRadius: 16, width: '90%', maxWidth: 420, boxShadow: 'var(--shadow-lg)' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 600 }}>Forward Message</h3>
+              <button className="btn-icon" onClick={() => setForwardingMsg(null)}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className={styles.forwardPreview}>
+              <span className={styles.forwardPreviewLabel}>Selected Message:</span>
+              <div dangerouslySetInnerHTML={{ __html: forwardingMsg.content || "Attachment" }} />
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <input
+                type="text"
+                placeholder="Search channels or people..."
+                className="input-field"
+                value={forwardSearch}
+                onChange={(e) => setForwardSearch(e.target.value)}
+                style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-hover)', color: 'var(--text-primary)' }}
+              />
+            </div>
+            <div className={styles.forwardList}>
+              {filteredForwardDestinations.length === 0 ? (
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '16px 0', fontSize: 13 }}>
+                  No channels or people found
+                </div>
+              ) : (
+                filteredForwardDestinations.map(dest => (
+                  <div key={`${dest.type}-${dest.id}`} className={styles.forwardItem}>
+                    <div className={styles.forwardItemInfo}>
+                      {dest.type === 'channel' ? <Hash size={18} style={{ color: 'var(--brand)' }} /> : <UserIcon size={18} style={{ color: 'var(--text-muted)' }} />}
+                      <span>{dest.name}</span>
+                    </div>
+                    <button
+                      className="btn-primary"
+                      style={{ padding: '6px 14px', fontSize: 13, borderRadius: 16, background: 'var(--brand)', color: '#fff', border: 'none', cursor: 'pointer' }}
+                      disabled={forwardingSending === dest.id}
+                      onClick={() => handleSendForward(dest)}
+                    >
+                      {forwardingSending === dest.id ? "Sending..." : "Send"}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

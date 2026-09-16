@@ -438,9 +438,9 @@
   color: var(--text-primary);
 }
 
-@media (hover: none) {
+@media (hover: none), (max-width: 768px) {
   .msgMenuBtn {
-    opacity: 0.6;
+    display: none !important;
   }
 }
 
@@ -973,6 +973,10 @@
 
 /* ===== MOBILE RESPONSIVE CHAT AREA ===== */
 @media (max-width: 768px) {
+  .msgMenuBtn {
+    display: none !important;
+  }
+
   .mobileBackBtn {
     display: flex;
   }
@@ -1096,3 +1100,219 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* Meta Messenger Long Press Overlay & Actions */
+.longPressBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 998;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.messengerPopoverWrapper {
+  position: relative;
+  z-index: 999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  margin-top: 6px;
+  margin-bottom: 6px;
+}
+
+.messengerQuickReactions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-panel, #ffffff);
+  border: 1px solid var(--border, #e5e7eb);
+  padding: 6px 10px;
+  border-radius: 28px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  max-width: fit-content;
+}
+
+:global(.dark) .messengerQuickReactions {
+  background: rgba(26, 35, 64, 0.95);
+  backdrop-filter: blur(12px);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.quickReactionBtn {
+  background: transparent;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 50%;
+  transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.quickReactionBtn:hover,
+.quickReactionBtn:active {
+  transform: scale(1.35) translateY(-2px);
+}
+
+.quickReactionBtnMore {
+  background: var(--bg-hover, #f3f4f6);
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.quickReactionBtnMore:hover {
+  transform: scale(1.15);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.messengerActionMenu {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-panel, #ffffff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 14px;
+  padding: 6px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+  min-width: 195px;
+}
+
+:global(.dark) .messengerActionMenu {
+  background: rgba(26, 35, 64, 0.95);
+  backdrop-filter: blur(12px);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.messengerMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+  width: 100%;
+  text-align: left;
+}
+
+.messengerMenuItem:hover,
+.messengerMenuItem:active {
+  background: var(--bg-hover, #f3f4f6);
+}
+
+.messengerMenuItemDanger {
+  color: var(--status-offline, #ef4444);
+}
+
+.messengerMenuItemDanger:hover,
+.messengerMenuItemDanger:active {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* Toast notification */
+.toastNotification {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.92);
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 30px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 99999;
+  backdrop-filter: blur(8px);
+  animation: slideUpFade 0.25s ease-out;
+}
+
+/* Forward Modal */
+.forwardPreview {
+  background: var(--bg-hover);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  max-height: 80px;
+  overflow-y: auto;
+}
+
+.forwardPreviewLabel {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 2px;
+  color: var(--text-primary);
+}
+
+.forwardList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.forwardItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  transition: background 0.15s ease;
+}
+
+.forwardItemInfo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+/* Pinned badge */
+.pinnedBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  color: var(--brand);
+  opacity: 0.85;
+}
+
+@keyframes popIn {
+  0% { opacity: 0; transform: scale(0.9) translateY(4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes slideUpFade {
+  0% { opacity: 0; transform: translate(-50%, 12px); }
+  100% { opacity: 1; transform: translate(-50%, 0); }
+}
+
