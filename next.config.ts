@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  compress: true,
+  reactStrictMode: true,
   serverExternalPackages: ["@prisma/client", "bcryptjs", "@prisma/adapter-libsql"],
   images: {
     remotePatterns: [

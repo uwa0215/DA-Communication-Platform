@@ -183,9 +183,9 @@ export default function Sidebar({ currentUser }: SidebarProps) {
     }
   };
 
-  const { data: channelsData, mutate: mutateChannels } = useSWR("/api/channels", fetcher);
-  const { data: usersData, mutate: mutateUsers } = useSWR("/api/users", fetcher);
-  const { data: dmUsersData, mutate: mutateDmUsers } = useSWR("/api/users/dms", fetcher);
+  const { data: channelsData, mutate: mutateChannels } = useSWR("/api/channels", fetcher, { revalidateOnFocus: false, dedupingInterval: 10000 });
+  const { data: usersData, mutate: mutateUsers } = useSWR("/api/users", fetcher, { revalidateOnFocus: false, dedupingInterval: 10000 });
+  const { data: dmUsersData, mutate: mutateDmUsers } = useSWR("/api/users/dms", fetcher, { revalidateOnFocus: false, dedupingInterval: 10000 });
 
   useEffect(() => {
     if (channelsData?.channels) setChannels(channelsData.channels);
