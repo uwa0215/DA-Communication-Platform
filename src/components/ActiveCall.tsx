@@ -18,19 +18,21 @@ export default function ActiveCall() {
   useEffect(() => {
     if (localVideoRef.current && localStream) {
       localVideoRef.current.srcObject = localStream;
+      localVideoRef.current.play().catch(e => console.log("Local play error:", e));
     }
-  }, [localStream]);
+  }, [localStream, isCalling, activeCall]);
 
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
+      remoteVideoRef.current.play().catch(e => console.log("Remote play error:", e));
     }
-  }, [remoteStream]);
+  }, [remoteStream, activeCall]);
 
   const toggleMute = () => {
     if (localStream) {
       localStream.getAudioTracks().forEach(t => t.enabled = !t.enabled);
-      setIsMuted(!localStream.getAudioTracks()[0].enabled);
+      setIsMuted(!localStream.getAudioTracks()[0]?.enabled);
     }
   };
 
@@ -45,12 +47,13 @@ export default function ActiveCall() {
 
   const userName = activeCall?.user?.name || "User";
   const userAvatar = activeCall?.user?.avatar;
+  const isVideoCall = activeCall?.type === 'video';
 
   return (
     <div style={{
       position: 'fixed',
       top: 0, left: 0, right: 0, bottom: 0,
-      background: '#000',
+      background: '#0b132b',
       zIndex: 99997,
       display: 'flex',
       flexDirection: 'column',
@@ -58,26 +61,37 @@ export default function ActiveCall() {
       alignItems: 'center'
     }}>
       
-      {/* Remote Video (Full Screen) */}
-      {remoteStream && activeCall?.type === 'video' ? (
-        <video 
-          ref={remoteVideoRef} 
-          autoPlay 
-          playsInline 
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-        />
-      ) : (
+      {/* Remote Video/Audio Element - MUST be in DOM so remote audio plays for voice calls */}
+      <video 
+        ref={remoteVideoRef} 
+        autoPlay 
+        playsInline 
+        style={{ 
+          display: remoteStream && isVideoCall ? 'block' : 'none', 
+          width: '100%', 
+          height: '100%', 
+          objectFit: 'cover' 
+        }} 
+      />
+
+      {/* Voice Call Avatar & Status UI */}
+      {(!remoteStream || !isVideoCall) && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white' }}>
-          <div style={{ width: 120, height: 120, borderRadius: '50%', background: '#333', marginBottom: 24, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ 
+            width: 130, height: 130, borderRadius: '50%', background: '#1c2541', marginBottom: 24, 
+            overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 0 30px rgba(59, 130, 246, 0.3)', border: '4px solid rgba(255, 255, 255, 0.1)' 
+          }}>
             {userAvatar ? (
-              <Image src={userAvatar} alt={userName} width={120} height={120} style={{ objectFit: 'cover' }} unoptimized />
+              <Image src={userAvatar} alt={userName} width={130} height={130} style={{ objectFit: 'cover' }} unoptimized />
             ) : (
-              <span style={{ fontSize: 48, fontWeight: 'bold' }}>{userName.charAt(0).toUpperCase()}</span>
+              <span style={{ fontSize: 52, fontWeight: 'bold', color: '#60a5fa' }}>{userName.charAt(0).toUpperCase()}</span>
             )}
           </div>
-          <h2 style={{ margin: '0 0 8px', fontSize: 24 }}>{userName}</h2>
-          <p style={{ margin: 0, opacity: 0.7 }}>
-            {!remoteStream ? "Calling..." : "Audio Call Connected"}
+          <h2 style={{ margin: '0 0 10px', fontSize: 28, fontWeight: 600 }}>{userName}</h2>
+          <p style={{ margin: 0, opacity: 0.8, fontSize: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: remoteStream ? '#22c55e' : '#f59e0b', display: 'inline-block' }} />
+            {!remoteStream ? "Ringing..." : (isVideoCall ? "Connecting Video..." : "Voice Call Connected")}
           </p>
         </div>
       )}

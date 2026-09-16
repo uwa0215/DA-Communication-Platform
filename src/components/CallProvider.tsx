@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
-import { useSocket } from "@/hooks/useSocket";
+import { useSocket, getSocket } from "@/hooks/useSocket";
 import IncomingCallModal from "./IncomingCallModal";
 import ActiveCall from "./ActiveCall";
 import { useSession } from "next-auth/react";
@@ -264,17 +264,42 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   };
 
   const initiateCall = async (user: Caller, type: 'video' | 'audio') => {
-    if (!socket || !session?.user) return;
+    const activeSocket = socket || getSocket();
+    if (!session?.user) {
+      alert("Please log in to make calls.");
+      return;
+    }
+
+    // Activate UI active call screen IMMEDIATELY for instant user feedback
+    setActiveCall({ user, type, isInitiator: true });
+    setIsCalling(true);
+    ringer.startOutgoing();
+
     try {
-      const constraints = {
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-        video: type === 'video' ? { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } } : false
-      };
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (typeof navigator === "undefined" || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Camera/Microphone access is not supported by your browser or connection.");
+      }
+
+      let stream: MediaStream;
+      try {
+        const constraints = {
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: type === 'video' ? { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } } : false
+        };
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err1) {
+        if (type === 'video') {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+          } catch (err2) {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          }
+        } else {
+          throw err1;
+        }
+      }
+
       setLocalStream(stream);
-      setActiveCall({ user, type, isInitiator: true });
-      setIsCalling(true);
-      ringer.startOutgoing();
 
       const pc = initPeerConnection(user.id);
       stream.getTracks().forEach(track => pc.addTrack(track, stream));
@@ -282,49 +307,72 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
 
-      const myId = (session.user as any).id;
-      socket.emit("call-user", {
+      const myId = (session.user as any).id || (session.user as any).email || "me";
+      activeSocket.emit("call-user", {
         userToCall: user.id,
         offer,
         type,
         caller: { id: myId, name: session.user.name || "User", avatar: session.user.image }
       });
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error starting call:", e);
-      alert("Could not access camera or microphone. Please check permissions.");
+      alert(e?.message || "Could not access camera or microphone. Please check device permissions.");
+      cleanupCall();
     }
   };
 
   const acceptCall = async () => {
-    if (!incomingCall || !socket) return;
+    if (!incomingCall) return;
+    const activeSocket = socket || getSocket();
     ringer.stop();
     stopVibration();
+
+    const callToAccept = incomingCall;
+    setActiveCall({ user: callToAccept.caller, type: callToAccept.type, isInitiator: false });
+    setIncomingCall(null);
+
     try {
-      const constraints = {
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-        video: incomingCall.type === 'video' ? { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } } : false
-      };
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (typeof navigator === "undefined" || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Camera/Microphone access is not supported by your browser.");
+      }
+
+      let stream: MediaStream;
+      try {
+        const constraints = {
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: callToAccept.type === 'video' ? { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } } : false
+        };
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err1) {
+        if (callToAccept.type === 'video') {
+          try {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+          } catch (err2) {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          }
+        } else {
+          throw err1;
+        }
+      }
+
       setLocalStream(stream);
-      setActiveCall({ user: incomingCall.caller, type: incomingCall.type, isInitiator: false });
-      
-      const pc = initPeerConnection(incomingCall.caller.id);
+
+      const pc = initPeerConnection(callToAccept.caller.id);
       stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
-      await pc.setRemoteDescription(new RTCSessionDescription(incomingCall.offer));
+      await pc.setRemoteDescription(new RTCSessionDescription(callToAccept.offer));
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
 
-      socket.emit("make-answer", {
-        to: incomingCall.caller.id,
+      activeSocket.emit("make-answer", {
+        to: callToAccept.caller.id,
         answer
       });
-      
-      setIncomingCall(null);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error accepting call:", e);
       rejectCall();
-      alert("Could not access camera or microphone.");
+      alert(e?.message || "Could not access camera or microphone.");
+      cleanupCall();
     }
   };
 

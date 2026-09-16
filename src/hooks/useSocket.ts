@@ -4,19 +4,27 @@ import { io, Socket } from "socket.io-client";
 
 let socket: Socket | null = null;
 
+export function getSocket(): Socket {
+  if (!socket && typeof window !== "undefined") {
+    socket = io(window.location.origin, {
+      transports: ["websocket", "polling"],
+    });
+  }
+  return socket!;
+}
+
 export function useSocket() {
   const [socketInstance, setSocketInstance] = useState<Socket | null>(socket);
 
   const [isConnected, setIsConnected] = useState(socket ? socket.connected : false);
 
   useEffect(() => {
-    if (!socket) {
+    if (!socket && typeof window !== "undefined") {
       socket = io(window.location.origin, {
         transports: ["websocket", "polling"],
       });
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSocketInstance(socket);
     }
+    setSocketInstance(socket);
     
     if (socket) {
       setIsConnected(socket.connected);
