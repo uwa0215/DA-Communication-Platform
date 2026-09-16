@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import { Hash, Phone, PhoneOff, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings, Menu, ArrowLeft, Copy, Share2, Pin, User as UserIcon, Camera, RefreshCw, RotateCcw } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import { useUI } from "@/components/UIProvider";
@@ -81,6 +82,7 @@ export default function ChatArea({
   currentUserName,
   currentUserRole = "member",
 }: ChatAreaProps) {
+  const router = useRouter();
   const { socket } = useSocket();
   const { toggleMobileSidebar } = useUI();
   const { initiateCall } = useCall();
@@ -1004,9 +1006,15 @@ export default function ChatArea({
         <div className={styles.chatHeaderLeft}>
           <button
             className={styles.mobileBackBtn}
-            onClick={() => toggleMobileSidebar()}
-            title="Open chats list"
-            aria-label="Open chats list"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.innerWidth < 768) {
+                toggleMobileSidebar();
+              } else {
+                router.push("/dashboard");
+              }
+            }}
+            title="Go back / Chat list"
+            aria-label="Go back / Chat list"
           >
             <ArrowLeft size={20} />
           </button>

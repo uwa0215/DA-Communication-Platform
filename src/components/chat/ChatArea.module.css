@@ -955,7 +955,7 @@
 }
 
 .mobileBackBtn {
-  display: none;
+  display: flex;
   background: transparent;
   border: none;
   color: var(--text-primary);
@@ -964,11 +964,12 @@
   border-radius: 50%;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s ease;
-  margin-right: 2px;
+  transition: background 0.2s ease, transform 0.15s ease;
+  margin-right: 4px;
 }
 .mobileBackBtn:hover {
   background: var(--bg-hover);
+  transform: scale(1.08);
 }
 
 /* ===== MOBILE RESPONSIVE CHAT AREA ===== */
