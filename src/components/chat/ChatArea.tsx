@@ -108,7 +108,7 @@ export default function ChatArea({
       }
       setActiveActionsMsgId(msgId);
       setShowEmoji(false);
-    }, 450);
+    }, 350);
   };
 
   const handleTouchMove = () => {
@@ -1164,30 +1164,22 @@ export default function ChatArea({
                               : (callType === 'video' ? `Video call ended ${formattedDuration ? '• ' + formattedDuration : ''}` : `Audio call ended ${formattedDuration ? '• ' + formattedDuration : ''}`);
 
                             return (
-                              <div style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 12,
-                                padding: '10px 14px',
-                                background: 'var(--bg-card, #ffffff)',
-                                border: '1px solid var(--border-color, #e2e8f0)',
-                                borderRadius: 16,
-                                margin: '6px 0',
-                                maxWidth: 330,
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                                alignSelf: isMine ? 'flex-end' : 'flex-start'
-                              }}>
-                                <div style={{
-                                  width: 40,
-                                  height: 40,
-                                  borderRadius: '50%',
-                                  background: isMissed || isDeclined ? 'rgba(239, 68, 68, 0.12)' : 'rgba(34, 197, 94, 0.12)',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  color: isMissed || isDeclined ? '#ef4444' : '#22c55e',
-                                  flexShrink: 0
-                                }}>
+                              <div
+                                className={styles.callLogCard}
+                                onTouchStart={() => handleTouchStart(msg.id)}
+                                onTouchMove={handleTouchMove}
+                                onTouchEnd={handleTouchEnd}
+                                onContextMenu={(e) => {
+                                  e.preventDefault();
+                                  if (typeof navigator !== "undefined" && navigator.vibrate) {
+                                    try { navigator.vibrate(40); } catch (err) {}
+                                  }
+                                  setActiveActionsMsgId(msg.id);
+                                  setShowEmoji(false);
+                                }}
+                                style={{ alignSelf: isMine ? 'flex-end' : 'flex-start' }}
+                              >
+                                <div className={`${styles.callLogIcon} ${isMissed || isDeclined ? styles.callLogIconMissed : styles.callLogIconSuccess}`}>
                                   {isMissed || isDeclined ? (
                                     <PhoneOff size={20} />
                                   ) : callType === 'video' ? (
@@ -1197,11 +1189,11 @@ export default function ChatArea({
                                   )}
                                 </div>
 
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ fontWeight: 600, fontSize: 13, color: isMissed || isDeclined ? '#ef4444' : 'var(--text-primary)' }}>
+                                <div className={styles.callLogInfo}>
+                                  <div className={`${styles.callLogTitle} ${isMissed || isDeclined ? styles.callLogTitleMissed : ''}`}>
                                     {titleText}
                                   </div>
-                                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                                  <div className={styles.callLogTime}>
                                     {formatTime(msg.createdAt)}
                                   </div>
                                 </div>
@@ -1213,23 +1205,10 @@ export default function ChatArea({
                                       initiateCall({ id: targetId, name: msg.sender.name, avatar: msg.sender.avatar }, callType as any);
                                     }
                                   }}
-                                  style={{
-                                    padding: '6px 12px',
-                                    borderRadius: 20,
-                                    border: '1px solid var(--border-color, #cbd5e1)',
-                                    background: 'var(--bg-hover, #f1f5f9)',
-                                    color: 'var(--text-primary)',
-                                    fontSize: 12,
-                                    fontWeight: 600,
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 6,
-                                    flexShrink: 0
-                                  }}
+                                  className={styles.callLogBtn}
                                   title="Call back"
                                 >
-                                  {callType === 'video' ? <Video size={14} /> : <Phone size={14} />}
+                                  {callType === 'video' ? <Video size={13} /> : <Phone size={13} />}
                                   <span>Call back</span>
                                 </button>
                               </div>
@@ -1252,7 +1231,12 @@ export default function ChatArea({
                                     onTouchMove={handleTouchMove}
                                     onTouchEnd={handleTouchEnd}
                                     onContextMenu={(e) => {
-                                      if (isLongPressRef.current) e.preventDefault();
+                                      e.preventDefault();
+                                      if (typeof navigator !== "undefined" && navigator.vibrate) {
+                                        try { navigator.vibrate(40); } catch (err) {}
+                                      }
+                                      setActiveActionsMsgId(msg.id);
+                                      setShowEmoji(false);
                                     }}
                                   />
                                   {!(msg as any).isDeleted && (
@@ -1276,9 +1260,11 @@ export default function ChatArea({
                             );
                           })())}
                           
-                          {/* Meta Messenger Long Press Popover */}
+                          {/* Meta Messenger Long Press Backdrop & Popover */}
                           {activeActionsMsgId === msg.id && !(msg as any).isDeleted && (
-                            <div className={styles.messengerPopoverWrapper} onClick={(e) => e.stopPropagation()}>
+                            <>
+                              <div className={styles.longPressBackdrop} onClick={(e) => { e.stopPropagation(); setActiveActionsMsgId(null); }} />
+                              <div className={styles.messengerPopoverWrapper} onClick={(e) => e.stopPropagation()}>
                               {/* Floating Quick Reaction Bar */}
                               <div className={styles.messengerQuickReactions}>
                                 {["❤️", "😂", "😮", "😢", "🙏", "👍"].map(e => (
@@ -1407,7 +1393,8 @@ export default function ChatArea({
                                 )}
                               </div>
                             </div>
-                          )}
+                          </>
+                        )}
                         </div>
 
                         {msg.fileUrl && (() => {
