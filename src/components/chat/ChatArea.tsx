@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Hash, Phone, PhoneOff, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings, Menu, ArrowLeft, Copy, Share2, Pin, User as UserIcon } from "lucide-react";
+import { Hash, Phone, PhoneOff, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings, Menu, ArrowLeft, Copy, Share2, Pin, User as UserIcon, Camera, RefreshCw, RotateCcw } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import { useUI } from "@/components/UIProvider";
 import EmojiPicker from "emoji-picker-react";
@@ -318,6 +318,93 @@ export default function ChatArea({
 
   const apiBase = channelId ? `/api/channels/${channelId}/messages` : `/api/dm/${dmUserId}`;
   const roomId = dmUserId ? [currentUserId, dmUserId].sort().join(":") : null;
+
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [showCameraModal, setShowCameraModal] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [capturedPhotoBlob, setCapturedPhotoBlob] = useState<Blob | null>(null);
+  const [capturedPhotoUrl, setCapturedPhotoUrl] = useState<string | null>(null);
+  const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const startCamera = async (mode: 'user' | 'environment' = 'user') => {
+    try {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: mode, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      });
+      setCameraStream(stream);
+      setFacingMode(mode);
+      setCapturedPhotoBlob(null);
+      setCapturedPhotoUrl(null);
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+        }
+      }, 50);
+    } catch (err) {
+      console.error("Camera access error:", err);
+      cameraInputRef.current?.click();
+      setShowCameraModal(false);
+    }
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    if (facingMode === 'user') {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob((blob) => {
+      if (blob) {
+        setCapturedPhotoBlob(blob);
+        setCapturedPhotoUrl(URL.createObjectURL(blob));
+        if (cameraStream) {
+          cameraStream.getTracks().forEach(track => track.stop());
+        }
+      }
+    }, 'image/jpeg', 0.92);
+  };
+
+  const closeCameraModal = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    if (capturedPhotoUrl) {
+      URL.revokeObjectURL(capturedPhotoUrl);
+    }
+    setCapturedPhotoBlob(null);
+    setCapturedPhotoUrl(null);
+    setShowCameraModal(false);
+    setUploadingPhoto(false);
+  };
+
+  const handleSendCapturedPhoto = async () => {
+    if (!capturedPhotoBlob || uploadingPhoto) return;
+    setUploadingPhoto(true);
+
+    const file = new (globalThis as any).File([capturedPhotoBlob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
+    const fakeEvent = {
+      target: { files: [file] }
+    } as unknown as React.ChangeEvent<HTMLInputElement>;
+
+    await handleFileUpload(fakeEvent);
+    closeCameraModal();
+  };
 
   const extensions = useMemo(() => [
     StarterKit,
@@ -1474,10 +1561,30 @@ export default function ChatArea({
           >
             <Plus size={20} />
           </button>
+
+          <button 
+            className={`btn-icon ${styles.toolbarBtn}`} 
+            title="Take Photo" 
+            onClick={() => {
+              setShowCameraModal(true);
+              startCamera('user');
+            }}
+          >
+            <Camera size={20} />
+          </button>
           
           <input 
             type="file" 
             ref={fileInputRef} 
+            onChange={handleFileUpload} 
+            style={{ display: "none" }} 
+          />
+
+          <input 
+            type="file" 
+            ref={cameraInputRef}
+            accept="image/*"
+            capture="environment"
             onChange={handleFileUpload} 
             style={{ display: "none" }} 
           />
@@ -1919,6 +2026,86 @@ export default function ChatArea({
                 ))
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Meta Messenger Live Camera Viewfinder Modal */}
+      {showCameraModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 999999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '20px 16px', animation: 'fadeIn 0.2s ease' }}>
+          {/* Header Bar */}
+          <div style={{ width: '100%', maxWidth: 500, display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#fff', zIndex: 2 }}>
+            <button className="btn-icon" style={{ color: '#fff', background: 'rgba(255,255,255,0.15)', borderRadius: '50%', padding: 8 }} onClick={closeCameraModal} title="Close Camera">
+              <X size={20} />
+            </button>
+            <span style={{ fontWeight: 600, fontSize: 16 }}>{capturedPhotoUrl ? "Photo Preview" : "Take Photo"}</span>
+            {!capturedPhotoUrl ? (
+              <button className="btn-icon" style={{ color: '#fff', background: 'rgba(255,255,255,0.15)', borderRadius: '50%', padding: 8 }} onClick={() => startCamera(facingMode === 'user' ? 'environment' : 'user')} title="Flip Camera">
+                <RefreshCw size={20} />
+              </button>
+            ) : (
+              <div style={{ width: 36 }} />
+            )}
+          </div>
+
+          {/* Viewfinder Video or Snapshot Preview */}
+          <div style={{ position: 'relative', width: '100%', maxWidth: 460, flex: 1, margin: '16px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 24, background: '#000', boxShadow: '0 12px 40px rgba(0,0,0,0.5)' }}>
+            {capturedPhotoUrl ? (
+              <img src={capturedPhotoUrl} alt="Captured Photo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+            ) : (
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline 
+                muted 
+                style={{ width: '100%', height: '100%', objectFit: 'cover', transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }} 
+              />
+            )}
+          </div>
+
+          {/* Controls at Bottom */}
+          <div style={{ width: '100%', maxWidth: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24, zIndex: 2, paddingBottom: 12 }}>
+            {capturedPhotoUrl ? (
+              <>
+                <button 
+                  className="btn btn-outline" 
+                  style={{ borderRadius: 30, padding: '10px 24px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+                  onClick={() => startCamera(facingMode)}
+                  disabled={uploadingPhoto}
+                >
+                  <RotateCcw size={18} /> Retake
+                </button>
+
+                <button 
+                  className="btn btn-primary" 
+                  style={{ borderRadius: 30, padding: '10px 28px', background: 'var(--brand)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600 }}
+                  onClick={handleSendCapturedPhoto}
+                  disabled={uploadingPhoto}
+                >
+                  {uploadingPhoto ? <span className="spinner" style={{ width: 18, height: 18 }} /> : <><Send size={18} /> Send Photo</>}
+                </button>
+              </>
+            ) : (
+              <button 
+                onClick={capturePhoto}
+                style={{
+                  width: 72,
+                  height: 72,
+                  borderRadius: '50%',
+                  background: 'transparent',
+                  border: '4px solid #ffffff',
+                  padding: 4,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'transform 0.15s ease',
+                }}
+                title="Take Photo"
+              >
+                <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#ffffff' }} />
+              </button>
+            )}
           </div>
         </div>
       )}
