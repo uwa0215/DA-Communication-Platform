@@ -233,6 +233,21 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     }
   }, [socket, session]);
 
+  const iceCandidatesQueueRef = useRef<RTCIceCandidateInit[]>([]);
+
+  const processIceQueue = async (pc: RTCPeerConnection) => {
+    while (iceCandidatesQueueRef.current.length > 0) {
+      const cand = iceCandidatesQueueRef.current.shift();
+      if (cand) {
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(cand));
+        } catch (e) {
+          console.error("Error adding queued ice candidate:", e);
+        }
+      }
+    }
+  };
+
   useEffect(() => {
     if (!socket || !session?.user) return;
 
@@ -267,6 +282,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       if (peerConnection.current) {
         try {
           await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer));
+          await processIceQueue(peerConnection.current);
         } catch (e) {
           console.error("Failed to set remote description on answer:", e);
         }
@@ -275,12 +291,15 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     });
 
     socket.on("ice-candidate", async (data) => {
-      if (peerConnection.current) {
+      const pc = peerConnection.current;
+      if (pc && pc.remoteDescription && pc.remoteDescription.type) {
         try {
-          await peerConnection.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+          await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
         } catch (e) {
           console.error("Error adding ice candidate:", e);
         }
+      } else {
+        iceCandidatesQueueRef.current.push(data.candidate);
       }
     });
 
@@ -308,13 +327,15 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   }, [socket, session, activeCall, incomingCall]);
 
   const initPeerConnection = (targetUserId: string) => {
+    iceCandidatesQueueRef.current = [];
     const pc = new RTCPeerConnection({
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
         { urls: "stun:stun2.l.google.com:19302" },
         { urls: "stun:stun3.l.google.com:19302" },
-        { urls: "stun:stun4.l.google.com:19302" }
+        { urls: "stun:stun4.l.google.com:19302" },
+        { urls: "stun:global.stun.twilio.com:3478" }
       ]
     });
 
@@ -447,6 +468,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
       await pc.setRemoteDescription(new RTCSessionDescription(callToAccept.offer));
+      await processIceQueue(pc);
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
 

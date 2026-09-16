@@ -11,6 +11,7 @@ export default function ActiveCall() {
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
 
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
@@ -22,10 +23,19 @@ export default function ActiveCall() {
     }
   }, [localStream, isCalling, activeCall]);
 
+  // Dedicated Audio output for unblocked real-time WebRTC sound
+  useEffect(() => {
+    if (remoteAudioRef.current && remoteStream) {
+      remoteAudioRef.current.srcObject = remoteStream;
+      remoteAudioRef.current.play().catch(e => console.log("Remote audio play error:", e));
+    }
+  }, [remoteStream, activeCall]);
+
+  // Dedicated Video output for video call stream
   useEffect(() => {
     if (remoteVideoRef.current && remoteStream) {
       remoteVideoRef.current.srcObject = remoteStream;
-      remoteVideoRef.current.play().catch(e => console.log("Remote play error:", e));
+      remoteVideoRef.current.play().catch(e => console.log("Remote video play error:", e));
     }
   }, [remoteStream, activeCall]);
 
@@ -61,18 +71,22 @@ export default function ActiveCall() {
       alignItems: 'center'
     }}>
       
-      {/* Remote Video/Audio Element - MUST be in DOM so remote audio plays for voice calls */}
-      <video 
-        ref={remoteVideoRef} 
-        autoPlay 
-        playsInline 
-        style={{ 
-          display: remoteStream && isVideoCall ? 'block' : 'none', 
-          width: '100%', 
-          height: '100%', 
-          objectFit: 'cover' 
-        }} 
-      />
+      {/* Always-mounted Dedicated Audio Element to ensure audio is output through speakers during calls */}
+      <audio ref={remoteAudioRef} autoPlay playsInline />
+
+      {/* Remote Video Element for video call streams */}
+      {remoteStream && isVideoCall && (
+        <video 
+          ref={remoteVideoRef} 
+          autoPlay 
+          playsInline 
+          style={{ 
+            width: '100%', 
+            height: '100%', 
+            objectFit: 'cover' 
+          }} 
+        />
+      )}
 
       {/* Voice Call Avatar & Status UI */}
       {(!remoteStream || !isVideoCall) && (
