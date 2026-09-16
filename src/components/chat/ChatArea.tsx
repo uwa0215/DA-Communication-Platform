@@ -257,6 +257,7 @@ export default function ChatArea({
   }, [forwardDestinations, forwardSearch]);
 
   const bottomRef = useRef<HTMLDivElement>(null);
+  const messageListRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const typingTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -385,7 +386,7 @@ export default function ChatArea({
     }
     
     // Remember scroll position
-    const scrollContainer = document.querySelector(`.${styles.messagesScroll}`);
+    const scrollContainer = messageListRef.current;
     const scrollHeightBefore = scrollContainer?.scrollHeight || 0;
     
     setMessages(prev => [...newMessages, ...prev]);
@@ -400,15 +401,33 @@ export default function ChatArea({
     setLoadingMore(false);
   };
 
+  const scrollToBottom = useCallback((instant = false) => {
+    if (messageListRef.current) {
+      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+    }
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: instant ? "auto" : "smooth" });
+    }
+  }, []);
+
   useEffect(() => {
     fetchMessages();
   }, [fetchMessages]);
 
   useEffect(() => {
+    if (!loading && messages.length > 0) {
+      scrollToBottom(true);
+      const t1 = setTimeout(() => scrollToBottom(true), 50);
+      const t2 = setTimeout(() => scrollToBottom(true), 250);
+      return () => { clearTimeout(t1); clearTimeout(t2); };
+    }
+  }, [channelId, dmUserId, loading, scrollToBottom]);
+
+  useEffect(() => {
     editor?.commands.setContent('');
     setSending(false);
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    scrollToBottom(false);
+  }, [messages, scrollToBottom]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "default") {
@@ -960,7 +979,7 @@ export default function ChatArea({
             </div>
           )}
           {/* Messages */}
-          <div className={styles.messageList} id="message-list">
+          <div className={styles.messageList} id="message-list" ref={messageListRef}>
         {loading ? (
           <div className={styles.loadingWrap}>
             {[...Array(6)].map((_, i) => (
@@ -1288,6 +1307,7 @@ export default function ChatArea({
                                   src={msg.fileUrl} 
                                   alt={msg.fileName || "Uploaded image"} 
                                   className={styles.fileImg} 
+                                  onLoad={() => scrollToBottom(true)}
                                   onClick={() => setPreviewFile({ url: msg.fileUrl!, name: msg.fileName || 'file', type: 'image' })}
                                   title="Click to view image"
                                 />
