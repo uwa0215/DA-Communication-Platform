@@ -244,23 +244,25 @@ export default function ChatArea({
     if (!forwardingMsg) return;
     const loadDestinations = async () => {
       try {
-        const [channelsData, usersData] = await Promise.all([
-          fetcher("/api/channels").catch(() => []),
-          fetcher("/api/users").catch(() => [])
+        const [channelsRes, usersRes] = await Promise.all([
+          fetcher("/api/channels").catch(() => ({ channels: [] })),
+          fetcher("/api/users").catch(() => ({ users: [] }))
         ]);
+        const channelsList = Array.isArray(channelsRes) ? channelsRes : (channelsRes?.channels || []);
+        const usersList = Array.isArray(usersRes) ? usersRes : (usersRes?.users || []);
+
         const list: { id: string; name: string; type: 'channel' | 'dm' }[] = [];
-        if (Array.isArray(channelsData)) {
-          channelsData.forEach((c: any) => {
-            list.push({ id: c.id, name: c.name || "Channel", type: 'channel' });
-          });
-        }
-        if (Array.isArray(usersData)) {
-          usersData.forEach((u: any) => {
-            if (u.id !== currentUserId) {
-              list.push({ id: u.id, name: u.name || u.email || "User", type: 'dm' });
-            }
-          });
-        }
+        
+        channelsList.forEach((c: any) => {
+          list.push({ id: c.id, name: c.name || "Channel", type: 'channel' });
+        });
+        
+        usersList.forEach((u: any) => {
+          if (u.id !== currentUserId) {
+            list.push({ id: u.id, name: u.name || u.email || "User", type: 'dm' });
+          }
+        });
+        
         setForwardDestinations(list);
       } catch (e) {
         console.error("Failed to load forward destinations:", e);
