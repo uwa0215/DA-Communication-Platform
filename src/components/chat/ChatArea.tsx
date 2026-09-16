@@ -2045,24 +2045,38 @@ export default function ChatArea({
 
       {/* Meta Messenger Live Camera Viewfinder Modal */}
       {showCameraModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 999999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '20px 16px', animation: 'fadeIn 0.2s ease' }}>
-          {/* Header Bar */}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.94)', zIndex: 999999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between', padding: '16px', animation: 'fadeIn 0.2s ease', userSelect: 'none' }}>
+          {/* Header Bar with Back Button, Title, and Switch Camera */}
           <div style={{ width: '100%', maxWidth: 500, display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#fff', zIndex: 2 }}>
-            <button className="btn-icon" style={{ color: '#fff', background: 'rgba(255,255,255,0.15)', borderRadius: '50%', padding: 8 }} onClick={closeCameraModal} title="Close Camera">
-              <X size={20} />
+            <button 
+              style={{ color: '#fff', background: 'rgba(255,255,255,0.18)', borderRadius: 24, padding: '8px 16px', border: '1px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 14, fontWeight: 600 }} 
+              onClick={closeCameraModal} 
+              title="Go back / Cancel"
+            >
+              <ArrowLeft size={18} />
+              <span>Back</span>
             </button>
-            <span style={{ fontWeight: 600, fontSize: 16 }}>{capturedPhotoUrl ? "Photo Preview" : "Take Photo"}</span>
+
+            <span style={{ fontWeight: 600, fontSize: 15, color: 'rgba(255,255,255,0.9)' }}>
+              {capturedPhotoUrl ? "Photo Preview" : (facingMode === 'user' ? "Front Camera" : "Rear Camera")}
+            </span>
+
             {!capturedPhotoUrl ? (
-              <button className="btn-icon" style={{ color: '#fff', background: 'rgba(255,255,255,0.15)', borderRadius: '50%', padding: 8 }} onClick={() => startCamera(facingMode === 'user' ? 'environment' : 'user')} title="Flip Camera">
-                <RefreshCw size={20} />
+              <button 
+                style={{ color: '#fff', background: 'rgba(255,255,255,0.18)', borderRadius: 24, padding: '8px 14px', border: '1px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, fontWeight: 500 }} 
+                onClick={() => startCamera(facingMode === 'user' ? 'environment' : 'user')} 
+                title="Switch Camera (Front / Rear)"
+              >
+                <RefreshCw size={16} />
+                <span className="hidden-xs">{facingMode === 'user' ? "Rear Cam" : "Front Cam"}</span>
               </button>
             ) : (
-              <div style={{ width: 36 }} />
+              <div style={{ width: 70 }} />
             )}
           </div>
 
           {/* Viewfinder Video or Snapshot Preview */}
-          <div style={{ position: 'relative', width: '100%', maxWidth: 460, flex: 1, margin: '16px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 24, background: '#000', boxShadow: '0 12px 40px rgba(0,0,0,0.5)' }}>
+          <div style={{ position: 'relative', width: '100%', maxWidth: 460, flex: 1, margin: '14px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', borderRadius: 24, background: '#000', boxShadow: '0 12px 40px rgba(0,0,0,0.6)' }}>
             {capturedPhotoUrl ? (
               <img src={capturedPhotoUrl} alt="Captured Photo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             ) : (
@@ -2077,12 +2091,12 @@ export default function ChatArea({
           </div>
 
           {/* Controls at Bottom */}
-          <div style={{ width: '100%', maxWidth: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24, zIndex: 2, paddingBottom: 12 }}>
+          <div style={{ width: '100%', maxWidth: 500, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, zIndex: 2, paddingBottom: 12 }}>
             {capturedPhotoUrl ? (
-              <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                 <button 
                   className="btn btn-outline" 
-                  style={{ borderRadius: 30, padding: '10px 24px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+                  style={{ borderRadius: 30, padding: '12px 26px', background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 15, fontWeight: 500 }}
                   onClick={() => startCamera(facingMode)}
                   disabled={uploadingPhoto}
                 >
@@ -2091,33 +2105,85 @@ export default function ChatArea({
 
                 <button 
                   className="btn btn-primary" 
-                  style={{ borderRadius: 30, padding: '10px 28px', background: 'var(--brand)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600 }}
+                  style={{ borderRadius: 30, padding: '12px 30px', background: 'var(--brand)', color: '#fff', border: 'none', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontWeight: 600, fontSize: 15, boxShadow: '0 4px 14px rgba(16,185,129,0.4)' }}
                   onClick={handleSendCapturedPhoto}
                   disabled={uploadingPhoto}
                 >
                   {uploadingPhoto ? <span className="spinner" style={{ width: 18, height: 18 }} /> : <><Send size={18} /> Send Photo</>}
                 </button>
-              </>
+              </div>
             ) : (
-              <button 
-                onClick={capturePhoto}
-                style={{
-                  width: 72,
-                  height: 72,
-                  borderRadius: '50%',
-                  background: 'transparent',
-                  border: '4px solid #ffffff',
-                  padding: 4,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'transform 0.15s ease',
-                }}
-                title="Take Photo"
-              >
-                <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#ffffff' }} />
-              </button>
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-around', width: '100%', maxWidth: 360 }}>
+                  {/* Bottom Left Back Button */}
+                  <button
+                    onClick={closeCameraModal}
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.18)',
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      backdropFilter: 'blur(8px)',
+                    }}
+                    title="Back / Exit Camera"
+                  >
+                    <ArrowLeft size={22} />
+                  </button>
+
+                  {/* Shutter Button */}
+                  <button 
+                    onClick={capturePhoto}
+                    style={{
+                      width: 76,
+                      height: 76,
+                      borderRadius: '50%',
+                      background: 'transparent',
+                      border: '4px solid #ffffff',
+                      padding: 4,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'transform 0.15s ease',
+                      boxShadow: '0 0 20px rgba(255,255,255,0.3)'
+                    }}
+                    title="Take Photo"
+                  >
+                    <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#ffffff' }} />
+                  </button>
+
+                  {/* Switch Camera Button for Mobile / Rear Camera */}
+                  <button
+                    onClick={() => startCamera(facingMode === 'user' ? 'environment' : 'user')}
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.18)',
+                      border: '1px solid rgba(255,255,255,0.3)',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      backdropFilter: 'blur(8px)',
+                    }}
+                    title={`Switch to ${facingMode === 'user' ? 'Rear' : 'Front'} Camera`}
+                  >
+                    <RefreshCw size={22} />
+                  </button>
+                </div>
+
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>
+                  {facingMode === 'user' ? "Using Front Camera — Tap right icon to switch to Rear Camera" : "Using Rear Camera — Tap right icon to switch to Front Camera"}
+                </div>
+              </>
             )}
           </div>
         </div>
