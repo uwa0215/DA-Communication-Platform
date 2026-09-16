@@ -109,7 +109,7 @@ export default function ActiveCall() {
       {/* Always-mounted Remote Audio tag */}
       <audio ref={remoteAudioRef} autoPlay playsInline />
 
-      {/* Remote Video Element (Full Screen for Video Calls) */}
+      {/* Remote Video Element (Full Screen for Video Calls - uncropped normal aspect ratio) */}
       <video 
         ref={remoteVideoRef} 
         autoPlay 
@@ -118,7 +118,8 @@ export default function ActiveCall() {
           display: hasRemoteVideo && isVideoCall && !isVideoOff ? 'block' : 'none', 
           width: '100%', 
           height: '100%', 
-          objectFit: 'cover' 
+          objectFit: 'contain',
+          background: '#090d16'
         }} 
       />
 
@@ -144,13 +145,13 @@ export default function ActiveCall() {
         </div>
       )}
 
-      {/* Local Camera PIP Window */}
+      {/* Local Camera PIP Window (Matching standard landscape camera aspect ratio to prevent zoom) */}
       <div style={{
         position: 'absolute',
         bottom: 110,
         right: 24,
-        width: 150,
-        height: 220,
+        width: 210,
+        height: 140,
         background: '#0f172a',
         borderRadius: 16,
         overflow: 'hidden',

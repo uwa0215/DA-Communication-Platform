@@ -406,7 +406,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       try {
         const constraints = {
           audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-          video: type === 'video' ? { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } } : false
+          video: type === 'video' ? true : false
         };
         stream = await navigator.mediaDevices.getUserMedia(constraints);
       } catch (err1) {
@@ -467,7 +467,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       try {
         const constraints = {
           audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-          video: callToAccept.type === 'video' ? { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 } } : false
+          video: callToAccept.type === 'video' ? true : false
         };
         stream = await navigator.mediaDevices.getUserMedia(constraints);
       } catch (err1) {
