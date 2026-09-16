@@ -52,7 +52,7 @@
   justify-content: space-between;
   padding: 16px 20px 8px;
   position: relative;
-  z-index: 1;
+  z-index: 500;
 }
 
 .sidebarTitle {
@@ -66,6 +66,8 @@
 .sidebarHeaderActions {
   display: flex;
   gap: 8px;
+  position: relative;
+  z-index: 501;
 }
 
 .headerBtn {
@@ -101,22 +103,22 @@
   top: 100%;
   right: 0;
   margin-top: 8px;
-  width: 200px;
-  background: var(--bg-panel);
+  width: 210px;
+  background: var(--bg-elevated, #ffffff);
   border: 1px solid var(--border);
-  border-radius: var(--r-lg);
-  box-shadow: var(--shadow-lg);
-  z-index: 100;
+  border-radius: var(--r-md, 12px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  z-index: 9999;
   animation: scalePop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   transform-origin: top right;
   overflow: hidden;
-  padding: 8px 0;
+  padding: 6px 0;
 }
 :global(.dark) .newMenu {
-  background: rgba(26, 35, 64, 0.95);
+  background: #1a2340;
   backdrop-filter: blur(24px);
-  border-color: rgba(52, 211, 153, 0.1);
-  box-shadow: var(--shadow-lg), 0 0 30px rgba(52, 211, 153, 0.04);
+  border-color: rgba(52, 211, 153, 0.2);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 20px rgba(52, 211, 153, 0.1);
 }
 
 .newMenuItem {
@@ -204,7 +206,7 @@
   flex-direction: column;
   transition: width 0.3s ease, background 0.3s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
-  z-index: 100;
+  z-index: 2;
 }
 
 /* Top Actions */
