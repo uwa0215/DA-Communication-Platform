@@ -84,11 +84,15 @@ export default function ActiveCall() {
     setIsVideoOff(prev => !prev);
   };
 
-  if (!activeCall && !isCalling) return null;
-
   const userName = activeCall?.user?.name || "User";
   const userAvatar = activeCall?.user?.avatar;
   const isVideoCall = activeCall?.type === 'video';
+
+  const hasRemoteVideo = Boolean(
+    remoteStream &&
+    remoteStream.getVideoTracks().length > 0 &&
+    remoteStream.getVideoTracks().some(t => t.enabled && t.readyState === 'live')
+  );
 
   return (
     <div style={{
@@ -111,7 +115,7 @@ export default function ActiveCall() {
         autoPlay 
         playsInline 
         style={{ 
-          display: remoteStream && isVideoCall && !isVideoOff ? 'block' : 'none', 
+          display: hasRemoteVideo && isVideoCall && !isVideoOff ? 'block' : 'none', 
           width: '100%', 
           height: '100%', 
           objectFit: 'cover' 
@@ -119,7 +123,7 @@ export default function ActiveCall() {
       />
 
       {/* Voice Call / Waiting Avatar & Status UI */}
-      {(!remoteStream || !isVideoCall || isVideoOff) && (
+      {(!hasRemoteVideo || !isVideoCall || isVideoOff) && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white', zIndex: 10 }}>
           <div style={{ 
             width: 140, height: 140, borderRadius: '50%', background: '#1e293b', marginBottom: 24, 

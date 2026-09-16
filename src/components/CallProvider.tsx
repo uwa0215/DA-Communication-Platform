@@ -326,8 +326,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     };
   }, [socket, session, activeCall, incomingCall]);
 
-  const initPeerConnection = (targetUserId: string) => {
-    iceCandidatesQueueRef.current = [];
+  const initPeerConnection = (targetUserId: string, isAnswer = false) => {
+    if (!isAnswer) {
+      iceCandidatesQueueRef.current = [];
+    }
     const pc = new RTCPeerConnection({
       iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
@@ -335,7 +337,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         { urls: "stun:stun2.l.google.com:19302" },
         { urls: "stun:stun3.l.google.com:19302" },
         { urls: "stun:stun4.l.google.com:19302" },
-        { urls: "stun:global.stun.twilio.com:3478" }
+        { urls: "stun:global.stun.twilio.com:3478" },
+        { urls: "stun:stun.services.mozilla.com" }
       ]
     });
 
@@ -348,14 +351,24 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     pc.ontrack = (event) => {
       console.log("WebRTC track received:", event.track.kind, event.streams);
       if (event.streams && event.streams[0]) {
-        setRemoteStream(event.streams[0]);
+        const stream = event.streams[0];
+        setRemoteStream(new MediaStream(stream.getTracks()));
+        stream.onaddtrack = () => {
+          setRemoteStream(new MediaStream(stream.getTracks()));
+        };
+        stream.onremovetrack = () => {
+          setRemoteStream(new MediaStream(stream.getTracks()));
+        };
       } else if (event.track) {
         setRemoteStream(prev => {
-          const stream = prev ? new MediaStream(prev.getTracks()) : new MediaStream();
-          stream.addTrack(event.track);
-          return stream;
+          const existing = prev ? prev.getTracks().filter(t => t.id !== event.track.id) : [];
+          return new MediaStream([...existing, event.track]);
         });
       }
+    };
+
+    pc.oniceconnectionstatechange = () => {
+      console.log("ICE connection state:", pc.iceConnectionState);
     };
 
     peerConnection.current = pc;
@@ -471,7 +484,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
       setLocalStream(stream);
 
-      const pc = initPeerConnection(callToAccept.caller.id);
+      const pc = initPeerConnection(callToAccept.caller.id, true);
       stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
       await pc.setRemoteDescription(new RTCSessionDescription(callToAccept.offer));
