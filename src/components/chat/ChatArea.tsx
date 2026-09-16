@@ -105,8 +105,7 @@ export default function ChatArea({
 
   const [popoverTargetRect, setPopoverTargetRect] = useState<{ top: number; left: number; width: number; height: number; bottom: number; right: number } | null>(null);
 
-  const openMessageMenu = (msgId: string, element: HTMLElement) => {
-    const rect = element.getBoundingClientRect();
+  const openMessageMenuWithRect = (msgId: string, rect: DOMRect | { top: number; left: number; width: number; height: number; bottom: number; right: number }) => {
     setPopoverTargetRect({
       top: rect.top,
       left: rect.left,
@@ -119,17 +118,39 @@ export default function ChatArea({
     setShowEmoji(false);
   };
 
+  const openMessageMenu = (msgId: string, element?: HTMLElement | null) => {
+    if (element) {
+      openMessageMenuWithRect(msgId, element.getBoundingClientRect());
+    } else if (typeof document !== "undefined") {
+      const el = document.querySelector(`[data-msg-bubble="${msgId}"]`) || document.querySelector(`[data-msg-id="${msgId}"]`);
+      if (el) {
+        openMessageMenuWithRect(msgId, el.getBoundingClientRect());
+      } else {
+        setActiveActionsMsgId(msgId);
+        setShowEmoji(false);
+      }
+    } else {
+      setActiveActionsMsgId(msgId);
+      setShowEmoji(false);
+    }
+  };
+
   const handleTouchStart = (msgId: string, e?: React.TouchEvent | React.MouseEvent) => {
     isLongPressRef.current = false;
-    const currentTarget = e?.currentTarget as HTMLElement | undefined;
+    const targetEl = e?.currentTarget as HTMLElement | undefined;
+    const rect = targetEl ? targetEl.getBoundingClientRect() : null;
+
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+
     longPressTimerRef.current = setTimeout(() => {
       isLongPressRef.current = true;
       if (typeof navigator !== "undefined" && navigator.vibrate) {
         try { navigator.vibrate(40); } catch (e) {}
       }
-      if (currentTarget) {
-        openMessageMenu(msgId, currentTarget);
+      if (rect && rect.width > 0) {
+        openMessageMenuWithRect(msgId, rect);
+      } else {
+        openMessageMenu(msgId, targetEl);
       }
     }, 350);
   };
@@ -1251,8 +1272,9 @@ export default function ChatArea({
                             }
                             return (
                               <>
-                                <div className={styles.msgBubbleRow} style={{ display: 'flex', alignItems: 'center', gap: 6, flexDirection: isMine ? 'row-reverse' : 'row', maxWidth: '100%' }}>
+                                <div data-msg-id={msg.id} className={styles.msgBubbleRow} style={{ display: 'flex', alignItems: 'center', gap: 6, flexDirection: isMine ? 'row-reverse' : 'row', maxWidth: '100%' }}>
                                   <div
+                                    data-msg-bubble={msg.id}
                                     className={`${styles.msgContent} ${isMine ? styles.msgContentMine : styles.msgContentTheirs} ${groupPositionClass}`}
                                     dangerouslySetInnerHTML={{ __html: msg.content }}
                                     onTouchStart={(e) => handleTouchStart(msg.id, e)}
@@ -1271,8 +1293,8 @@ export default function ChatArea({
                                       className={`${styles.msgMenuBtn} ${activeActionsMsgId === msg.id ? styles.msgMenuBtnActive : ''}`}
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        setActiveActionsMsgId(prev => prev === msg.id ? null : msg.id);
-                                        setShowEmoji(false);
+                                        const bubbleEl = e.currentTarget.parentElement?.querySelector(`[data-msg-bubble="${msg.id}"]`) as HTMLElement | null;
+                                        openMessageMenu(msg.id, bubbleEl || e.currentTarget);
                                       }}
                                       title="Message options"
                                     >
@@ -1294,6 +1316,7 @@ export default function ChatArea({
                           const isVideo = msg.fileType?.startsWith("video/") || /\.(mp4|webm|ogg)($|\?)/i.test(msg.fileUrl || "");
                           return (
                             <div
+                              data-msg-bubble={msg.id}
                               className={styles.fileAttachment}
                               onTouchStart={(e) => handleTouchStart(msg.id, e)}
                               onTouchMove={handleTouchMove}
@@ -1901,18 +1924,36 @@ export default function ChatArea({
           const windowW = typeof window !== "undefined" ? window.innerWidth : 800;
           const windowH = typeof window !== "undefined" ? window.innerHeight : 600;
 
+          let targetRect = popoverTargetRect;
+          if ((!targetRect || targetRect.width === 0) && typeof document !== "undefined") {
+            const domEl = document.querySelector(`[data-msg-bubble="${activeMsg.id}"]`) || document.querySelector(`[data-msg-id="${activeMsg.id}"]`);
+            if (domEl) {
+              const r = domEl.getBoundingClientRect();
+              if (r.width > 0) {
+                targetRect = {
+                  top: r.top,
+                  left: r.left,
+                  width: r.width,
+                  height: r.height,
+                  bottom: r.bottom,
+                  right: r.right,
+                };
+              }
+            }
+          }
+
           let popoverStyle: React.CSSProperties = {
             position: 'fixed',
             zIndex: 100000,
           };
 
-          if (popoverTargetRect) {
+          if (targetRect && targetRect.width > 0) {
             const popoverH = isMineMsg ? 350 : 310;
-            let topPos = popoverTargetRect.top - 40;
-            if (topPos + popoverH > windowH - 16) {
-              topPos = windowH - popoverH - 16;
+            let topPos = targetRect.top - 46;
+            if (topPos + popoverH > windowH - 12) {
+              topPos = windowH - popoverH - 12;
             }
-            topPos = Math.max(16, topPos);
+            topPos = Math.max(12, topPos);
 
             popoverStyle = {
               position: 'fixed',
@@ -1921,11 +1962,11 @@ export default function ChatArea({
             };
 
             if (isMineMsg) {
-              const rightVal = Math.max(16, windowW - popoverTargetRect.right);
+              const rightVal = Math.max(12, windowW - targetRect.right);
               popoverStyle.right = rightVal;
               popoverStyle.alignItems = 'flex-end';
             } else {
-              const leftVal = Math.max(16, popoverTargetRect.left);
+              const leftVal = Math.max(12, targetRect.left);
               popoverStyle.left = leftVal;
               popoverStyle.alignItems = 'flex-start';
             }
