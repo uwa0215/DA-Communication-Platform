@@ -10,21 +10,24 @@ export default function IncomingCallModal() {
 
   if (!incomingCall) return null;
 
+  const callerName = incomingCall?.caller?.name || "Caller";
+  const callerAvatar = incomingCall?.caller?.avatar;
+
   return (
     <>
       <div className="modal-overlay" style={{ zIndex: 99998, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)' }} />
       <div className="modal-content" style={{ zIndex: 99999, width: 320, textAlign: 'center', padding: '32px 24px', background: 'var(--bg-card)', borderRadius: 16, boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}>
         <div style={{ marginBottom: 24 }}>
           <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'var(--bg-hover)', margin: '0 auto 16px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {incomingCall.caller.avatar ? (
-              <Image src={incomingCall.caller.avatar} alt={incomingCall.caller.name} width={80} height={80} style={{ objectFit: 'cover' }} unoptimized />
+            {callerAvatar ? (
+              <Image src={callerAvatar} alt={callerName} width={80} height={80} style={{ objectFit: 'cover' }} unoptimized />
             ) : (
               <span style={{ fontSize: 32, fontWeight: 'bold', color: 'var(--text-secondary)' }}>
-                {incomingCall.caller.name.charAt(0).toUpperCase()}
+                {callerName.charAt(0).toUpperCase()}
               </span>
             )}
           </div>
-          <h2 style={{ margin: '0 0 8px', fontSize: 20 }}>{incomingCall.caller.name}</h2>
+          <h2 style={{ margin: '0 0 8px', fontSize: 20 }}>{callerName}</h2>
           <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: 14 }}>
             Incoming {incomingCall.type === 'video' ? 'video' : 'audio'} call...
           </p>
@@ -35,7 +38,7 @@ export default function IncomingCallModal() {
             onClick={rejectCall}
             style={{ 
               width: 56, height: 56, borderRadius: '50%', border: 'none',
-              background: 'var(--danger)', color: 'white', cursor: 'pointer',
+              background: '#ef4444', color: 'white', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 4px 12px rgba(239, 68, 68, 0.4)'
             }}

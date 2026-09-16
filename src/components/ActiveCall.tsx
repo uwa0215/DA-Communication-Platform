@@ -43,6 +43,9 @@ export default function ActiveCall() {
 
   if (!activeCall && !isCalling) return null;
 
+  const userName = activeCall?.user?.name || "User";
+  const userAvatar = activeCall?.user?.avatar;
+
   return (
     <div style={{
       position: 'fixed',
@@ -66,13 +69,13 @@ export default function ActiveCall() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'white' }}>
           <div style={{ width: 120, height: 120, borderRadius: '50%', background: '#333', marginBottom: 24, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {activeCall?.user.avatar ? (
-              <Image src={activeCall.user.avatar} alt={activeCall.user.name} width={120} height={120} style={{ objectFit: 'cover' }} unoptimized />
+            {userAvatar ? (
+              <Image src={userAvatar} alt={userName} width={120} height={120} style={{ objectFit: 'cover' }} unoptimized />
             ) : (
-              <span style={{ fontSize: 48, fontWeight: 'bold' }}>{activeCall?.user.name.charAt(0)}</span>
+              <span style={{ fontSize: 48, fontWeight: 'bold' }}>{userName.charAt(0).toUpperCase()}</span>
             )}
           </div>
-          <h2 style={{ margin: '0 0 8px', fontSize: 24 }}>{activeCall?.user.name}</h2>
+          <h2 style={{ margin: '0 0 8px', fontSize: 24 }}>{userName}</h2>
           <p style={{ margin: 0, opacity: 0.7 }}>
             {!remoteStream ? "Calling..." : "Audio Call Connected"}
           </p>
@@ -134,7 +137,7 @@ export default function ActiveCall() {
 
         <button 
           onClick={endCall}
-          style={{ width: 48, height: 48, borderRadius: '50%', border: 'none', background: 'var(--danger)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{ width: 48, height: 48, borderRadius: '50%', border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <PhoneOff size={20} />
         </button>

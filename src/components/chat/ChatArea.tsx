@@ -908,10 +908,11 @@ export default function ChatArea({
             title="Voice call"
             aria-label="Start voice call"
             onClick={() => {
-              if (dmUser) {
-                initiateCall({ id: dmUser.id, name: dmUser.name, avatar: dmUser.avatar }, 'audio');
-              } else if (channelId) {
-                initiateCall({ id: channelId, name: channelName || 'Channel', avatar: groupAvatar || undefined }, 'audio');
+              const targetId = dmUserId || dmUser?.id || channelId;
+              const targetName = dmUser?.name || channelName || 'User';
+              const targetAvatar = dmUser?.avatar || (channelId ? (groupAvatar || undefined) : undefined);
+              if (targetId) {
+                initiateCall({ id: targetId, name: targetName, avatar: targetAvatar }, 'audio');
               }
             }}
           >
@@ -922,10 +923,11 @@ export default function ChatArea({
             title="Video call"
             aria-label="Start video call"
             onClick={() => {
-              if (dmUser) {
-                initiateCall({ id: dmUser.id, name: dmUser.name, avatar: dmUser.avatar }, 'video');
-              } else if (channelId) {
-                initiateCall({ id: channelId, name: channelName || 'Channel', avatar: groupAvatar || undefined }, 'video');
+              const targetId = dmUserId || dmUser?.id || channelId;
+              const targetName = dmUser?.name || channelName || 'User';
+              const targetAvatar = dmUser?.avatar || (channelId ? (groupAvatar || undefined) : undefined);
+              if (targetId) {
+                initiateCall({ id: targetId, name: targetName, avatar: targetAvatar }, 'video');
               }
             }}
           >
