@@ -254,23 +254,23 @@ export default function DashboardClient({
             <span>Recent Activity</span>
           </div>
           <div className={styles.activityList}>
-            {recentMessages.length === 0 ? (
+            {(!recentMessages || recentMessages.length === 0) ? (
               <p className={styles.emptyState}>No recent messages yet.</p>
             ) : (
               recentMessages.map(m => (
                 <div key={m.id} className={styles.activityItem}>
                   <div className="avatar avatar-sm" style={{ flexShrink: 0 }}>
-                    {m.sender.avatar ? <Image src={m.sender.avatar} alt="" width={32} height={32} /> : initials(m.sender.name)}
+                    {m.sender?.avatar ? <Image src={m.sender.avatar} alt="" width={32} height={32} /> : initials(m.sender?.name || "User")}
                   </div>
                   <div className={styles.activityInfo}>
                     <span className={styles.activityAuthor}>
-                      {m.sender.name}
+                      {m.sender?.name || "Unknown User"}
                       {m.channel && <span className={styles.activityChannel}> in #{m.channel.name}</span>}
                     </span>
                     <span className={styles.activityText} dangerouslySetInnerHTML={{ __html: (m.content || '').substring(0, 80) + ((m.content || '').length > 80 ? '...' : '') }} />
                   </div>
                   <span className={styles.activityTime}>
-                    {new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {m.createdAt ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                   </span>
                 </div>
               ))
