@@ -160,6 +160,62 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const targetSocketRef = useRef<string | null>(null);
 
+  const callMetaRef = useRef<{
+    user: Caller;
+    type: 'video' | 'audio';
+    isInitiator: boolean;
+    startTime: number;
+    connectTime: number | null;
+    status: 'missed' | 'declined' | 'completed';
+    logged: boolean;
+  } | null>(null);
+
+  const sendCallLogMessage = async (statusOverride?: 'missed' | 'declined' | 'completed') => {
+    const meta = callMetaRef.current;
+    if (!meta || meta.logged) return;
+    meta.logged = true;
+
+    if (!meta.isInitiator) return;
+
+    const finalStatus = statusOverride || meta.status;
+    let durationSec = 0;
+    if (finalStatus === 'completed' && meta.connectTime) {
+      durationSec = Math.max(1, Math.round((Date.now() - meta.connectTime) / 1000));
+    }
+
+    let formattedDuration = "";
+    if (durationSec > 0) {
+      const hrs = Math.floor(durationSec / 3600);
+      const mins = Math.floor((durationSec % 3600) / 60);
+      const secs = durationSec % 60;
+      if (hrs > 0) formattedDuration = `${hrs}h ${mins}m ${secs}s`;
+      else if (mins > 0) formattedDuration = `${mins}m ${secs}s`;
+      else formattedDuration = `${secs}s`;
+    }
+
+    const contentText = finalStatus === 'missed'
+      ? (meta.type === 'video' ? 'Missed video call' : 'Missed audio call')
+      : finalStatus === 'declined'
+      ? 'Call declined'
+      : (meta.type === 'video' ? `Video call ended ${formattedDuration ? '• ' + formattedDuration : ''}` : `Audio call ended ${formattedDuration ? '• ' + formattedDuration : ''}`);
+
+    const fileName = `call_log:${meta.type}:${finalStatus}:${durationSec}`;
+
+    try {
+      await fetch(`/api/dm/${meta.user.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: contentText,
+          fileName: fileName,
+          fileType: "call_log"
+        })
+      });
+    } catch (e) {
+      console.error("Failed to post call log to chat:", e);
+    }
+  };
+
   // Automatically join socket user room so calls arrive reliably
   useEffect(() => {
     if (!socket || !session?.user) return;
@@ -188,6 +244,15 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       }
       targetSocketRef.current = data.callerSocket;
       setIncomingCall(data);
+      callMetaRef.current = {
+        user: data.caller,
+        type: data.type,
+        isInitiator: false,
+        startTime: Date.now(),
+        connectTime: null,
+        status: 'missed',
+        logged: false
+      };
       ringer.startIncoming();
       startVibration();
     });
@@ -195,6 +260,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     socket.on("answer-made", async (data) => {
       ringer.stop();
       stopVibration();
+      if (callMetaRef.current) {
+        callMetaRef.current.connectTime = Date.now();
+        callMetaRef.current.status = 'completed';
+      }
       if (peerConnection.current) {
         try {
           await peerConnection.current.setRemoteDescription(new RTCSessionDescription(data.answer));
@@ -218,12 +287,14 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     socket.on("call-rejected", () => {
       ringer.stop();
       stopVibration();
+      sendCallLogMessage('missed');
       cleanupCall();
     });
 
     socket.on("call-ended", () => {
       ringer.stop();
       stopVibration();
+      sendCallLogMessage();
       cleanupCall();
     });
 
@@ -269,6 +340,16 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       alert("Please log in to make calls.");
       return;
     }
+
+    callMetaRef.current = {
+      user,
+      type,
+      isInitiator: true,
+      startTime: Date.now(),
+      connectTime: null,
+      status: 'missed',
+      logged: false
+    };
 
     // Activate UI active call screen IMMEDIATELY for instant user feedback
     setActiveCall({ user, type, isInitiator: true });
@@ -331,6 +412,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setActiveCall({ user: callToAccept.caller, type: callToAccept.type, isInitiator: false });
     setIncomingCall(null);
 
+    if (callMetaRef.current) {
+      callMetaRef.current.connectTime = Date.now();
+      callMetaRef.current.status = 'completed';
+    }
+
     try {
       if (typeof navigator === "undefined" || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error("Camera/Microphone access is not supported by your browser.");
@@ -379,6 +465,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const rejectCall = () => {
     ringer.stop();
     stopVibration();
+    if (callMetaRef.current) {
+      callMetaRef.current.status = 'declined';
+    }
     if (incomingCall && socket) {
       socket.emit("reject-call", { to: incomingCall.caller.id });
     }
@@ -391,10 +480,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     if (activeCall && socket) {
       socket.emit("end-call", { to: activeCall.user.id });
     }
+    sendCallLogMessage();
     cleanupCall();
   };
 
   const cleanupCall = () => {
+    sendCallLogMessage();
     ringer.stop();
     stopVibration();
     if (localStream) {
@@ -410,6 +501,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     setIncomingCall(null);
     setIsCalling(false);
     targetSocketRef.current = null;
+    callMetaRef.current = null;
   };
 
   const state = { isCalling, incomingCall, activeCall, localStream, remoteStream };

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Hash, Phone, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings, Menu, ArrowLeft, Copy, Share2, Pin, User as UserIcon } from "lucide-react";
+import { Hash, Phone, PhoneOff, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings, Menu, ArrowLeft, Copy, Share2, Pin, User as UserIcon } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import { useUI } from "@/components/UIProvider";
 import EmojiPicker from "emoji-picker-react";
@@ -1138,7 +1138,103 @@ export default function ChatArea({
                               <div className="line-clamp-1" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} dangerouslySetInnerHTML={{ __html: msg.parent.content || "Sent an attachment" }} />
                             </div>
                           )}
-                          {msg.content && msg.content !== "Sent a file" && msg.content !== "<p>Sent a file</p>" && (() => {
+                          {msg.fileType === "call_log" ? (() => {
+                            const parts = (msg.fileName || "").split(":");
+                            const callType = parts[1] || (msg.content?.toLowerCase().includes("video") ? "video" : "audio");
+                            const callStatus = parts[2] || (msg.content?.toLowerCase().includes("missed") ? "missed" : "completed");
+                            const durationSec = parseInt(parts[3] || "0", 10);
+
+                            const isMissed = callStatus === "missed";
+                            const isDeclined = callStatus === "declined";
+
+                            let formattedDuration = "";
+                            if (durationSec > 0) {
+                              const hrs = Math.floor(durationSec / 3600);
+                              const mins = Math.floor((durationSec % 3600) / 60);
+                              const secs = durationSec % 60;
+                              if (hrs > 0) formattedDuration = `${hrs}h ${mins}m ${secs}s`;
+                              else if (mins > 0) formattedDuration = `${mins}m ${secs}s`;
+                              else formattedDuration = `${secs}s`;
+                            }
+
+                            const titleText = isMissed 
+                              ? (callType === 'video' ? 'Missed video call' : 'Missed audio call')
+                              : isDeclined 
+                              ? 'Call declined' 
+                              : (callType === 'video' ? `Video call ended ${formattedDuration ? '• ' + formattedDuration : ''}` : `Audio call ended ${formattedDuration ? '• ' + formattedDuration : ''}`);
+
+                            return (
+                              <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 12,
+                                padding: '10px 14px',
+                                background: 'var(--bg-card, #ffffff)',
+                                border: '1px solid var(--border-color, #e2e8f0)',
+                                borderRadius: 16,
+                                margin: '6px 0',
+                                maxWidth: 330,
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                                alignSelf: isMine ? 'flex-end' : 'flex-start'
+                              }}>
+                                <div style={{
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: '50%',
+                                  background: isMissed || isDeclined ? 'rgba(239, 68, 68, 0.12)' : 'rgba(34, 197, 94, 0.12)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: isMissed || isDeclined ? '#ef4444' : '#22c55e',
+                                  flexShrink: 0
+                                }}>
+                                  {isMissed || isDeclined ? (
+                                    <PhoneOff size={20} />
+                                  ) : callType === 'video' ? (
+                                    <Video size={20} />
+                                  ) : (
+                                    <Phone size={20} />
+                                  )}
+                                </div>
+
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ fontWeight: 600, fontSize: 13, color: isMissed || isDeclined ? '#ef4444' : 'var(--text-primary)' }}>
+                                    {titleText}
+                                  </div>
+                                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                                    {formatTime(msg.createdAt)}
+                                  </div>
+                                </div>
+
+                                <button
+                                  onClick={() => {
+                                    const targetId = msg.sender.id === currentUserId ? (dmUserId || channelId) : msg.sender.id;
+                                    if (targetId) {
+                                      initiateCall({ id: targetId, name: msg.sender.name, avatar: msg.sender.avatar }, callType as any);
+                                    }
+                                  }}
+                                  style={{
+                                    padding: '6px 12px',
+                                    borderRadius: 20,
+                                    border: '1px solid var(--border-color, #cbd5e1)',
+                                    background: 'var(--bg-hover, #f1f5f9)',
+                                    color: 'var(--text-primary)',
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    flexShrink: 0
+                                  }}
+                                  title="Call back"
+                                >
+                                  {callType === 'video' ? <Video size={14} /> : <Phone size={14} />}
+                                  <span>Call back</span>
+                                </button>
+                              </div>
+                            );
+                          })() : (msg.content && msg.content !== "Sent a file" && msg.content !== "<p>Sent a file</p>" && (() => {
                             let linkMatch = null;
                             if (msg.content) {
                               linkMatch = msg.content.match(/<a [^>]*href="([^"]+)"/);
@@ -1178,7 +1274,7 @@ export default function ChatArea({
                                 )}
                               </>
                             );
-                          })()}
+                          })())}
                           
                           {/* Meta Messenger Long Press Popover */}
                           {activeActionsMsgId === msg.id && !(msg as any).isDeleted && (
