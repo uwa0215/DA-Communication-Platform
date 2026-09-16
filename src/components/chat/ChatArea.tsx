@@ -21,6 +21,7 @@ import LinkPreview from "./LinkPreview";
 import { fetcher } from "@/lib/fetcher";
 import { loadSettings } from "@/lib/settingsStore";
 import { playMessageChime } from "@/lib/audioEffects";
+import { useCall } from "@/components/CallProvider";
 import styles from "./ChatArea.module.css";
 
 const EMOJI_SET = ["👍","❤️","😂","😮","😢","🔥","🎉","✅","👏","🚀"];
@@ -82,6 +83,7 @@ export default function ChatArea({
 }: ChatAreaProps) {
   const { socket } = useSocket();
   const { toggleMobileSidebar } = useUI();
+  const { initiateCall } = useCall();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isEditorEmpty, setIsEditorEmpty] = useState(true);
   const [sending, setSending] = useState(false);
@@ -901,10 +903,32 @@ export default function ChatArea({
           </div>
         </div>
         <div className={styles.chatHeaderActions}>
-          <button className={`btn-icon ${isCalling === 'audio' ? styles.btnIconActive : ""}`} title="Voice call" aria-label="Start voice call" onClick={() => setIsCalling('audio')}>
+          <button
+            className="btn-icon"
+            title="Voice call"
+            aria-label="Start voice call"
+            onClick={() => {
+              if (dmUser) {
+                initiateCall({ id: dmUser.id, name: dmUser.name, avatar: dmUser.avatar }, 'audio');
+              } else if (channelId) {
+                initiateCall({ id: channelId, name: channelName || 'Channel', avatar: groupAvatar || undefined }, 'audio');
+              }
+            }}
+          >
             <Phone size={18} />
           </button>
-          <button className={`btn-icon ${isCalling === 'video' ? styles.btnIconActive : ""}`} title="Video call" aria-label="Start video call" onClick={() => setIsCalling('video')}>
+          <button
+            className="btn-icon"
+            title="Video call"
+            aria-label="Start video call"
+            onClick={() => {
+              if (dmUser) {
+                initiateCall({ id: dmUser.id, name: dmUser.name, avatar: dmUser.avatar }, 'video');
+              } else if (channelId) {
+                initiateCall({ id: channelId, name: channelName || 'Channel', avatar: groupAvatar || undefined }, 'video');
+              }
+            }}
+          >
             <Video size={18} />
           </button>
           <button className={`btn-icon ${showSearch ? styles.btnIconActive : ""}`} title="Search" aria-label="Search messages" onClick={() => setShowSearch(!showSearch)}>
