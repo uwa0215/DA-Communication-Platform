@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -50,8 +50,8 @@ export default function ForgotPasswordPage() {
             <div className={loginStyles.logoImgWrap}>
               <Image src={daLogo} alt="DA CALABARZON Logo" className={loginStyles.logoImg} width={100} height={100} />
             </div>
-            <div className={loginStyles.logoText}>DA CALABARZON</div>
-            <div className={loginStyles.logoSub}>Password Recovery</div>
+            <div className={loginStyles.logoText}>Trellis</div>
+            <div className={loginStyles.logoSub}>DA CALABARZON Regional Enterprise Communication System (DA-RECS)</div>
           </div>
 
           {/* Icon accent */}

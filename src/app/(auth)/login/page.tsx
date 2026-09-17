@@ -59,8 +59,8 @@ function LoginContent() {
             <div className={s.logoImgWrap}>
               <Image src={daLogo} alt="DA CALABARZON Logo" className={s.logoImg} width={100} height={100} />
             </div>
-            <div className={s.logoText}>DA CALABARZON</div>
-            <div className={s.logoSub}>Regional Enterprise Communication System (DA-RECS)</div>
+            <div className={s.logoText}>Trellis</div>
+            <div className={s.logoSub}>DA CALABARZON Regional Enterprise Communication System (DA-RECS)</div>
           </div>
 
           {error && <div className={s.errorBox}>{error}</div>}

@@ -88,7 +88,7 @@ export default function ResetPasswordPage() {
               />
             </div>
             <div>
-              <span className={styles.leftLogoText}>DA CALABARZON</span>
+              <span className={styles.leftLogoText}>Trellis</span>
               <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center", justifyContent: "center" }}>
                 <span className={styles.leftLogoBadge}>Official</span>
                 <span className={styles.leftLogoBadge} style={{ background: "rgba(6,182,212,.12)", borderColor: "rgba(6,182,212,.3)", color: "#06b6d4" }}>Region IV-A</span>
