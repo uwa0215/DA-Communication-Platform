@@ -23,6 +23,7 @@ import { fetcher } from "@/lib/fetcher";
 import { loadSettings } from "@/lib/settingsStore";
 import { playMessageChime } from "@/lib/audioEffects";
 import { useCall } from "@/components/CallProvider";
+import { getClientCachedMessages, setClientCachedMessages } from "@/lib/clientMessageCache";
 import styles from "./ChatArea.module.css";
 
 const EMOJI_SET = ["👍","❤️","😂","😮","😢","🔥","🎉","✅","👏","🚀"];
@@ -575,14 +576,49 @@ export default function ChatArea({
     updateGroupData({ avatar: url });
   }
 
-  const fetchMessages = useCallback(async () => {
-    setLoading(true);
-    const res = await fetch(apiBase);
-    const data = await res.json();
-    setMessages(data.messages || []);
-    setHasMore((data.messages || []).length === 50);
-    setLoading(false);
+  useEffect(() => {
+    if (!apiBase) return;
+
+    // 1. Instant load from client-side memory cache if available
+    const cached = getClientCachedMessages(apiBase);
+    if (cached) {
+      setMessages(cached.messages);
+      setHasMore(cached.hasMore);
+      setLoading(false); // INSTANT RENDER! ZERO SKELETON FLASH!
+    } else {
+      setMessages([]);
+      setLoading(true);
+    }
+
+    // 2. Background revalidation (SWR pattern)
+    let isSubscribed = true;
+    fetch(apiBase)
+      .then(res => res.json())
+      .then(data => {
+        if (!isSubscribed) return;
+        const fetchedMsgs = data.messages || [];
+        const hasMoreVal = fetchedMsgs.length === 50;
+        setMessages(fetchedMsgs);
+        setHasMore(hasMoreVal);
+        setClientCachedMessages(apiBase, fetchedMsgs, hasMoreVal);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!isSubscribed) return;
+        setLoading(false);
+      });
+
+    return () => {
+      isSubscribed = false;
+    };
   }, [apiBase]);
+
+  // Keep clientMessageCache up-to-date whenever messages array updates
+  useEffect(() => {
+    if (apiBase && messages.length > 0) {
+      setClientCachedMessages(apiBase, messages, hasMore);
+    }
+  }, [apiBase, messages, hasMore]);
 
   const loadMoreMessages = async () => {
     if (loadingMore || !hasMore || messages.length === 0) return;
@@ -627,9 +663,6 @@ export default function ChatArea({
     }
   }, []);
 
-  useEffect(() => {
-    fetchMessages();
-  }, [fetchMessages]);
 
   useEffect(() => {
     if (!loading && messages.length > 0) {

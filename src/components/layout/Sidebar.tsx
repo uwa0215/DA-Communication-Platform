@@ -17,6 +17,7 @@ import { useSocket } from "@/hooks/useSocket";
 import UserProfileModal from "@/components/chat/UserProfileModal";
 import { useCall } from "@/components/CallProvider";
 import { useUI } from "@/components/UIProvider";
+import { prefetchChatMessages } from "@/lib/clientMessageCache";
 import styles from "./Sidebar.module.css";
 
 interface User {
@@ -449,6 +450,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
       <div key={user.id} className={styles.dmItemWrap}>
         <Link
           href={`/dm/${user.id}`}
+          onMouseEnter={() => prefetchChatMessages(`/api/dm/${user.id}`)}
           className={`${styles.navItem} ${isUnread ? styles.navItemUnread : ""} ${pathname === `/dm/${user.id}` ? styles.navItemActive : ""}`}
           onClick={() => { setUnreadDMs(u => ({ ...u, [user.id]: 0 })); setMobileSidebarOpen(false); }}
         >
@@ -741,6 +743,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
                   <Link
                     key={ch.id}
                     href={`/channels/${ch.name}`}
+                    onMouseEnter={() => prefetchChatMessages(`/api/channels/${ch.id}/messages`)}
                     onClick={() => setMobileSidebarOpen(false)}
                     className={`${styles.navItem} ${pathname === `/channels/${ch.name}` ? styles.navItemActive : ""}`}
                   >
@@ -771,6 +774,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
                   <Link
                     key={ch.id}
                     href={`/group/${ch.id}`}
+                    onMouseEnter={() => prefetchChatMessages(`/api/channels/${ch.id}/messages`)}
                     onClick={() => setMobileSidebarOpen(false)}
                     className={`${styles.navItem} ${pathname === `/group/${ch.id}` ? styles.navItemActive : ""}`}
                   >
