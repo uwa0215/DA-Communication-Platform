@@ -107,3 +107,24 @@
   gap: 14px;
 }
 
+@media (max-width: 640px) {
+  .container {
+    width: 100%;
+    max-width: 100%;
+    gap: 12px;
+  }
+  .mainCard {
+    width: 100%;
+    border-radius: 22px;
+    padding: 32px 18px 24px;
+  }
+  .logoImgWrap {
+    width: 125px;
+    height: 125px;
+  }
+  .twoCol {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+

@@ -465,25 +465,106 @@
 
 /* ── Responsive ── */
 @media (max-width: 900px) {
-  .statsRow { grid-template-columns: repeat(2, 1fr); }
-  .actionsGrid { grid-template-columns: repeat(2, 1fr); }
-  .twoCol { grid-template-columns: 1fr; }
+  .dashboard { padding: 20px 20px 32px; gap: 20px; }
+  .statsRow { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .actionsGrid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .twoCol { grid-template-columns: 1fr; gap: 20px; }
 }
+
 @media (max-width: 600px) {
-  .dashboard { padding: 16px; }
-  .statsRow { grid-template-columns: 1fr; }
-  .actionsGrid { grid-template-columns: 1fr; }
-  .heroTitle { font-size: 24px; }
-  .heroSection {
-    flex-direction: column-reverse;
-    text-align: center;
-    gap: 24px;
-    padding: 24px 16px;
+  .dashboard { padding: 14px 12px 32px; gap: 16px; }
+  .hero {
+    padding: 24px 18px;
+    border-radius: var(--r-lg);
   }
-  .heroLogo { 
-    display: flex;
-    transform: scale(0.6); 
-    margin-bottom: -20px;
+  .heroContent {
+    flex-direction: column-reverse;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+  }
+  .heroTextBlock {
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+  }
+  .heroBadge {
+    font-size: 10px;
+    padding: 4px 10px;
+    max-width: 100%;
+    line-height: 1.4;
+    text-align: center;
+    justify-content: center;
+    white-space: normal;
+  }
+  .heroTitle {
+    font-size: 24px;
+    line-height: 1.25;
+  }
+  .heroSub {
+    font-size: 13px;
+    line-height: 1.5;
+  }
+  .heroLogo {
+    transform: none;
+    margin-bottom: 0;
+  }
+  .heroLogo img {
+    width: 80px !important;
+    height: 80px !important;
+  }
+
+  /* 2x2 grid for stats cards on mobile for clean native app look */
+  .statsRow {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .statCard {
+    padding: 14px 12px;
+    gap: 10px;
+    border-radius: 16px;
+  }
+  .statIcon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+  .statIcon svg {
+    width: 18px;
+    height: 18px;
+  }
+  .statNumber {
+    font-size: 20px;
+  }
+  .statLabel {
+    font-size: 10px;
+  }
+
+  /* 2x2 grid for shortcut cards on mobile */
+  .actionsGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .actionCard {
+    padding: 16px 12px;
+    gap: 8px;
+    border-radius: 16px;
+  }
+  .actionIcon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+  }
+  .actionIcon svg {
+    width: 20px;
+    height: 20px;
+  }
+  .actionLabel {
+    font-size: 12px;
+    text-align: center;
+  }
+  .actionArrow {
+    display: none;
   }
 }
 /* ── Keyframes (must be in-module so CSS Modules scoping matches) ── */

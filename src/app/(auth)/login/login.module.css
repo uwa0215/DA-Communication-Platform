@@ -498,6 +498,94 @@
   width: 100%; color: #10b981; font-size: 13px;
   text-align: center; margin-bottom: 12px;
   padding: 10px 14px; background: rgba(16,185,129,0.08);
-  border-radius: 10px; border: 1px solid rgba(16,185,129,0.2);
+  border-radius: 100px; border: 1px solid rgba(16,185,129,0.2);
+}
+
+/* ── Mobile Responsive Login Page ── */
+@media (max-width: 640px) {
+  .page {
+    padding: 20px 14px;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .container {
+    width: 100%;
+    max-width: 100%;
+    gap: 12px;
+  }
+  .mainCard {
+    width: 100%;
+    border-radius: 22px;
+    padding: 32px 20px 26px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+  }
+  .mainCard::before {
+    width: 180px;
+  }
+  .logoWrap {
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .logoImgWrap {
+    width: 125px;
+    height: 125px;
+    margin-bottom: 4px;
+  }
+  .logoImgWrap::before {
+    inset: -7px;
+  }
+  .logoImgWrap::after {
+    inset: -14px;
+  }
+  .logoText {
+    font-size: 34px;
+  }
+  .logoSub {
+    font-size: 10.5px;
+    letter-spacing: 1px;
+    max-width: 100%;
+    line-height: 1.45;
+  }
+  .logoBadge {
+    font-size: 9.5px;
+    padding: 3px 10px;
+    letter-spacing: 0.8px;
+  }
+  .form {
+    gap: 12px;
+  }
+  .input {
+    padding: 14px 14px 14px 42px;
+    font-size: 14px;
+    border-radius: 12px;
+  }
+  .inputIcon {
+    left: 14px;
+  }
+  .submitBtn {
+    padding: 15px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+  .optionsRow {
+    flex-direction: row;
+    font-size: 12px;
+  }
+  .rememberLabel {
+    font-size: 12px;
+  }
+  .forgotLink {
+    font-size: 12px;
+  }
+  .subCard {
+    width: 100%;
+    border-radius: 16px;
+    padding: 16px;
+    font-size: 13.5px;
+  }
 }
 
