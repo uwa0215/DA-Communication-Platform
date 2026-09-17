@@ -75,9 +75,9 @@ export default function RegisterPage() {
           {/* Logo with proper overflow to show rings */}
           <div className={s.logoWrap}>
             <div className={rs.logoImgWrap}>
-              <Image src={daLogo} alt="DA CALABARZON Logo" className={s.logoImg} width={100} height={100} />
+              <Image src={daLogo} alt="DA CALABARZON Logo" className={s.logoImg} width={100} height={100} priority />
             </div>
-            <div className={s.logoText}>Trellis</div>
+            <h1 className={s.logoText}>Trellis</h1>
             <div className={s.logoSub}>DA CALABARZON Regional Enterprise Communication System (DA-RECS)</div>
           </div>
 
@@ -87,41 +87,56 @@ export default function RegisterPage() {
             {/* Full Name */}
             <div className={rs.fieldGroup}>
               <label className={rs.fieldLabel}><User size={13} /> Full Name</label>
-              <input id="reg-name" type="text" className={s.input}
-                placeholder="Juan Dela Cruz" value={form.name}
-                onChange={e => update("name", e.target.value)} required />
+              <div className={s.inputWrap}>
+                <User className={s.inputIcon} size={18} />
+                <input id="reg-name" type="text" className={s.input}
+                  placeholder="Juan Dela Cruz" value={form.name}
+                  onChange={e => update("name", e.target.value)} required />
+              </div>
             </div>
 
             {/* Email */}
             <div className={rs.fieldGroup}>
               <label className={rs.fieldLabel}><Mail size={13} /> Email address</label>
-              <input id="reg-email" type="email" className={s.input}
-                placeholder="you@da.gov.ph" value={form.email}
-                onChange={e => update("email", e.target.value)} required />
+              <div className={s.inputWrap}>
+                <Mail className={s.inputIcon} size={18} />
+                <input id="reg-email" type="email" className={s.input}
+                  placeholder="you@da.gov.ph" value={form.email}
+                  onChange={e => update("email", e.target.value)} required />
+              </div>
             </div>
 
             {/* Job Title + Division */}
             <div className={rs.twoCol}>
               <div className={rs.fieldGroup}>
                 <label className={rs.fieldLabel}><Briefcase size={13} /> Job Title</label>
-                <input id="reg-jobtitle" type="text" className={s.input}
-                  placeholder="e.g. Agriculturist II" value={form.jobTitle}
-                  onChange={e => update("jobTitle", e.target.value)} />
+                <div className={s.inputWrap}>
+                  <Briefcase className={s.inputIcon} size={18} />
+                  <input id="reg-jobtitle" type="text" className={s.input}
+                    placeholder="e.g. Agriculturist II" value={form.jobTitle}
+                    onChange={e => update("jobTitle", e.target.value)} />
+                </div>
               </div>
               <div className={rs.fieldGroup}>
                 <label className={rs.fieldLabel}><Building2 size={13} /> Division</label>
-                <input id="reg-dept" type="text" className={s.input}
-                  placeholder="e.g. PMED" value={form.department}
-                  onChange={e => update("department", e.target.value)} />
+                <div className={s.inputWrap}>
+                  <Building2 className={s.inputIcon} size={18} />
+                  <input id="reg-dept" type="text" className={s.input}
+                    placeholder="e.g. PMED" value={form.department}
+                    onChange={e => update("department", e.target.value)} />
+                </div>
               </div>
             </div>
 
             {/* Unit */}
             <div className={rs.fieldGroup}>
               <label className={rs.fieldLabel}><Building2 size={13} /> Unit</label>
-              <input id="reg-unit" type="text" className={s.input}
-                placeholder="e.g. MIS" value={form.unit}
-                onChange={e => update("unit", e.target.value)} />
+              <div className={s.inputWrap}>
+                <Building2 className={s.inputIcon} size={18} />
+                <input id="reg-unit" type="text" className={s.input}
+                  placeholder="e.g. MIS" value={form.unit}
+                  onChange={e => update("unit", e.target.value)} />
+              </div>
             </div>
 
             {/* Password + Confirm */}
@@ -129,6 +144,7 @@ export default function RegisterPage() {
               <div className={rs.fieldGroup}>
                 <label className={rs.fieldLabel}><Lock size={13} /> Password</label>
                 <div className={s.inputWrap}>
+                  <Lock className={s.inputIcon} size={18} />
                   <input id="reg-password" type={showPass ? "text" : "password"} className={s.input}
                     placeholder="Min. 8 chars, A-Z, 0-9, !@#..." value={form.password}
                     onChange={e => update("password", e.target.value)} required style={{ paddingRight: "44px" }} />
@@ -139,9 +155,12 @@ export default function RegisterPage() {
               </div>
               <div className={rs.fieldGroup}>
                 <label className={rs.fieldLabel}><Lock size={13} /> Confirm</label>
-                <input id="reg-confirm" type={showPass ? "text" : "password"} className={s.input}
-                  placeholder="Repeat password" value={form.confirmPassword}
-                  onChange={e => update("confirmPassword", e.target.value)} required />
+                <div className={s.inputWrap}>
+                  <Lock className={s.inputIcon} size={18} />
+                  <input id="reg-confirm" type={showPass ? "text" : "password"} className={s.input}
+                    placeholder="Repeat password" value={form.confirmPassword}
+                    onChange={e => update("confirmPassword", e.target.value)} required />
+                </div>
               </div>
             </div>
 

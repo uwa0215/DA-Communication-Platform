@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
 import daLogo from "../../../../public/New Logo.png";
-import { Eye, EyeOff, ShieldCheck, Globe, Zap } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck, Globe, Zap, Mail, Lock } from "lucide-react";
 import s from "./login.module.css";
 
 function LoginContent() {
@@ -57,9 +57,9 @@ function LoginContent() {
         <div className={s.mainCard}>
           <div className={s.logoWrap}>
             <div className={s.logoImgWrap}>
-              <Image src={daLogo} alt="DA CALABARZON Logo" className={s.logoImg} width={100} height={100} />
+              <Image src={daLogo} alt="DA CALABARZON Logo" className={s.logoImg} width={100} height={100} priority />
             </div>
-            <div className={s.logoText}>Trellis</div>
+            <h1 className={s.logoText}>Trellis</h1>
             <div className={s.logoSub}>DA CALABARZON Regional Enterprise Communication System (DA-RECS)</div>
           </div>
 
@@ -68,11 +68,13 @@ function LoginContent() {
 
           <form className={s.form} onSubmit={handleSubmit} noValidate>
             <div className={s.inputWrap}>
+              <Mail className={s.inputIcon} size={18} />
               <input id="login-email" type="email" className={s.input}
                 placeholder="Email address" value={email}
                 onChange={e => setEmail(e.target.value)} required autoComplete="email" />
             </div>
             <div className={s.inputWrap}>
+              <Lock className={s.inputIcon} size={18} />
               <input id="login-password" type={showPass ? "text" : "password"} className={s.input}
                 placeholder="Password" value={password}
                 onChange={e => setPassword(e.target.value)} required autoComplete="current-password"

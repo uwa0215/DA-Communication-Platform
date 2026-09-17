@@ -125,10 +125,12 @@
 }
 
 .leftLogoText {
-  font-size: 22px; font-weight: 900; letter-spacing: -0.5px;
-  background: linear-gradient(to right, #10b981, #06b6d4);
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-size: 36px; font-weight: 800; letter-spacing: -0.8px;
+  background: linear-gradient(135deg, #ffffff 0%, #34d399 50%, #06b6d4 100%);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text;
+  filter: drop-shadow(0 0 20px rgba(52, 211, 153, 0.35));
 }
 .leftLogoBadge {
   font-size: 10px; font-weight: 700; letter-spacing: 1px;

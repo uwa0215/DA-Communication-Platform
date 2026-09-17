@@ -48,9 +48,9 @@ export default function ForgotPasswordPage() {
           {/* Logo */}
           <div className={loginStyles.logoWrap}>
             <div className={loginStyles.logoImgWrap}>
-              <Image src={daLogo} alt="DA CALABARZON Logo" className={loginStyles.logoImg} width={100} height={100} />
+              <Image src={daLogo} alt="DA CALABARZON Logo" className={loginStyles.logoImg} width={100} height={100} priority />
             </div>
-            <div className={loginStyles.logoText}>Trellis</div>
+            <h1 className={loginStyles.logoText}>Trellis</h1>
             <div className={loginStyles.logoSub}>DA CALABARZON Regional Enterprise Communication System (DA-RECS)</div>
           </div>
 
@@ -62,14 +62,14 @@ export default function ForgotPasswordPage() {
             display: "flex", alignItems: "center", justifyContent: "center",
             marginBottom: "20px", boxShadow: "0 0 20px rgba(16,185,129,0.2)"
           }}>
-            <KeyRound size={24} color="#10b981" />
+            <KeyRound size={24} color="#34d399" />
           </div>
 
-          <h2 style={{ color: "#f0f9ff", fontWeight: 700, fontSize: "20px", margin: "0 0 8px", textAlign: "center" }}>
+          <h2 style={{ color: "#f0f9ff", fontWeight: 800, fontSize: "22px", fontFamily: "'Plus Jakarta Sans', sans-serif", margin: "0 0 8px", textAlign: "center" }}>
             Forgot your password?
           </h2>
-          <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "13px", textAlign: "center", marginBottom: "24px", lineHeight: 1.6 }}>
-            Enter your registered email address and we will send you a 6-digit reset code.
+          <p style={{ color: "rgba(255,255,255,0.55)", fontSize: "13.5px", fontFamily: "'Inter', sans-serif", textAlign: "center", marginBottom: "24px", lineHeight: 1.6, maxWidth: 360 }}>
+            Enter your registered email address and we will send you a 6-digit verification reset code.
           </p>
 
           {status === "error" && <div className={loginStyles.errorBox}>{message}</div>}
@@ -77,6 +77,7 @@ export default function ForgotPasswordPage() {
 
           <form className={loginStyles.form} onSubmit={handleSubmit} noValidate>
             <div className={loginStyles.inputWrap}>
+              <Mail className={loginStyles.inputIcon} size={18} />
               <input
                 id="reset-email"
                 type="email"
