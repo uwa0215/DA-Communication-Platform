@@ -1,12 +1,29 @@
-"use client";
+let sharedAudioCtx: AudioContext | null = null;
+
+function getSharedAudioContext(): AudioContext | null {
+  if (typeof window === "undefined") return null;
+  try {
+    if (!sharedAudioCtx) {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioCtx) {
+        sharedAudioCtx = new AudioCtx();
+      }
+    }
+    if (sharedAudioCtx && sharedAudioCtx.state === "suspended") {
+      sharedAudioCtx.resume().catch(() => {});
+    }
+    return sharedAudioCtx;
+  } catch (e) {
+    return null;
+  }
+}
 
 // Web Audio API Synthesizer for Chimes & Ringtones (No external audio file dependencies required)
 export function playMessageChime() {
   if (typeof window === "undefined") return;
   try {
-    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx = new AudioCtx();
+    const ctx = getSharedAudioContext();
+    if (!ctx) return;
 
     // Create gain node for smooth decay
     const gain = ctx.createGain();

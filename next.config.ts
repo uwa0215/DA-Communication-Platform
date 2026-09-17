@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   serverExternalPackages: ["@prisma/client", "bcryptjs", "@prisma/adapter-libsql"],
   images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 300,
     remotePatterns: [
       { protocol: "https", hostname: "**" },
     ],
