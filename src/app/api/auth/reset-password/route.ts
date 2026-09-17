@@ -4,6 +4,8 @@ import { users } from "@/lib/schema";
 import { eq, and, gt } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
+import { validatePassword } from "@/lib/passwordValidation";
+
 export async function POST(req: Request) {
   try {
     const { token, newPassword } = await req.json();
@@ -12,8 +14,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Token and new password are required" }, { status: 400 });
     }
 
-    if (newPassword.length < 6) {
-      return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
+    const passResult = validatePassword(newPassword);
+    if (!passResult.isValid) {
+      return NextResponse.json({ error: passResult.errors[0] || "Password does not meet security requirements" }, { status: 400 });
     }
 
     // Find user with valid token

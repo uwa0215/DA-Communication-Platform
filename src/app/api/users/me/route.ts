@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
+import { validatePassword } from "@/lib/passwordValidation";
+
 export async function PATCH(req: Request) {
   try {
     const session = await auth();
@@ -22,8 +24,9 @@ export async function PATCH(req: Request) {
     if (customStatus !== undefined) dataToUpdate.customStatus = customStatus;
 
     if (password) {
-      if (password.length < 6) {
-        return NextResponse.json({ error: "Password must be at least 6 characters." }, { status: 400 });
+      const passResult = validatePassword(password);
+      if (!passResult.isValid) {
+        return NextResponse.json({ error: passResult.errors[0] || "Password does not meet security requirements" }, { status: 400 });
       }
       dataToUpdate.password = await bcrypt.hash(password, 12);
     }

@@ -7,6 +7,8 @@ import Image from "next/image";
 import daLogo from "../../../../public/New Logo.png";
 import { Lock, ShieldCheck, ArrowRight, Eye, EyeOff, Hash } from "lucide-react";
 import styles from "../login/auth.module.css";
+import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
+import { validatePassword } from "@/lib/passwordValidation";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -33,9 +35,10 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    if (password.length < 6) {
+    const passResult = validatePassword(password);
+    if (!passResult.isValid) {
       setStatus("error");
-      setMessage("Password must be at least 6 characters.");
+      setMessage(passResult.errors[0] || "Password does not meet security requirements.");
       return;
     }
 
@@ -169,7 +172,7 @@ export default function ResetPasswordPage() {
                 <input
                   id="new-password"
                   type={showPass ? "text" : "password"}
-                  placeholder="Minimum 6 characters"
+                  placeholder="Min. 8 chars, A-Z, 0-9, !@#..."
                   className={styles.fieldInput}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
@@ -214,6 +217,8 @@ export default function ResetPasswordPage() {
                 </button>
               </div>
             </div>
+
+            <PasswordStrengthMeter password={password} />
 
             <button type="submit" className={styles.btnPrimary} disabled={status === "loading" || status === "success"}>
               {status === "loading" ? "Updating..." : "Verify & Reset Password"}

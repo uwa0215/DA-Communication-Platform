@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { users, channels, channelMembers } from "@/lib/schema";
 import { eq, count } from "drizzle-orm";
 import bcrypt from "bcryptjs";
+import { validatePassword } from "@/lib/passwordValidation";
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +11,11 @@ export async function POST(req: NextRequest) {
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    const passResult = validatePassword(password);
+    if (!passResult.isValid) {
+      return NextResponse.json({ error: passResult.errors[0] || "Password does not meet security requirements" }, { status: 400 });
     }
 
     const existing = await db.query.users.findFirst({ 

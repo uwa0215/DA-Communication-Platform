@@ -7,6 +7,8 @@ import daLogo from "../../../../public/New Logo.png";
 import { User, Mail, Lock, Briefcase, Building2, Eye, EyeOff, ShieldCheck, Globe, Zap } from "lucide-react";
 import s from "../login/login.module.css";
 import rs from "./register.module.css";
+import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
+import { validatePassword } from "@/lib/passwordValidation";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -24,7 +26,8 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (form.password !== form.confirmPassword) { setError("Passwords do not match."); return; }
-    if (form.password.length < 6) { setError("Password must be at least 6 characters."); return; }
+    const passResult = validatePassword(form.password);
+    if (!passResult.isValid) { setError(passResult.errors[0] || "Password does not meet security requirements."); return; }
     setLoading(true); setError("");
 
     const res = await fetch("/api/auth/register", {
@@ -127,7 +130,7 @@ export default function RegisterPage() {
                 <label className={rs.fieldLabel}><Lock size={13} /> Password</label>
                 <div className={s.inputWrap}>
                   <input id="reg-password" type={showPass ? "text" : "password"} className={s.input}
-                    placeholder="Min. 6 chars" value={form.password}
+                    placeholder="Min. 8 chars, A-Z, 0-9, !@#..." value={form.password}
                     onChange={e => update("password", e.target.value)} required style={{ paddingRight: "44px" }} />
                   <button type="button" className={s.eyeBtn} onClick={() => setShowPass(!showPass)}>
                     {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -141,6 +144,8 @@ export default function RegisterPage() {
                   onChange={e => update("confirmPassword", e.target.value)} required />
               </div>
             </div>
+
+            <PasswordStrengthMeter password={form.password} />
 
             <button id="register-btn" type="submit" className={s.submitBtn} disabled={loading} style={{ marginTop: "8px" }}>
               {loading ? "Creating account..." : "Create Account"}
