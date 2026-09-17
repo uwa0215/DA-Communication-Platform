@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Hash, Phone, PhoneOff, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings, Menu, ArrowLeft, Copy, Share2, Pin, User as UserIcon, Camera, RefreshCw, RotateCcw } from "lucide-react";
+import { Hash, Phone, PhoneOff, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Bell, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings, Menu, ArrowLeft, Copy, Share2, Pin, User as UserIcon, Camera, RefreshCw, RotateCcw, ChevronDown, ChevronUp, Link2, ExternalLink, ShieldAlert, Lock } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
 import { useUI } from "@/components/UIProvider";
 import EmojiPicker from "emoji-picker-react";
@@ -199,6 +199,82 @@ export default function ChatArea({
   const [forwardingSending, setForwardingSending] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [pinnedMessageIds, setPinnedMessageIds] = useState<string[]>([]);
+
+  // Details Panel State (Meta Messenger style)
+  const [detailsTab, setDetailsTab] = useState<'media' | 'files' | 'links'>('media');
+  const [accordionOpen, setAccordionOpen] = useState<Record<string, boolean>>({
+    about: true,
+    customization: false,
+    shared: true,
+    privacy: false
+  });
+  const [isMutedDetails, setIsMutedDetails] = useState(false);
+  const [currentTimeStr, setCurrentTimeStr] = useState<string>("");
+
+  useEffect(() => {
+    const updateTime = () => {
+      if (typeof window !== "undefined") {
+        setCurrentTimeStr(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+      }
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const toggleAccordion = (key: string) => {
+    setAccordionOpen(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // Dynamic shared media extraction (Images and Videos from current conversation)
+  const sharedMedia = useMemo(() => {
+    return messages.filter(m => {
+      if (!m.fileUrl) return false;
+      const type = (m.fileType || "").toLowerCase();
+      const url = m.fileUrl.toLowerCase();
+      return type.startsWith("image/") || type.startsWith("video/") ||
+        /\.(png|jpe?g|gif|webp|mp4|webm|mov)(\?.*)?$/i.test(url);
+    });
+  }, [messages]);
+
+  // Dynamic shared files extraction (PDFs, Docs, Spreadsheets, Archives, etc.)
+  const sharedFiles = useMemo(() => {
+    return messages.filter(m => {
+      if (!m.fileUrl) return false;
+      const type = (m.fileType || "").toLowerCase();
+      const url = m.fileUrl.toLowerCase();
+      const isMedia = type.startsWith("image/") || type.startsWith("video/") ||
+        /\.(png|jpe?g|gif|webp|mp4|webm|mov)(\?.*)?$/i.test(url);
+      return !isMedia;
+    });
+  }, [messages]);
+
+  // Dynamic shared links extraction (URLs in content text)
+  const sharedLinks = useMemo(() => {
+    const urlRegex = /(https?:\/\/[^\s<"']+)/gi;
+    const links: { id: string; url: string; domain: string; date: string }[] = [];
+    
+    messages.forEach(m => {
+      if (!m.content) return;
+      const matches = m.content.match(urlRegex);
+      if (matches) {
+        matches.forEach(url => {
+          try {
+            const parsed = new URL(url);
+            links.push({
+              id: `${m.id}-${url}`,
+              url,
+              domain: parsed.hostname.replace(/^www\./, ''),
+              date: m.createdAt,
+            });
+          } catch (e) {
+            // ignore invalid URL strings
+          }
+        });
+      }
+    });
+    return links;
+  }, [messages]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -1694,64 +1770,289 @@ export default function ChatArea({
         <div className={styles.chatDetailsPanel}>
           <div className={styles.detailsHeader}>
             <h3>Details</h3>
-            <button className="btn-icon" onClick={() => setShowDetailsPanel(false)}><X size={16}/></button>
+            <button className="btn-icon" onClick={() => setShowDetailsPanel(false)} aria-label="Close Details Panel"><X size={16}/></button>
           </div>
           
           <div className={styles.detailsScroll}>
             {dmUser ? (
-              // DM User Details
-              <div className={styles.detailsContent}>
-                <div className={styles.detailsHero}>
-                  <div className={`avatar avatar-xl status-${dmUser.status}`} style={{ width: 80, height: 80, fontSize: 32, marginBottom: 16 }}>
-                    {dmUser.avatar ? <Image src={dmUser.avatar} alt={dmUser.name} width={80} height={80} /> : initials(dmUser.name)}
-                    <span className="status-dot" style={{ width: 16, height: 16, borderWidth: 3 }} />
+              // DM User Details (Meta Messenger Style)
+              <div className={styles.detailsContent} style={{ padding: '16px 12px' }}>
+                <div className={styles.detailsHero} style={{ paddingBottom: 16 }}>
+                  <div className={`avatar avatar-xl status-${liveStatus}`} style={{ width: 88, height: 88, fontSize: 36, marginBottom: 12, cursor: 'pointer' }} onClick={() => setSelectedUserForProfile({ ...dmUser, status: liveStatus })}>
+                    {dmUser.avatar ? <Image src={dmUser.avatar} alt={dmUser.name} width={88} height={88} /> : initials(dmUser.name)}
+                    <span className="status-dot" style={{ width: 18, height: 18, borderWidth: 3 }} />
                   </div>
-                  <h3 className={styles.detailsName}>{dmUser.name}</h3>
-                  <div className={styles.detailsStatusText}>
-                    <span className={`status-${dmUser.status}`}><span className="status-dot" style={{ position: "relative", width: 8, height: 8, border: "none" }} /></span>
-                    <span style={{ textTransform: 'capitalize' }}>{dmUser.status}</span>
+                  <h3 className={styles.detailsName} style={{ fontSize: 20, fontWeight: 800 }}>{dmUser.name}</h3>
+                  <div className={styles.detailsStatusText} style={{ marginTop: 4 }}>
+                    <span className={`status-${liveStatus}`}><span className="status-dot" style={{ position: "relative", width: 8, height: 8, border: "none" }} /></span>
+                    <span style={{ textTransform: 'capitalize', fontWeight: 600 }}>{liveStatus}</span>
+                  </div>
+
+                  {/* Messenger Quick Action Buttons */}
+                  <div className={styles.detailsQuickActions}>
+                    <div className={styles.detailsQuickBtnWrap}>
+                      <button className={styles.detailsQuickBtn} onClick={() => setSelectedUserForProfile({ ...dmUser, status: liveStatus })} title="View Profile">
+                        <UserIcon size={18} />
+                      </button>
+                      <span className={styles.detailsQuickLabel}>Profile</span>
+                    </div>
+
+                    <div className={styles.detailsQuickBtnWrap}>
+                      <button 
+                        className={`${styles.detailsQuickBtn} ${isMutedDetails ? styles.detailsQuickBtnActive : ""}`} 
+                        onClick={() => {
+                          setIsMutedDetails(!isMutedDetails);
+                          setToastMessage(isMutedDetails ? "Notifications unmuted" : "Notifications muted");
+                          setTimeout(() => setToastMessage(null), 2500);
+                        }} 
+                        title={isMutedDetails ? "Unmute Notifications" : "Mute Notifications"}
+                      >
+                        {isMutedDetails ? <BellOff size={18} /> : <Bell size={18} />}
+                      </button>
+                      <span className={styles.detailsQuickLabel}>{isMutedDetails ? "Unmute" : "Mute"}</span>
+                    </div>
+
+                    <div className={styles.detailsQuickBtnWrap}>
+                      <button className={styles.detailsQuickBtn} onClick={() => setShowSearch(true)} title="Search in Chat">
+                        <Search size={18} />
+                      </button>
+                      <span className={styles.detailsQuickLabel}>Search</span>
+                    </div>
+
+                    <div className={styles.detailsQuickBtnWrap}>
+                      <button 
+                        className={styles.detailsQuickBtn} 
+                        onClick={() => initiateCall({ id: dmUserId || dmUser.id, name: dmUser.name, avatar: dmUser.avatar }, 'audio')} 
+                        title="Voice Call"
+                      >
+                        <Phone size={18} />
+                      </button>
+                      <span className={styles.detailsQuickLabel}>Call</span>
+                    </div>
+
+                    <div className={styles.detailsQuickBtnWrap}>
+                      <button 
+                        className={styles.detailsQuickBtn} 
+                        onClick={() => initiateCall({ id: dmUserId || dmUser.id, name: dmUser.name, avatar: dmUser.avatar }, 'video')} 
+                        title="Video Call"
+                      >
+                        <Video size={18} />
+                      </button>
+                      <span className={styles.detailsQuickLabel}>Video</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className={styles.detailsSection}>
-                  <div className={styles.detailsSectionTitle}>About</div>
-                  
-                  {dmUser.jobTitle && (
-                    <div className={styles.detailItem}>
-                      <Briefcase size={16} className={styles.detailIcon} />
-                      <div>
-                        <div className={styles.detailLabel}>Role</div>
-                        <div className={styles.detailValue}>{dmUser.jobTitle}</div>
+                {/* Collapsible Section 1: About / Contact Info */}
+                <div style={{ borderBottom: '1px solid var(--border)', marginBottom: 8, paddingBottom: 8 }}>
+                  <div className={styles.detailsAccordionHeader} onClick={() => toggleAccordion('about')}>
+                    <div className={styles.detailsAccordionTitle}>
+                      <Info size={16} style={{ color: 'var(--brand)' }} /> About Contact
+                    </div>
+                    <ChevronDown size={16} className={`${styles.detailsAccordionChevron} ${accordionOpen.about ? styles.detailsAccordionChevronOpen : ''}`} />
+                  </div>
+
+                  {accordionOpen.about && (
+                    <div className={styles.detailsAccordionContent}>
+                      {dmUser.jobTitle && (
+                        <div className={styles.detailItem}>
+                          <Briefcase size={16} className={styles.detailIcon} />
+                          <div>
+                            <div className={styles.detailLabel}>Role / Position</div>
+                            <div className={styles.detailValue}>{dmUser.jobTitle}</div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {(dmUser.department || dmUser.unit) && (
+                        <div className={styles.detailItem}>
+                          <Building size={16} className={styles.detailIcon} />
+                          <div>
+                            <div className={styles.detailLabel}>Department</div>
+                            <div className={styles.detailValue}>{dmUser.department} {dmUser.unit && `(${dmUser.unit})`}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className={styles.detailItem}>
+                        <Mail size={16} className={styles.detailIcon} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div className={styles.detailLabel}>Email Address</div>
+                          <div className={styles.detailValue} style={{ display: 'flex', alignItems: 'center', gap: 6, wordBreak: 'break-all' }}>
+                            <span>{dmUser.email || `${dmUser.name.split(' ')[0].toLowerCase()}@da.gov.ph`}</span>
+                            <button 
+                              className={styles.copyEmailBtn} 
+                              title="Copy Email"
+                              onClick={() => {
+                                const emailToCopy = dmUser.email || `${dmUser.name.split(' ')[0].toLowerCase()}@da.gov.ph`;
+                                navigator.clipboard?.writeText(emailToCopy);
+                                setToastMessage("Email copied to clipboard");
+                                setTimeout(() => setToastMessage(null), 2500);
+                              }}
+                            >
+                              <Copy size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={styles.detailItem}>
+                        <Clock size={16} className={styles.detailIcon} />
+                        <div>
+                          <div className={styles.detailLabel}>Local Time & Status</div>
+                          <div className={styles.detailValue}>
+                            {currentTimeStr || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (PST) · <span style={{ textTransform: 'capitalize', color: liveStatus === 'online' ? 'var(--status-online)' : 'var(--text-muted)' }}>{liveStatus}</span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}
-                  
-                  {(dmUser.department || dmUser.unit) && (
-                    <div className={styles.detailItem}>
-                      <Building size={16} className={styles.detailIcon} />
-                      <div>
-                        <div className={styles.detailLabel}>Department</div>
-                        <div className={styles.detailValue}>{dmUser.department} {dmUser.unit && `(${dmUser.unit})`}</div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className={styles.detailItem}>
-                    <Mail size={16} className={styles.detailIcon} />
-                    <div>
-                      <div className={styles.detailLabel}>Email</div>
-                      <div className={styles.detailValue}>{dmUser.email || `${dmUser.name.split(' ')[0].toLowerCase()}@da.gov.ph`}</div>
-                    </div>
-                  </div>
-
-                  <div className={styles.detailItem}>
-                    <Clock size={16} className={styles.detailIcon} />
-                    <div>
-                      <div className={styles.detailLabel}>Local Time</div>
-                      <div className={styles.detailValue}>{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (PST)</div>
-                    </div>
-                  </div>
                 </div>
+
+                {/* Collapsible Section 2: Shared Media, Files & Links */}
+                <div style={{ borderBottom: '1px solid var(--border)', marginBottom: 8, paddingBottom: 8 }}>
+                  <div className={styles.detailsAccordionHeader} onClick={() => toggleAccordion('shared')}>
+                    <div className={styles.detailsAccordionTitle}>
+                      <ImageIcon size={16} style={{ color: 'var(--brand)' }} /> Shared Media, Files & Links
+                    </div>
+                    <ChevronDown size={16} className={`${styles.detailsAccordionChevron} ${accordionOpen.shared ? styles.detailsAccordionChevronOpen : ''}`} />
+                  </div>
+
+                  {accordionOpen.shared && (
+                    <div className={styles.detailsAccordionContent}>
+                      {/* Tabs */}
+                      <div className={styles.mediaTabGroup}>
+                        <button 
+                          className={`${styles.mediaTabBtn} ${detailsTab === 'media' ? styles.mediaTabBtnActive : ''}`} 
+                          onClick={() => setDetailsTab('media')}
+                        >
+                          Media ({sharedMedia.length})
+                        </button>
+                        <button 
+                          className={`${styles.mediaTabBtn} ${detailsTab === 'files' ? styles.mediaTabBtnActive : ''}`} 
+                          onClick={() => setDetailsTab('files')}
+                        >
+                          Files ({sharedFiles.length})
+                        </button>
+                        <button 
+                          className={`${styles.mediaTabBtn} ${detailsTab === 'links' ? styles.mediaTabBtnActive : ''}`} 
+                          onClick={() => setDetailsTab('links')}
+                        >
+                          Links ({sharedLinks.length})
+                        </button>
+                      </div>
+
+                      {/* Shared Tab Content */}
+                      {detailsTab === 'media' && (
+                        sharedMedia.length > 0 ? (
+                          <div className={styles.sharedMediaGrid}>
+                            {sharedMedia.map(m => (
+                              <div 
+                                key={m.id} 
+                                className={styles.sharedMediaThumb} 
+                                onClick={() => setPreviewFile({ url: m.fileUrl!, name: m.fileName || 'Image', type: (m.fileType || '').startsWith('video') ? 'video' : 'image' })}
+                                title={m.fileName || 'View media'}
+                              >
+                                {(m.fileType || '').startsWith('video') || m.fileUrl!.endsWith('.mp4') ? (
+                                  <>
+                                    <video src={m.fileUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <div className={styles.sharedMediaVideoOverlay}><Video size={16} /></div>
+                                  </>
+                                ) : (
+                                  <img src={m.fileUrl} alt={m.fileName || 'Media'} className={styles.sharedMediaImg} />
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className={styles.detailsEmptyState}>No shared photos or videos yet.</div>
+                        )
+                      )}
+
+                      {detailsTab === 'files' && (
+                        sharedFiles.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {sharedFiles.map(m => (
+                              <div key={m.id} className={styles.sharedFileItem} onClick={() => window.open(m.fileUrl, '_blank')}>
+                                <FileText size={16} className={styles.sharedFileIcon} />
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div className={styles.sharedFileText}>{m.fileName || 'Attachment file'}</div>
+                                  <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{new Date(m.createdAt).toLocaleDateString()}</div>
+                                </div>
+                                <a href={m.fileUrl} download={m.fileName} target="_blank" rel="noopener noreferrer" className="btn-icon" onClick={e => e.stopPropagation()} title="Download">
+                                  <Download size={14} />
+                                </a>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className={styles.detailsEmptyState}>No shared documents or files yet.</div>
+                        )
+                      )}
+
+                      {detailsTab === 'links' && (
+                        sharedLinks.length > 0 ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                            {sharedLinks.map(link => (
+                              <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className={styles.sharedLinkItem}>
+                                <div className={styles.sharedLinkIcon}>
+                                  <Link2 size={16} />
+                                </div>
+                                <div className={styles.sharedLinkInfo}>
+                                  <div className={styles.sharedLinkUrl}>{link.url}</div>
+                                  <div className={styles.sharedLinkDomain}>{link.domain}</div>
+                                </div>
+                                <ExternalLink size={14} style={{ color: 'var(--text-muted)' }} />
+                              </a>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className={styles.detailsEmptyState}>No shared links in this chat yet.</div>
+                        )
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Collapsible Section 3: Privacy & Options */}
+                <div>
+                  <div className={styles.detailsAccordionHeader} onClick={() => toggleAccordion('privacy')}>
+                    <div className={styles.detailsAccordionTitle}>
+                      <Lock size={16} style={{ color: 'var(--brand)' }} /> Privacy & Support
+                    </div>
+                    <ChevronDown size={16} className={`${styles.detailsAccordionChevron} ${accordionOpen.privacy ? styles.detailsAccordionChevronOpen : ''}`} />
+                  </div>
+
+                  {accordionOpen.privacy && (
+                    <div className={styles.detailsAccordionContent}>
+                      <button 
+                        className={styles.messengerMenuItem} 
+                        onClick={() => {
+                          setIsMutedDetails(!isMutedDetails);
+                          setToastMessage(isMutedDetails ? "Notifications unmuted" : "Notifications muted");
+                          setTimeout(() => setToastMessage(null), 2500);
+                        }}
+                      >
+                        {isMutedDetails ? <Bell size={16} /> : <BellOff size={16} />}
+                        <span>{isMutedDetails ? "Unmute Notifications" : "Mute Notifications"}</span>
+                      </button>
+
+                      <button 
+                        className={`${styles.messengerMenuItem} ${styles.messengerMenuItemDanger}`} 
+                        onClick={() => {
+                          if (window.confirm(`Are you sure you want to block ${dmUser.name}?`)) {
+                            setToastMessage(`Blocked ${dmUser.name}`);
+                            setTimeout(() => setToastMessage(null), 2500);
+                          }
+                        }}
+                      >
+                        <ShieldAlert size={16} />
+                        <span>Block Contact</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
               </div>
             ) : isGroupChat ? (
               // Group Chat Details
@@ -1850,6 +2151,21 @@ export default function ChatArea({
                      </div>
                    </div>
                 </div>
+
+                {/* Group Shared Files */}
+                <div className={styles.detailsSection}>
+                  <div className={styles.detailsSectionTitle}>Shared Files</div>
+                  {sharedFiles.length > 0 ? (
+                    sharedFiles.map(m => (
+                      <div key={m.id} className={styles.sharedFileItem} onClick={() => window.open(m.fileUrl, '_blank')}>
+                        <FileText size={16} className={styles.sharedFileIcon} />
+                        <div className={styles.sharedFileText}>{m.fileName || 'Shared file'}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className={styles.detailsEmptyState}>No shared files in this group yet.</div>
+                  )}
+                </div>
               </div>
             ) : (
               // Channel Details
@@ -1871,33 +2187,24 @@ export default function ChatArea({
                       <div className={styles.detailValue}>This is the main channel for #{channelName}. Use this space for team-wide announcements and collaboration.</div>
                     </div>
                   </div>
-                  <div className={styles.detailItem}>
-                    <Users size={16} className={styles.detailIcon} />
-                    <div>
-                      <div className={styles.detailLabel}>Members</div>
-                      <div className={styles.detailValue}>24 Members</div>
-                    </div>
-                  </div>
+                </div>
+
+                {/* Channel Shared Files */}
+                <div className={styles.detailsSection}>
+                  <div className={styles.detailsSectionTitle}>Shared Files</div>
+                  {sharedFiles.length > 0 ? (
+                    sharedFiles.map(m => (
+                      <div key={m.id} className={styles.sharedFileItem} onClick={() => window.open(m.fileUrl, '_blank')}>
+                        <FileText size={16} className={styles.sharedFileIcon} />
+                        <div className={styles.sharedFileText}>{m.fileName || 'Shared file'}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className={styles.detailsEmptyState}>No shared files in this channel yet.</div>
+                  )}
                 </div>
               </div>
             )}
-
-            {/* Shared Media / Files Section (Mock) */}
-            <div className={styles.detailsSection}>
-              <div className={styles.detailsSectionTitle}>Shared Files</div>
-              <div className={styles.sharedFileItem}>
-                <FileText size={16} className={styles.sharedFileIcon} />
-                <div className={styles.sharedFileText}>Q3_Report_Final.pdf</div>
-              </div>
-              <div className={styles.sharedFileItem}>
-                <ImageIcon size={16} className={styles.sharedFileIcon} />
-                <div className={styles.sharedFileText}>design_mockup_v2.png</div>
-              </div>
-              <div className={styles.sharedFileItem}>
-                <FileText size={16} className={styles.sharedFileIcon} />
-                <div className={styles.sharedFileText}>meeting_notes.docx</div>
-              </div>
-            </div>
           </div>
         </div>
       )}
