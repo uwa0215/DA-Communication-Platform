@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { users, channels, messages, directMessages, channelMembers } from "@/lib/schema";
 import { eq, or, and, ilike, inArray } from "drizzle-orm";
 import { auth } from "@/lib/auth";
+import { getUserPresenceStatus } from "@/lib/presence";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -19,7 +20,7 @@ export async function GET(req: NextRequest) {
   const query = q.trim();
 
   try {
-    const usersData = await db.query.users.findMany({
+    const rawUsersData = await db.query.users.findMany({
       where: (u, { or, ilike }) => or(
         ilike(u.name, `%${query}%`),
         ilike(u.email, `%${query}%`),
@@ -28,6 +29,11 @@ export async function GET(req: NextRequest) {
       columns: { id: true, name: true, email: true, avatar: true, jobTitle: true, status: true },
       limit: 10
     });
+
+    const usersData = rawUsersData.map(u => ({
+      ...u,
+      status: getUserPresenceStatus(u.id)
+    }));
 
     const channelsData = await db.query.channels.findMany({
       where: (c, { ilike }) => ilike(c.name, `%${query}%`),

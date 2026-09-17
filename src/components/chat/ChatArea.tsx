@@ -690,9 +690,7 @@ export default function ChatArea({
     };
 
     const handleInitialPresences = (initialMap: Record<string, string>) => {
-      if (initialMap[dmUserId]) {
-        setLiveStatus(initialMap[dmUserId]);
-      }
+      setLiveStatus(initialMap[dmUserId] || "offline");
     };
 
     socket.on("user-presence", handlePresence);

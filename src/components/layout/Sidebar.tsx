@@ -249,7 +249,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
     });
 
     socket.on("initial-presences", (initialMap: Record<string, string>) => {
-      setPresences(p => ({ ...p, ...initialMap }));
+      setPresences(initialMap);
     });
 
     socket.on("dm-notification", async ({ from, sender }: { from: string; sender?: any }) => {

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/schema";
 import ChatArea from "@/components/chat/ChatArea";
+import { getUserPresenceStatus } from "@/lib/presence";
 
 interface Props {
   params: Promise<{ userId: string }>;
@@ -19,10 +20,13 @@ export default async function DMPage({ params }: Props) {
 
   if (!otherUser) return notFound();
 
+  const liveStatus = getUserPresenceStatus(userId);
+  const dmUser = { ...otherUser, status: liveStatus };
+
   return (
     <ChatArea
       dmUserId={userId}
-      dmUser={otherUser as any}
+      dmUser={dmUser as any}
       currentUserId={session?.user?.id || ""}
       currentUserName={session?.user?.name || "Unknown"}
     />

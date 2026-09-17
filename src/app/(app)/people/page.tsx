@@ -46,7 +46,7 @@ export default function PeoplePage() {
     };
 
     const handleInitialPresences = (initialMap: Record<string, string>) => {
-      setUsers(prev => prev.map(u => initialMap[u.id] ? { ...u, status: initialMap[u.id] } : u));
+      setUsers(prev => prev.map(u => ({ ...u, status: initialMap[u.id] || "offline" })));
     };
 
     socket.on("user-presence", handlePresence);
