@@ -3,8 +3,8 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Trellis – DA CALABARZON Communication Platform",
-  description: "Trellis is the official internal communication platform for DA CALABARZON employees.",
+  title: "Trellis (DA-RECS) – DA CALABARZON Regional Enterprise Communication System",
+  description: "Official DA CALABARZON Regional Enterprise Communication System (DA-RECS) for secure, private internal employee communication.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

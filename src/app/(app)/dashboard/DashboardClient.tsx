@@ -107,13 +107,13 @@ export default function DashboardClient({
         <div className={styles.heroContent}>
           <div className={styles.heroTextBlock}>
             <div className={styles.heroBadge}>
-              <ShieldCheck size={14} /> DA CALABARZON Employee Portal
+              <ShieldCheck size={14} /> DA CALABARZON Regional Enterprise Communication System (DA-RECS)
             </div>
             <h1 className={styles.heroTitle} style={{ opacity: 1, visibility: 'visible' }}>
               {greeting}, <span className={styles.heroName}>{firstName}</span>
             </h1>
             <p className={styles.heroSub} style={{ opacity: 1, visibility: 'visible' }}>
-              Welcome to your Trellis workspace. Here is what is happening today.
+              Welcome to your Trellis (DA-RECS) workspace. Here is what is happening today across the region.
             </p>
           </div>
           <div className={styles.heroLogo}>

@@ -154,7 +154,12 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
           <div className={styles.logoWrap}>
             <Image src={agriLogo} alt="Agri Logo" width={60} height={60} className="theme-logo" style={{ objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))' }} unoptimized priority />
           </div>
-          <span className={styles.brandName}>Trellis</span>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span className={styles.brandName} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              Trellis
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.5px', background: 'var(--brand-light)', padding: '1px 6px', borderRadius: 4, color: 'var(--brand)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>DA-RECS</span>
+            </span>
+          </div>
         </Link>
       </div>
 

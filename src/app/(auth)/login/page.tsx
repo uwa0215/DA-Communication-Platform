@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -60,7 +60,7 @@ function LoginContent() {
               <Image src={daLogo} alt="DA CALABARZON Logo" className={s.logoImg} width={100} height={100} />
             </div>
             <div className={s.logoText}>DA CALABARZON</div>
-            <div className={s.logoSub}>Employee Portal · Trellis</div>
+            <div className={s.logoSub}>Regional Enterprise Communication System (DA-RECS)</div>
           </div>
 
           {error && <div className={s.errorBox}>{error}</div>}
