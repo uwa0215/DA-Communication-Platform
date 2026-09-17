@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Flag } from "lucide-react";
 import calendarStyles from "@/app/(app)/calendar/calendar.module.css";
@@ -15,12 +15,21 @@ interface CalendarClientProps {
 }
 
 export default function CalendarClient({ initialMeetings, currentUserId }: CalendarClientProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [meetings, setMeetings] = useState<any[]>(initialMeetings);
   
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<any | null>(null);
   const [selectedHoliday, setSelectedHoliday] = useState<Holiday | null>(null);
+
+  // Scroll to top on mount
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = 0;
+    }
+    window.scrollTo(0, 0);
+  }, []);
 
   const nextMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
@@ -131,7 +140,7 @@ export default function CalendarClient({ initialMeetings, currentUserId }: Calen
   }, [year]);
 
   return (
-    <div className={calendarStyles.calendarPage}>
+    <div ref={containerRef} className={calendarStyles.calendarPage}>
       <div className={calendarStyles.header}>
         <div className={calendarStyles.titleArea}>
           <h1 className={calendarStyles.title}>
