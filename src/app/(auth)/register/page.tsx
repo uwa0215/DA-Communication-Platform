@@ -75,7 +75,10 @@ export default function RegisterPage() {
           {/* Logo with proper overflow to show rings */}
           <div className={s.logoWrap}>
             <div className={rs.logoImgWrap}>
-              <Image src={daLogo} alt="DA CALABARZON Logo" className={s.logoImg} width={100} height={100} priority />
+              <Image src={daLogo} alt="DA CALABARZON Official Seal" className={s.logoImg} width={160} height={160} priority />
+            </div>
+            <div className={s.logoBadge}>
+              <span className={s.logoBadgeDot} /> Department of Agriculture · Region IV-A
             </div>
             <h1 className={s.logoText}>Trellis</h1>
             <div className={s.logoSub}>DA CALABARZON Regional Enterprise Communication System (DA-RECS)</div>

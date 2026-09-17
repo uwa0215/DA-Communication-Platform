@@ -184,7 +184,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 480px;
+  max-width: 500px;
   gap: 16px;
   position: relative;
   z-index: 1;
@@ -197,7 +197,7 @@
   -webkit-backdrop-filter: blur(32px);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 28px;
-  padding: 48px 44px 38px;
+  padding: 44px 44px 38px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -217,7 +217,7 @@
   position: absolute;
   top: 0; left: 50%;
   transform: translateX(-50%);
-  width: 240px; height: 3px;
+  width: 260px; height: 3px;
   background: linear-gradient(90deg, transparent, rgba(52, 211, 153, 0.8), transparent);
   border-radius: 0 0 50% 50%;
 }
@@ -227,48 +227,91 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 28px;
+  gap: 10px;
+  margin-bottom: 24px;
   text-align: center;
+  width: 100%;
 }
+
+.logoBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #34d399;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  border-radius: 100px;
+  padding: 4px 12px;
+  margin-bottom: 4px;
+}
+.logoBadgeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 8px #34d399;
+  animation: pulseDot 2s ease-in-out infinite;
+}
+@keyframes pulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.75); }
+}
+
 .logoImgWrap {
   position: relative;
-  width: 100px; height: 100px;
-  margin-bottom: 4px;
+  width: 160px;
+  height: 160px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .logoImgWrap::before {
   content: '';
-  position: absolute; inset: -7px;
+  position: absolute; inset: -10px;
   border-radius: 50%;
-  border: 2px solid rgba(16,185,129,0.65);
+  border: 2px solid rgba(52, 211, 153, 0.65);
+  box-shadow: 0 0 30px rgba(52, 211, 153, 0.25);
   animation: ringPulse 3s ease-in-out infinite;
 }
 .logoImgWrap::after {
   content: '';
-  position: absolute; inset: -14px;
+  position: absolute; inset: -20px;
   border-radius: 50%;
-  border: 1px solid rgba(6,182,212,0.3);
-  animation: ringPulse 3s ease-in-out infinite 1.2s;
+  border: 1.5px dashed rgba(6, 182, 212, 0.35);
+  animation: ringPulse 4s ease-in-out infinite 1.5s;
 }
 .logoImg {
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   object-fit: contain;
-  box-shadow: 0 0 35px rgba(16,185,129,0.4), 0 4px 16px rgba(0,0,0,0.4);
+  background: rgba(4, 14, 26, 0.7);
+  padding: 6px;
+  box-shadow:
+    0 0 45px rgba(52, 211, 153, 0.45),
+    0 12px 28px rgba(0, 0, 0, 0.5);
   animation: logoBob 5s ease-in-out infinite;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
 }
 .logoText {
   font-family: 'Outfit', 'Plus Jakarta Sans', -apple-system, sans-serif;
-  font-size: 38px;
+  font-size: 42px;
   font-weight: 800;
   letter-spacing: -0.8px;
-  margin: 0;
+  margin: 4px 0 0;
   line-height: 1;
   background: linear-gradient(135deg, #ffffff 0%, #34d399 40%, #06b6d4 75%, #a78bfa 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  filter: drop-shadow(0 0 20px rgba(52, 211, 153, 0.35));
+  filter: drop-shadow(0 0 24px rgba(52, 211, 153, 0.4));
   animation: shimmer 5s ease-in-out infinite;
 }
 .logoSub {
