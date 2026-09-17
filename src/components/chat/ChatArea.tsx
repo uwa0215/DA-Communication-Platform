@@ -20,6 +20,7 @@ const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 const UserProfileModal = dynamic(() => import("./UserProfileModal"), { ssr: false });
 const ChannelSettingsModal = dynamic(() => import("./ChannelSettingsModal"), { ssr: false });
 const ThreadPanel = dynamic(() => import("./ThreadPanel"), { ssr: false });
+import GifPicker from "./GifPicker";
 import LinkPreview from "./LinkPreview";
 import { fetcher } from "@/lib/fetcher";
 import { loadSettings } from "@/lib/settingsStore";
@@ -98,6 +99,7 @@ export default function ChatArea({
   const [showEmoji, setShowEmoji] = useState(false);
   const [previewFile, setPreviewFile] = useState<{ url: string, name: string, type: string } | null>(null);
   const [showInputEmoji, setShowInputEmoji] = useState(false);
+  const [expressionMode, setExpressionMode] = useState<'emoji' | 'gif'>('emoji');
   const [hoverMsgId, setHoverMsgId] = useState<string | null>(null);
   const [activeActionsMsgId, setActiveActionsMsgId] = useState<string | null>(null);
 
@@ -887,6 +889,66 @@ export default function ChatArea({
     } catch (err) {
       console.error("Error sending message:", err);
       // Remove optimistic message on error
+      setMessages(prev => prev.filter(x => x.id !== tempId));
+    }
+  }
+
+  async function sendGifMessage(gifUrl: string, title?: string) {
+    setShowInputEmoji(false);
+    
+    const tempId = `optimistic-${Date.now()}`;
+    const optimisticMsg: Message = {
+      id: tempId,
+      content: "",
+      fileUrl: gifUrl,
+      fileName: title || "GIF",
+      fileType: "image/gif",
+      sender: {
+        id: currentUserId,
+        name: currentUserName,
+        status: "online"
+      },
+      createdAt: new Date().toISOString(),
+      reactions: [],
+      parent: replyingToMessage || undefined
+    };
+
+    setMessages(prev => [...prev, optimisticMsg]);
+    scrollToBottom(true);
+    const parentIdToUse = replyingToMessage?.id;
+    setReplyingToMessage(null);
+
+    try {
+      const res = await fetch(apiBase, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: "",
+          fileUrl: gifUrl,
+          fileName: title || "GIF",
+          fileType: "image/gif",
+          parentId: parentIdToUse
+        }),
+      });
+
+      if (!res.ok) {
+        setMessages(prev => prev.filter(x => x.id !== tempId));
+      } else {
+        const data = await res.json();
+        if (data.message && socket) {
+          if (channelId) {
+            socket.emit("send-message", data.message);
+          } else if (dmUserId) {
+            socket.emit("send-dm", { roomId, message: data.message });
+          }
+        }
+        const settings = loadSettings();
+        if (settings.playSounds) {
+          playMessageChime();
+        }
+      }
+    } catch (err) {
+      console.error("Error sending GIF message:", err);
       setMessages(prev => prev.filter(x => x.id !== tempId));
     }
   }
@@ -1727,25 +1789,93 @@ export default function ChatArea({
           )}
 
           {!isRecording && (
-            <div style={{ position: "relative", display: "flex", alignItems: "center" }} ref={emojiPickerRef}>
+            <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 2 }} ref={emojiPickerRef}>
               <button 
-                className={`btn-icon ${styles.toolbarBtn} ${showInputEmoji ? styles.toolbarBtnActive : ''}`} 
+                className={`btn-icon ${styles.toolbarBtn} ${showInputEmoji && expressionMode === 'emoji' ? styles.toolbarBtnActive : ''}`} 
                 title="Emoji"
-                onClick={() => setShowInputEmoji(!showInputEmoji)}
+                onClick={() => {
+                  if (showInputEmoji && expressionMode === 'emoji') {
+                    setShowInputEmoji(false);
+                  } else {
+                    setExpressionMode('emoji');
+                    setShowInputEmoji(true);
+                  }
+                }}
               >
                 <Smile size={20} />
               </button>
+
+              <button 
+                className={`btn-icon ${styles.toolbarBtn} ${showInputEmoji && expressionMode === 'gif' ? styles.toolbarBtnActive : ''}`} 
+                title="GIFs"
+                onClick={() => {
+                  if (showInputEmoji && expressionMode === 'gif') {
+                    setShowInputEmoji(false);
+                  } else {
+                    setExpressionMode('gif');
+                    setShowInputEmoji(true);
+                  }
+                }}
+                style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.5, padding: '4px 6px' }}
+              >
+                GIF
+              </button>
+
               {showInputEmoji && (
-                <div style={{ position: "absolute", bottom: "calc(100% + 8px)", right: 0, zIndex: 9999, boxShadow: "0 12px 36px rgba(0, 0, 0, 0.3)", borderRadius: 16, overflow: "hidden" }}>
-                  <EmojiPicker 
-                    width={typeof window !== "undefined" && window.innerWidth < 450 ? Math.min(300, window.innerWidth - 32) : 340}
-                    height={340}
-                    previewConfig={{ showPreview: false }}
-                    onEmojiClick={(e) => {
-                      editor?.chain().focus().insertContent(e.emoji).run();
-                      setShowInputEmoji(false);
-                    }} 
-                  />
+                <div style={{ position: "absolute", bottom: "calc(100% + 8px)", right: 0, zIndex: 9999, boxShadow: "0 16px 40px rgba(0, 0, 0, 0.4)", borderRadius: 16, overflow: "hidden", background: "var(--bg-panel, #0f172a)", border: "1px solid rgba(255, 255, 255, 0.12)" }}>
+                  {/* Meta Messenger Expression Picker Header */}
+                  <div style={{ display: "flex", background: "rgba(0, 0, 0, 0.25)", padding: "4px 8px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", gap: 4 }}>
+                    <button
+                      type="button"
+                      onClick={() => setExpressionMode('emoji')}
+                      style={{
+                        flex: 1,
+                        padding: "6px 12px",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        borderRadius: 10,
+                        border: "none",
+                        cursor: "pointer",
+                        background: expressionMode === 'emoji' ? "var(--brand, #10b981)" : "transparent",
+                        color: expressionMode === 'emoji' ? "#ffffff" : "rgba(255, 255, 255, 0.6)",
+                        transition: "all 0.2s ease"
+                      }}
+                    >
+                      😃 Emojis
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpressionMode('gif')}
+                      style={{
+                        flex: 1,
+                        padding: "6px 12px",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        borderRadius: 10,
+                        border: "none",
+                        cursor: "pointer",
+                        background: expressionMode === 'gif' ? "var(--brand, #10b981)" : "transparent",
+                        color: expressionMode === 'gif' ? "#ffffff" : "rgba(255, 255, 255, 0.6)",
+                        transition: "all 0.2s ease"
+                      }}
+                    >
+                      🎬 GIFs
+                    </button>
+                  </div>
+
+                  {expressionMode === 'emoji' ? (
+                    <EmojiPicker 
+                      width={typeof window !== "undefined" && window.innerWidth < 450 ? Math.min(300, window.innerWidth - 32) : 340}
+                      height={340}
+                      previewConfig={{ showPreview: false }}
+                      onEmojiClick={(e) => {
+                        editor?.chain().focus().insertContent(e.emoji).run();
+                        setShowInputEmoji(false);
+                      }} 
+                    />
+                  ) : (
+                    <GifPicker onSelectGif={(gifUrl, title) => sendGifMessage(gifUrl, title)} />
+                  )}
                 </div>
               )}
             </div>
