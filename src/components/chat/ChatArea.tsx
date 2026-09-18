@@ -1791,34 +1791,12 @@ export default function ChatArea({
           {!isRecording && (
             <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 2 }} ref={emojiPickerRef}>
               <button 
-                className={`btn-icon ${styles.toolbarBtn} ${showInputEmoji && expressionMode === 'emoji' ? styles.toolbarBtnActive : ''}`} 
-                title="Emoji"
-                onClick={() => {
-                  if (showInputEmoji && expressionMode === 'emoji') {
-                    setShowInputEmoji(false);
-                  } else {
-                    setExpressionMode('emoji');
-                    setShowInputEmoji(true);
-                  }
-                }}
+                type="button"
+                className={`btn-icon ${styles.toolbarBtn} ${showInputEmoji ? styles.toolbarBtnActive : ''}`} 
+                title="Emojis & GIFs"
+                onClick={() => setShowInputEmoji(!showInputEmoji)}
               >
                 <Smile size={20} />
-              </button>
-
-              <button 
-                className={`btn-icon ${styles.toolbarBtn} ${showInputEmoji && expressionMode === 'gif' ? styles.toolbarBtnActive : ''}`} 
-                title="GIFs"
-                onClick={() => {
-                  if (showInputEmoji && expressionMode === 'gif') {
-                    setShowInputEmoji(false);
-                  } else {
-                    setExpressionMode('gif');
-                    setShowInputEmoji(true);
-                  }
-                }}
-                style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.5, padding: '4px 6px' }}
-              >
-                GIF
               </button>
 
               {showInputEmoji && (
