@@ -69,7 +69,7 @@ export default function MeetingRoomModal({ roomId, title = "Video Meeting", curr
     async function setupLocalMedia() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } },
           audio: true,
         });
         if (mounted) {
@@ -102,12 +102,15 @@ export default function MeetingRoomModal({ roomId, title = "Video Meeting", curr
     };
   }, []);
 
-  // Sync Local Video Ref when localStream changes
+  // Sync Local Video Ref when localStream, screenStream, isVideoOff, or isSharingScreen changes
   useEffect(() => {
-    if (localVideoRef.current && localStream) {
-      localVideoRef.current.srcObject = localStream;
+    if (localVideoRef.current) {
+      const activeStream = isSharingScreen ? screenStream : localStream;
+      if (activeStream && localVideoRef.current.srcObject !== activeStream) {
+        localVideoRef.current.srcObject = activeStream;
+      }
     }
-  }, [localStream]);
+  }, [localStream, screenStream, isVideoOff, isSharingScreen]);
 
   // Socket Signaling & WebRTC Peer Management
   useEffect(() => {
@@ -266,10 +269,29 @@ export default function MeetingRoomModal({ roomId, title = "Video Meeting", curr
   };
 
   // Media Controls
-  const toggleMute = () => {
-    if (localStream) {
+  const toggleMute = async () => {
+    let currentStream = localStream;
+    if (!currentStream || currentStream.getAudioTracks().length === 0) {
+      try {
+        const newAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const newTrack = newAudioStream.getAudioTracks()[0];
+        if (newTrack) {
+          if (!currentStream) {
+            currentStream = new MediaStream([newTrack]);
+            setLocalStream(currentStream);
+          } else {
+            currentStream.addTrack(newTrack);
+          }
+          Object.values(peerConnectionsRef.current).forEach(pc => pc.addTrack(newTrack, currentStream!));
+        }
+      } catch (err) {
+        console.error("Could not obtain audio track:", err);
+      }
+    }
+
+    if (currentStream) {
       const newState = !isMuted;
-      localStream.getAudioTracks().forEach(t => (t.enabled = !newState));
+      currentStream.getAudioTracks().forEach(t => (t.enabled = !newState));
       setIsMuted(newState);
       if (socket) {
         socket.emit("meeting-media-update", { roomId, userId: currentUser.id, isMuted: newState, isVideoOff });
@@ -277,10 +299,36 @@ export default function MeetingRoomModal({ roomId, title = "Video Meeting", curr
     }
   };
 
-  const toggleVideo = () => {
-    if (localStream) {
-      const newState = !isVideoOff;
-      localStream.getVideoTracks().forEach(t => (t.enabled = !newState));
+  const toggleVideo = async () => {
+    let currentStream = localStream;
+    const newState = !isVideoOff;
+
+    if (!newState) {
+      // Turning camera ON
+      if (!currentStream || currentStream.getVideoTracks().length === 0 || currentStream.getVideoTracks().every(t => t.readyState === 'ended')) {
+        try {
+          const newVideoStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 1280 }, height: { ideal: 720 } }
+          });
+          const newTrack = newVideoStream.getVideoTracks()[0];
+          if (newTrack) {
+            if (!currentStream) {
+              currentStream = new MediaStream([newTrack]);
+              setLocalStream(currentStream);
+            } else {
+              currentStream.addTrack(newTrack);
+            }
+            Object.values(peerConnectionsRef.current).forEach(pc => pc.addTrack(newTrack, currentStream!));
+          }
+        } catch (err) {
+          console.error("Could not obtain video track:", err);
+          return;
+        }
+      }
+    }
+
+    if (currentStream) {
+      currentStream.getVideoTracks().forEach(t => (t.enabled = !newState));
       setIsVideoOff(newState);
       if (socket) {
         socket.emit("meeting-media-update", { roomId, userId: currentUser.id, isMuted, isVideoOff: newState });
@@ -373,16 +421,18 @@ export default function MeetingRoomModal({ roomId, title = "Video Meeting", curr
           
           {/* Self Local Tile */}
           <div className={styles.videoTile}>
-            {localStream && !isVideoOff ? (
-              <video 
-                ref={localVideoRef} 
-                autoPlay 
-                playsInline 
-                muted 
-                className={isSharingScreen ? styles.videoFeedScreenShare : styles.videoFeed}
-                style={{ transform: isSharingScreen ? 'none' : 'scaleX(-1)' }}
-              />
-            ) : (
+            <video 
+              ref={localVideoRef} 
+              autoPlay 
+              playsInline 
+              muted 
+              className={isSharingScreen ? styles.videoFeedScreenShare : styles.videoFeed}
+              style={{ 
+                display: (isVideoOff && !isSharingScreen) ? 'none' : 'block',
+                transform: isSharingScreen ? 'none' : 'scaleX(-1)' 
+              }}
+            />
+            {isVideoOff && !isSharingScreen && (
               <div className={styles.avatarFallback}>
                 <div className={styles.avatarInner}>
                   {currentUser.avatar ? (
