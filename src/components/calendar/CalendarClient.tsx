@@ -19,6 +19,8 @@ export default function CalendarClient({ initialMeetings, currentUserId }: Calen
   const [currentDate, setCurrentDate] = useState(new Date());
   const [meetings, setMeetings] = useState<any[]>(initialMeetings);
   
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState<any | null>(null);
   const [selectedHoliday, setSelectedHoliday] = useState<Holiday | null>(null);
@@ -32,15 +34,28 @@ export default function CalendarClient({ initialMeetings, currentUserId }: Calen
   }, []);
 
   const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    const nextD = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+    setCurrentDate(nextD);
+    setSelectedDate(nextD);
   };
 
   const prevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    const prevD = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    setCurrentDate(prevD);
+    setSelectedDate(prevD);
   };
   
   const today = () => {
-    setCurrentDate(new Date());
+    const nowD = new Date();
+    setCurrentDate(nowD);
+    setSelectedDate(nowD);
+  };
+
+  const handleDateClick = (d: { day: number, isCurrentMonth: boolean, date: Date }) => {
+    setSelectedDate(d.date);
+    if (!d.isCurrentMonth) {
+      setCurrentDate(new Date(d.date.getFullYear(), d.date.getMonth(), 1));
+    }
   };
 
   const handleMeetingScheduled = (newMeeting: any) => {
@@ -110,6 +125,13 @@ export default function CalendarClient({ initialMeetings, currentUserId }: Calen
     return d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   };
 
+  const isSelectedDate = (d: Date) => {
+    return selectedDate && 
+      d.getDate() === selectedDate.getDate() && 
+      d.getMonth() === selectedDate.getMonth() && 
+      d.getFullYear() === selectedDate.getFullYear();
+  };
+
   const getMeetingsForDate = (date: Date) => {
     return meetings.filter(m => {
       const mDate = new Date(m.startTime);
@@ -119,7 +141,11 @@ export default function CalendarClient({ initialMeetings, currentUserId }: Calen
     }).sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
   };
 
-  // Agenda logic — upcoming meetings + upcoming holidays
+  // Selected Date events
+  const selectedDayMeetings = selectedDate ? getMeetingsForDate(selectedDate) : [];
+  const selectedDayHolidays = selectedDate ? (holidayMap.get(fmtDate(selectedDate)) || []) : [];
+
+  // Upcoming meetings logic
   const now = new Date();
   const upcomingMeetings = [...meetings]
     .filter(m => new Date(m.endTime) >= now)
@@ -130,7 +156,6 @@ export default function CalendarClient({ initialMeetings, currentUserId }: Calen
   const upcomingHolidays = useMemo(() => {
     const todayStr = fmtDate(now);
     const allHolidays = getPhilippineHolidays(now.getFullYear());
-    // Add next year's holidays too for when we're near year-end
     const nextYearHolidays = getPhilippineHolidays(now.getFullYear() + 1);
     
     return [...allHolidays, ...nextYearHolidays]
@@ -141,21 +166,23 @@ export default function CalendarClient({ initialMeetings, currentUserId }: Calen
 
   return (
     <div ref={containerRef} className={calendarStyles.calendarPage}>
+      {/* ===== HEADER ===== */}
       <div className={calendarStyles.header}>
         <div className={calendarStyles.titleArea}>
           <h1 className={calendarStyles.title}>
             <CalendarIcon size={24} className="text-brand" /> Calendar
           </h1>
-          <div className={calendarStyles.monthNav}>
-            <button className={calendarStyles.navBtn} onClick={prevMonth}><ChevronLeft size={20} /></button>
-            <div className={calendarStyles.currentMonth}>
-              {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
-            </div>
-            <button className={calendarStyles.navBtn} onClick={nextMonth}><ChevronRight size={20} /></button>
-          </div>
-          <button className="btn btn-ghost" onClick={today} style={{ marginLeft: 8 }}>Today</button>
+          <button className="btn btn-ghost btn-sm" onClick={today}>Today</button>
         </div>
-        
+
+        <div className={calendarStyles.monthNav}>
+          <button className={calendarStyles.navBtn} onClick={prevMonth}><ChevronLeft size={20} /></button>
+          <div className={calendarStyles.currentMonth}>
+            {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+          </div>
+          <button className={calendarStyles.navBtn} onClick={nextMonth}><ChevronRight size={20} /></button>
+        </div>
+
         <div className={calendarStyles.headerActions}>
           <div className={calendarStyles.holidayLegend}>
             <span className={calendarStyles.legendLabel}>
@@ -167,82 +194,21 @@ export default function CalendarClient({ initialMeetings, currentUserId }: Calen
               Special Non-Working
             </span>
           </div>
-          <button className="btn btn-primary" onClick={() => setShowScheduleModal(true)}>
+          <button className={`btn btn-primary ${calendarStyles.newMeetingHeaderBtn}`} onClick={() => setShowScheduleModal(true)}>
             <Plus size={18} /> New Meeting
           </button>
         </div>
       </div>
 
       <div className={calendarStyles.mainArea}>
-        {/* Left Agenda Panel */}
-        <div className={calendarStyles.agendaPanel}>
-          <div className={calendarStyles.agendaHeader}>
-            <div className={calendarStyles.agendaTitle}>Upcoming</div>
-          </div>
-          <div className={calendarStyles.agendaList}>
-            {/* Upcoming Holidays */}
-            {upcomingHolidays.length > 0 && (
-              <>
-                <div className={calendarStyles.agendaSectionLabel}>🇵🇭 Holidays</div>
-                {upcomingHolidays.map((h, i) => {
-                  const hDate = new Date(h.date + 'T00:00:00');
-                  const dateLabel = isToday(hDate) ? 'Today' : hDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', weekday: 'short' });
-                  return (
-                    <div key={`holiday-${i}`} className={calendarStyles.agendaHoliday} onClick={() => setSelectedHoliday(h)} style={{ cursor: 'pointer' }}>
-                      <Flag size={18} className={calendarStyles.agendaHolidayIcon} />
-                      <div className={calendarStyles.agendaHolidayText}>
-                        <div className={calendarStyles.agendaHolidayName}>{h.name}</div>
-                        <div className={calendarStyles.agendaHolidayDate}>{dateLabel}</div>
-                      </div>
-                      <span className={`${calendarStyles.agendaHolidayType} ${h.type === 'regular' ? calendarStyles.agendaHolidayTypeRegular : calendarStyles.agendaHolidayTypeSpecial}`}>
-                        {h.type === 'regular' ? 'Regular' : 'Special'}
-                      </span>
-                    </div>
-                  );
-                })}
-              </>
-            )}
-
-            {/* Upcoming Meetings */}
-            <div className={calendarStyles.agendaSectionLabel}>📅 Meetings</div>
-            {upcomingMeetings.length === 0 ? (
-              <div className={calendarStyles.emptyAgenda}>
-                No upcoming meetings. Enjoy your free time!
-              </div>
-            ) : (
-              upcomingMeetings.map(m => {
-                const start = new Date(m.startTime);
-                const isTodayStr = isToday(start) ? 'Today' : start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-                const timeStr = start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                
-                return (
-                  <div key={m.id} className={calendarStyles.agendaItem} onClick={() => setSelectedMeeting(m)}>
-                    <div className={calendarStyles.agendaTime}>{isTodayStr}, {timeStr}</div>
-                    <div className={calendarStyles.agendaMeetingTitle}>{m.title}</div>
-                    <div className={calendarStyles.agendaParticipants}>
-                      {m.participants?.slice(0, 4).map((p: any) => (
-                        <div key={p.id} className={calendarStyles.agendaAvatar} title={p.user.name}>
-                          {p.user.avatar ? <Image src={p.user.avatar} alt="" width={32} height={32} style={{width:"100%", height:"100%", borderRadius:"50%", objectFit:"cover"}} /> : p.user.name[0]}
-                        </div>
-                      ))}
-                      {m.participants?.length > 4 && (
-                        <div className={calendarStyles.agendaAvatar} style={{ background: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600 }}>
-                          +{m.participants.length - 4}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-
-        {/* Right Calendar Grid */}
+        {/* ===== CALENDAR GRID ===== */}
         <div className={calendarStyles.calendarGrid}>
           <div className={calendarStyles.daysHeader}>
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-              <div key={d} className={calendarStyles.dayName}>{d}</div>
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d, idx) => (
+              <div key={d} className={calendarStyles.dayName}>
+                <span className="hidden-mobile">{d}</span>
+                <span className="visible-mobile">{['S', 'M', 'T', 'W', 'T', 'F', 'S'][idx]}</span>
+              </div>
             ))}
           </div>
           
@@ -252,20 +218,45 @@ export default function CalendarClient({ initialMeetings, currentUserId }: Calen
               const dateStr = fmtDate(d.date);
               const dayHolidays = holidayMap.get(dateStr) || [];
               const hasHoliday = dayHolidays.length > 0;
+              const isSelected = isSelectedDate(d.date);
               
               return (
                 <div 
                   key={i} 
-                  className={`${calendarStyles.dateCell} ${!d.isCurrentMonth ? calendarStyles.dateCellOtherMonth : ''} ${hasHoliday ? calendarStyles.dateCellHoliday : ''}`}
+                  onClick={() => handleDateClick(d)}
+                  className={`
+                    ${calendarStyles.dateCell} 
+                    ${!d.isCurrentMonth ? calendarStyles.dateCellOtherMonth : ''} 
+                    ${hasHoliday ? calendarStyles.dateCellHoliday : ''}
+                    ${isSelected ? calendarStyles.dateCellSelected : ''}
+                  `}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <span className={`${calendarStyles.dateNumber} ${isToday(d.date) ? calendarStyles.dateNumberToday : ''} ${hasHoliday && !isToday(d.date) ? calendarStyles.dateNumberHoliday : ''}`}>
+                  <div className={calendarStyles.dateNumberWrapper}>
+                    <span className={`
+                      ${calendarStyles.dateNumber} 
+                      ${isToday(d.date) ? calendarStyles.dateNumberToday : ''} 
+                      ${hasHoliday && !isToday(d.date) ? calendarStyles.dateNumberHoliday : ''}
+                    `}>
                       {d.day}
                     </span>
                   </div>
                   
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, overflowY: 'auto' }}>
-                    {/* Holiday tags first */}
+                  {/* Indicators for Mobile View */}
+                  <div className={calendarStyles.dotsRow}>
+                    {dayHolidays.map((h, hi) => (
+                      <span 
+                        key={`dot-h-${hi}`} 
+                        className={`${calendarStyles.dot} ${h.type === 'regular' ? calendarStyles.dotRegularHoliday : calendarStyles.dotSpecialHoliday}`} 
+                        title={h.name} 
+                      />
+                    ))}
+                    {dayMeetings.slice(0, 3).map((m, mi) => (
+                      <span key={`dot-m-${mi}`} className={`${calendarStyles.dot} ${calendarStyles.dotMeeting}`} title={m.title} />
+                    ))}
+                  </div>
+
+                  {/* Text Blocks for Desktop View */}
+                  <div className={calendarStyles.desktopBlocks}>
                     {dayHolidays.map((h, hi) => (
                       <span 
                         key={`h-${hi}`} 
@@ -278,9 +269,8 @@ export default function CalendarClient({ initialMeetings, currentUserId }: Calen
                       </span>
                     ))}
                     
-                    {/* Meeting blocks */}
                     {dayMeetings.slice(0, hasHoliday ? 2 : 3).map(m => (
-                      <div key={m.id} className={calendarStyles.meetingBlock} onClick={() => setSelectedMeeting(m)}>
+                      <div key={m.id} className={calendarStyles.meetingBlock} onClick={(e) => { e.stopPropagation(); setSelectedMeeting(m); }}>
                         <span className={calendarStyles.meetingBlockTime}>
                           {new Date(m.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).toLowerCase().replace(' ', '')}
                         </span>
@@ -298,7 +288,116 @@ export default function CalendarClient({ initialMeetings, currentUserId }: Calen
             })}
           </div>
         </div>
+
+        {/* ===== AGENDA & SELECTED DAY PANEL ===== */}
+        <div className={calendarStyles.agendaPanel}>
+          <div className={calendarStyles.agendaHeader}>
+            <div className={calendarStyles.agendaTitle}>
+              {selectedDate ? (
+                <span>
+                  {isToday(selectedDate) ? "Today's Agenda" : selectedDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', weekday: 'short' })}
+                </span>
+              ) : (
+                "Upcoming Events"
+              )}
+            </div>
+            {selectedDate && !isToday(selectedDate) && (
+              <button 
+                className="btn btn-ghost btn-xs" 
+                onClick={() => setSelectedDate(new Date())}
+                style={{ fontSize: 11 }}
+              >
+                Go to Today
+              </button>
+            )}
+          </div>
+
+          <div className={calendarStyles.agendaList}>
+            {/* Selected Day Holidays */}
+            {selectedDayHolidays.length > 0 && (
+              <>
+                <div className={calendarStyles.agendaSectionLabel}>🇵🇭 Holiday</div>
+                {selectedDayHolidays.map((h, i) => (
+                  <div key={`sel-h-${i}`} className={calendarStyles.agendaHoliday} onClick={() => setSelectedHoliday(h)} style={{ cursor: 'pointer' }}>
+                    <Flag size={18} className={calendarStyles.agendaHolidayIcon} />
+                    <div className={calendarStyles.agendaHolidayText}>
+                      <div className={calendarStyles.agendaHolidayName}>{h.name}</div>
+                      <div className={calendarStyles.agendaHolidayDate}>{h.type === 'regular' ? 'Regular Holiday' : 'Special Non-Working Day'}</div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+
+            {/* Selected Day Meetings */}
+            <div className={calendarStyles.agendaSectionLabel}>📅 Scheduled Meetings</div>
+            {selectedDayMeetings.length === 0 ? (
+              <div className={calendarStyles.emptyAgenda}>
+                No meetings scheduled for this date.
+                <div style={{ marginTop: 12 }}>
+                  <button className="btn btn-sm btn-primary" onClick={() => setShowScheduleModal(true)}>
+                    <Plus size={14} /> Schedule Meeting
+                  </button>
+                </div>
+              </div>
+            ) : (
+              selectedDayMeetings.map(m => {
+                const start = new Date(m.startTime);
+                const end = new Date(m.endTime);
+                const timeStr = `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                
+                return (
+                  <div key={m.id} className={calendarStyles.agendaItem} onClick={() => setSelectedMeeting(m)}>
+                    <div className={calendarStyles.agendaTime}>{timeStr}</div>
+                    <div className={calendarStyles.agendaMeetingTitle}>{m.title}</div>
+                    <div className={calendarStyles.agendaParticipants}>
+                      {m.participants?.slice(0, 4).map((p: any) => (
+                        <div key={p.id} className={calendarStyles.agendaAvatar} title={p.user.name}>
+                          {p.user.avatar ? <Image src={p.user.avatar} alt="" width={32} height={32} style={{width:"100%", height:"100%", borderRadius:"50%", objectFit:"cover"}} /> : p.user.name[0]}
+                        </div>
+                      ))}
+                      {m.participants?.length > 4 && (
+                        <div className={calendarStyles.agendaAvatar} style={{ background: 'var(--bg-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600 }}>
+                          +{m.participants.length - 4}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
+            {/* Upcoming Section when not selected or in addition */}
+            {upcomingHolidays.length > 0 && (
+              <>
+                <div className={calendarStyles.agendaSectionLabel} style={{ marginTop: 16 }}>Upcoming Holidays</div>
+                {upcomingHolidays.slice(0, 3).map((h, i) => {
+                  const hDate = new Date(h.date + 'T00:00:00');
+                  const dateLabel = isToday(hDate) ? 'Today' : hDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+                  return (
+                    <div key={`up-h-${i}`} className={calendarStyles.agendaHoliday} onClick={() => setSelectedHoliday(h)} style={{ cursor: 'pointer' }}>
+                      <Flag size={16} className={calendarStyles.agendaHolidayIcon} />
+                      <div className={calendarStyles.agendaHolidayText}>
+                        <div className={calendarStyles.agendaHolidayName}>{h.name}</div>
+                        <div className={calendarStyles.agendaHolidayDate}>{dateLabel}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Floating Action Button (Mobile Only) */}
+      <button 
+        className={calendarStyles.fabBtn} 
+        onClick={() => setShowScheduleModal(true)} 
+        title="Schedule New Meeting"
+      >
+        <Plus size={24} />
+      </button>
 
       {showScheduleModal && (
         <ScheduleModal 
