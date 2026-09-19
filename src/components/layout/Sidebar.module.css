@@ -631,36 +631,72 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 95;
 }
 
 @media (max-width: 768px) {
+  /* On Mobile, hide the left nav rail to give 100% width to Meta Messenger Chats drawer */
+  .navRail {
+    display: none !important;
+  }
+
   .sidebarContainer {
     position: fixed !important;
     top: var(--header-h, 60px);
     bottom: 0;
     left: 0;
-    width: 85vw !important;
-    max-width: 320px !important;
-    min-width: 270px !important;
+    width: 88vw !important;
+    max-width: 360px !important;
+    min-width: 280px !important;
     height: calc(100dvh - var(--header-h, 60px)) !important;
     transform: translateX(-110%) !important;
     z-index: 100;
     background: var(--bg-panel) !important;
-    border-right: none !important;
+    border-right: 1px solid var(--border) !important;
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.25) !important;
     visibility: hidden !important;
     pointer-events: none !important;
-    transition: transform 0.3s ease, visibility 0.3s ease !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s ease !important;
   }
+
+  :global(.dark) .sidebarContainer {
+    background: #0f1628 !important;
+    border-right-color: rgba(52, 211, 153, 0.1) !important;
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.5) !important;
+  }
+
   .sidebarContainer.open {
     transform: translateX(0) !important;
     visibility: visible !important;
     pointer-events: auto !important;
   }
+
+  .messengerHeader {
+    padding: 14px 16px 8px;
+  }
+
+  /* Horizontal scrolling filter pills for mobile */
+  .filterBar {
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 8px 14px;
+    gap: 8px;
+  }
+  .filterBar::-webkit-scrollbar {
+    display: none;
+  }
+  .filterTab {
+    flex: 0 0 auto;
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+
   .mobileBackdrop {
     display: block;
     top: var(--header-h, 60px);
   }
+
   .resizer {
     display: none !important;
   }

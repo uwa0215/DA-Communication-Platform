@@ -46,11 +46,11 @@
 
   .navItem:hover,
   .active {
-    color: var(--brand);
+    color: var(--chat-accent, var(--brand));
   }
 
   :global(.dark) .active {
-    color: #34d399;
+    color: var(--chat-accent, #34d399);
   }
 
   .navItem svg {
