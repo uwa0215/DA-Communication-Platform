@@ -379,7 +379,7 @@ export default function MeetingRoomModal({ roomId, title = "Video Meeting", curr
                 autoPlay 
                 playsInline 
                 muted 
-                className={styles.videoFeed}
+                className={isSharingScreen ? styles.videoFeedScreenShare : styles.videoFeed}
                 style={{ transform: isSharingScreen ? 'none' : 'scaleX(-1)' }}
               />
             ) : (
