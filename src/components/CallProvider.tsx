@@ -157,6 +157,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
 
+  const localStreamRef = useRef<MediaStream | null>(null);
+  useEffect(() => {
+    localStreamRef.current = localStream;
+  }, [localStream]);
+
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const targetSocketRef = useRef<string | null>(null);
 
@@ -530,8 +535,16 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     sendCallLogMessage();
     ringer.stop();
     stopVibration();
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(t => {
+        try { t.stop(); } catch (e) {}
+      });
+      localStreamRef.current = null;
+    }
     if (localStream) {
-      localStream.getTracks().forEach(t => t.stop());
+      localStream.getTracks().forEach(t => {
+        try { t.stop(); } catch (e) {}
+      });
     }
     if (peerConnection.current) {
       peerConnection.current.close();

@@ -48,6 +48,46 @@ export default function MeetingRoomModal({ roomId, title = "Video Meeting", curr
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const peerConnectionsRef = useRef<Record<string, RTCPeerConnection>>({});
 
+  const localStreamRef = useRef<MediaStream | null>(null);
+  const screenStreamRef = useRef<MediaStream | null>(null);
+
+  useEffect(() => {
+    localStreamRef.current = localStream;
+  }, [localStream]);
+
+  useEffect(() => {
+    screenStreamRef.current = screenStream;
+  }, [screenStream]);
+
+  const handleLeaveMeeting = () => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(t => {
+        try { t.stop(); } catch (e) {}
+      });
+      localStreamRef.current = null;
+    }
+    if (localStream) {
+      localStream.getTracks().forEach(t => {
+        try { t.stop(); } catch (e) {}
+      });
+    }
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach(t => {
+        try { t.stop(); } catch (e) {}
+      });
+      screenStreamRef.current = null;
+    }
+    if (screenStream) {
+      screenStream.getTracks().forEach(t => {
+        try { t.stop(); } catch (e) {}
+      });
+    }
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = null;
+    }
+    onClose();
+  };
+
   // Duration timer
   useEffect(() => {
     const timer = setInterval(() => {
@@ -74,6 +114,7 @@ export default function MeetingRoomModal({ roomId, title = "Video Meeting", curr
         });
         if (mounted) {
           setLocalStream(stream);
+          localStreamRef.current = stream;
           if (localVideoRef.current) {
             localVideoRef.current.srcObject = stream;
           }
@@ -84,6 +125,7 @@ export default function MeetingRoomModal({ roomId, title = "Video Meeting", curr
           const audioStream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
           if (mounted) {
             setLocalStream(audioStream);
+            localStreamRef.current = audioStream;
             setIsVideoOff(true);
           }
         } catch (e) {
@@ -96,8 +138,17 @@ export default function MeetingRoomModal({ roomId, title = "Video Meeting", curr
 
     return () => {
       mounted = false;
-      if (localStream) {
-        localStream.getTracks().forEach(t => t.stop());
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(t => {
+          try { t.stop(); } catch (e) {}
+        });
+        localStreamRef.current = null;
+      }
+      if (screenStreamRef.current) {
+        screenStreamRef.current.getTracks().forEach(t => {
+          try { t.stop(); } catch (e) {}
+        });
+        screenStreamRef.current = null;
       }
     };
   }, []);
@@ -303,35 +354,50 @@ export default function MeetingRoomModal({ roomId, title = "Video Meeting", curr
     let currentStream = localStream;
     const newState = !isVideoOff;
 
-    if (!newState) {
-      // Turning camera ON
-      if (!currentStream || currentStream.getVideoTracks().length === 0 || currentStream.getVideoTracks().every(t => t.readyState === 'ended')) {
-        try {
-          const newVideoStream = await navigator.mediaDevices.getUserMedia({
-            video: { width: { ideal: 1280 }, height: { ideal: 720 } }
-          });
-          const newTrack = newVideoStream.getVideoTracks()[0];
-          if (newTrack) {
-            if (!currentStream) {
-              currentStream = new MediaStream([newTrack]);
-              setLocalStream(currentStream);
-            } else {
-              currentStream.addTrack(newTrack);
-            }
-            Object.values(peerConnectionsRef.current).forEach(pc => pc.addTrack(newTrack, currentStream!));
-          }
-        } catch (err) {
-          console.error("Could not obtain video track:", err);
-          return;
-        }
+    if (newState) {
+      // Turning camera OFF -> Stop video track so hardware LED & browser camera indicator turn OFF
+      if (currentStream) {
+        currentStream.getVideoTracks().forEach(track => {
+          track.stop();
+          currentStream!.removeTrack(track);
+        });
       }
-    }
-
-    if (currentStream) {
-      currentStream.getVideoTracks().forEach(t => (t.enabled = !newState));
-      setIsVideoOff(newState);
+      setIsVideoOff(true);
       if (socket) {
-        socket.emit("meeting-media-update", { roomId, userId: currentUser.id, isMuted, isVideoOff: newState });
+        socket.emit("meeting-media-update", { roomId, userId: currentUser.id, isMuted, isVideoOff: true });
+      }
+    } else {
+      // Turning camera ON -> Request new video track
+      try {
+        const newVideoStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: { ideal: 1280 }, height: { ideal: 720 } }
+        });
+        const newTrack = newVideoStream.getVideoTracks()[0];
+        if (newTrack) {
+          if (!currentStream) {
+            currentStream = new MediaStream([newTrack]);
+            setLocalStream(currentStream);
+            localStreamRef.current = currentStream;
+          } else {
+            currentStream.addTrack(newTrack);
+          }
+          // Replace track in peer connections
+          Object.values(peerConnectionsRef.current).forEach(pc => {
+            const senders = pc.getSenders();
+            const videoSender = senders.find(s => s.track && s.track.kind === 'video');
+            if (videoSender) {
+              videoSender.replaceTrack(newTrack);
+            } else {
+              pc.addTrack(newTrack, currentStream!);
+            }
+          });
+        }
+        setIsVideoOff(false);
+        if (socket) {
+          socket.emit("meeting-media-update", { roomId, userId: currentUser.id, isMuted, isVideoOff: false });
+        }
+      } catch (err) {
+        console.error("Could not obtain video track:", err);
       }
     }
   };
@@ -409,7 +475,7 @@ export default function MeetingRoomModal({ roomId, title = "Video Meeting", curr
             <Users size={16} />
           </button>
 
-          <button className={styles.closeBtn} onClick={onClose} title="Leave Meeting">
+          <button className={styles.closeBtn} onClick={handleLeaveMeeting} title="Leave Meeting">
             <X size={20} />
           </button>
         </div>
@@ -516,7 +582,7 @@ export default function MeetingRoomModal({ roomId, title = "Video Meeting", curr
 
         <button 
           className={styles.ctrlBtnEndCall} 
-          onClick={onClose}
+          onClick={handleLeaveMeeting}
           title="Leave Video Meeting"
         >
           <PhoneOff size={22} />
