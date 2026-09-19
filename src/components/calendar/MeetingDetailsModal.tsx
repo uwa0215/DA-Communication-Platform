@@ -5,22 +5,37 @@ import Image from "next/image";
 import { X, Calendar as CalendarIcon, Clock, Users, AlignLeft, CheckCircle2, XCircle, HelpCircle, Trash2, Video, Copy, ExternalLink } from "lucide-react";
 import calendarStyles from "@/app/(app)/calendar/calendar.module.css";
 
+import MeetingRoomModal from "./MeetingRoomModal";
+
 interface MeetingDetailsModalProps {
   meeting: any;
   onClose: () => void;
   onUpdate: (updatedMeeting: any, deleted?: boolean) => void;
   currentUserId: string;
+  currentUser?: { id: string; name: string; avatar?: string };
 }
 
-export default function MeetingDetailsModal({ meeting, onClose, onUpdate, currentUserId }: MeetingDetailsModalProps) {
+export default function MeetingDetailsModal({ meeting, onClose, onUpdate, currentUserId, currentUser }: MeetingDetailsModalProps) {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [inMeeting, setInMeeting] = useState(false);
 
   const startDate = new Date(meeting.startTime).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   const timeStr = `${new Date(meeting.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(meeting.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
   const myParticipantRecord = meeting.participants?.find((p: any) => p.userId === currentUserId);
   const isCreator = meeting.createdById === currentUserId;
+
+  const currentUserName = currentUser?.name || myParticipantRecord?.user?.name || "Participant";
+  const currentUserAvatar = currentUser?.avatar || myParticipantRecord?.user?.avatar;
+
+  // Extract clean room ID from meetLink (e.g. /meeting/hakdog-room -> hakdog-room)
+  const getRoomId = () => {
+    if (!meeting.meetLink) return meeting.id;
+    const parts = meeting.meetLink.split("/meeting/");
+    if (parts.length > 1) return parts[1];
+    return meeting.id;
+  };
 
   const handleRsvp = async (status: string) => {
     setLoading(true);
@@ -108,27 +123,28 @@ export default function MeetingDetailsModal({ meeting, onClose, onUpdate, curren
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <Video size={20} style={{ color: 'var(--brand)', flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 2 }}>Video Call</div>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px', marginBottom: 2 }}>In-App Multi-Participant Video Meeting</div>
                     <div style={{ fontSize: 13, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {meeting.meetLink}
                     </div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <a 
-                    href={meeting.meetLink} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                  <button 
                     className="btn btn-primary" 
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none', fontSize: 13 }}
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}
+                    onClick={() => setInMeeting(true)}
                   >
                     <Video size={16} /> Join Meeting
-                  </a>
+                  </button>
                   <button 
                     className="btn btn-ghost" 
                     style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}
                     onClick={() => {
-                      navigator.clipboard.writeText(meeting.meetLink);
+                      const fullUrl = meeting.meetLink.startsWith('http') 
+                        ? meeting.meetLink 
+                        : `${window.location.origin}${meeting.meetLink}`;
+                      navigator.clipboard.writeText(fullUrl);
                       setCopied(true);
                       setTimeout(() => setCopied(false), 2000);
                     }}
@@ -137,6 +153,19 @@ export default function MeetingDetailsModal({ meeting, onClose, onUpdate, curren
                   </button>
                 </div>
               </div>
+            )}
+
+            {inMeeting && (
+              <MeetingRoomModal
+                roomId={getRoomId()}
+                title={meeting.title}
+                currentUser={{
+                  id: currentUserId,
+                  name: currentUserName,
+                  avatar: currentUserAvatar
+                }}
+                onClose={() => setInMeeting(false)}
+              />
             )}
 
             {meeting.description && (

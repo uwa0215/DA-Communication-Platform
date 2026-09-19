@@ -59,14 +59,14 @@ export async function POST(req: NextRequest) {
     const allParticipants = new Set(participantIds || []);
     allParticipants.add(session.user!.id);
 
-    // Generate a unique Jitsi Meet link
+    // Generate a unique native in-app meeting room link
     const sanitizedTitle = title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
-      .slice(0, 40);
+      .slice(0, 30);
     const randomId = Math.random().toString(36).substring(2, 10);
-    const meetLink = `https://meet.jit.si/companychat-${sanitizedTitle}-${randomId}`;
+    const meetLink = `/meeting/${sanitizedTitle}-${randomId}`;
 
     const meeting = await prisma.meeting.create({
       data: {
