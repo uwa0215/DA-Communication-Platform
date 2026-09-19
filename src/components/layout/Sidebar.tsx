@@ -18,6 +18,8 @@ import UserProfileModal from "@/components/chat/UserProfileModal";
 import { useCall } from "@/components/CallProvider";
 import { useUI } from "@/components/UIProvider";
 import { prefetchChatMessages } from "@/lib/clientMessageCache";
+import { loadSettings } from "@/lib/settingsStore";
+import { playMessengerIncomingSound } from "@/lib/audioEffects";
 import styles from "./Sidebar.module.css";
 
 interface User {
@@ -260,6 +262,10 @@ export default function Sidebar({ currentUser }: SidebarProps) {
       setLastMessageTimes(times => ({ ...times, [from]: Date.now() }));
 
       if (currentDmId !== from) {
+        const settings = loadSettings();
+        if (settings.playSounds) {
+          playMessengerIncomingSound();
+        }
         setMutedDMs(muted => {
           if (!muted.includes(from)) {
             setUnreadDMs(u => ({ ...u, [from]: (u[from] || 0) + 1 }));

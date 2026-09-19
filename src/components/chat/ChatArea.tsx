@@ -24,7 +24,7 @@ import GifPicker from "./GifPicker";
 import LinkPreview from "./LinkPreview";
 import { fetcher } from "@/lib/fetcher";
 import { loadSettings } from "@/lib/settingsStore";
-import { playMessageChime } from "@/lib/audioEffects";
+import { playMessengerIncomingSound, playMessengerOutgoingSound } from "@/lib/audioEffects";
 import { useCall } from "@/components/CallProvider";
 import { getClientCachedMessages, setClientCachedMessages } from "@/lib/clientMessageCache";
 import styles from "./ChatArea.module.css";
@@ -703,9 +703,15 @@ export default function ChatArea({
           return;
         }
 
-        if (msg.sender.id !== currentUserId && typeof document !== "undefined" && !document.hasFocus() && "Notification" in window && Notification.permission === "granted") {
-          const text = msg.content ? msg.content.replace(/<[^>]*>?/gm, '') : (msg.fileName ? `Attachment: ${msg.fileName}` : 'New message');
-          new Notification(`${msg.sender.name} in #${channelName}`, { body: text, icon: msg.sender.avatar || '/favicon.ico' });
+        if (msg.sender.id !== currentUserId) {
+          const settings = loadSettings();
+          if (settings.playSounds) {
+            playMessengerIncomingSound();
+          }
+          if (typeof document !== "undefined" && !document.hasFocus() && "Notification" in window && Notification.permission === "granted") {
+            const text = msg.content ? msg.content.replace(/<[^>]*>?/gm, '') : (msg.fileName ? `Attachment: ${msg.fileName}` : 'New message');
+            new Notification(`${msg.sender.name} in #${channelName}`, { body: text, icon: msg.sender.avatar || '/favicon.ico' });
+          }
         }
         setMessages(m => {
           const filtered = m.filter(x => !(x.id.startsWith("optimistic-") && (x.content === msg.content || x.fileName === msg.fileName) && x.sender.id === msg.sender.id));
@@ -734,9 +740,15 @@ export default function ChatArea({
     } else if (roomId) {
       socket.emit("join-dm", roomId);
       socket.on("new-dm", (msg: Message) => {
-        if (msg.sender.id !== currentUserId && typeof document !== "undefined" && !document.hasFocus() && "Notification" in window && Notification.permission === "granted") {
-          const text = msg.content ? msg.content.replace(/<[^>]*>?/gm, '') : (msg.fileName ? `Attachment: ${msg.fileName}` : 'New message');
-          new Notification(msg.sender.name, { body: text, icon: msg.sender.avatar || '/favicon.ico' });
+        if (msg.sender.id !== currentUserId) {
+          const settings = loadSettings();
+          if (settings.playSounds) {
+            playMessengerIncomingSound();
+          }
+          if (typeof document !== "undefined" && !document.hasFocus() && "Notification" in window && Notification.permission === "granted") {
+            const text = msg.content ? msg.content.replace(/<[^>]*>?/gm, '') : (msg.fileName ? `Attachment: ${msg.fileName}` : 'New message');
+            new Notification(msg.sender.name, { body: text, icon: msg.sender.avatar || '/favicon.ico' });
+          }
         }
         setMessages(m => {
           const filtered = m.filter(x => !(x.id.startsWith("optimistic-") && (x.content === msg.content || x.fileName === msg.fileName) && x.sender.id === msg.sender.id));
@@ -884,7 +896,7 @@ export default function ChatArea({
 
       const settings = loadSettings();
       if (settings.playSounds) {
-        playMessageChime();
+        playMessengerOutgoingSound();
       }
     } catch (err) {
       console.error("Error sending message:", err);
@@ -944,7 +956,7 @@ export default function ChatArea({
         }
         const settings = loadSettings();
         if (settings.playSounds) {
-          playMessageChime();
+          playMessengerOutgoingSound();
         }
       }
     } catch (err) {
