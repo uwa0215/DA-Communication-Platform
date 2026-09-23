@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trellis-cache-v2';
+const CACHE_NAME = 'trellis-cache-v3';
 const URLS_TO_CACHE = [
   '/',
   '/manifest.json',
@@ -45,7 +45,7 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// ===== WEB PUSH NOTIFICATIONS =====
+// ===== WEB PUSH NOTIFICATIONS (MESSAGES & INCOMING CALLS) =====
 self.addEventListener('push', (event) => {
   let data = {};
   if (event.data) {
@@ -57,14 +57,22 @@ self.addEventListener('push', (event) => {
   }
 
   const title = data.title || 'Trellis Messenger';
+  const isCall = title.includes('Call') || (data.url && data.url.includes('call=incoming'));
+
   const options = {
     body: data.body || 'You have a new message',
     icon: data.icon || '/icon-192.png',
     badge: '/icon-192.png',
     data: { url: data.url || '/dashboard' },
-    vibrate: [100, 50, 100, 50, 100],
+    // Ringtone vibration pattern for calls, short pulse for messages
+    vibrate: isCall ? [600, 200, 600, 200, 600, 200, 600, 400, 600, 200, 600, 200, 600] : [100, 50, 100, 50, 100],
     renotify: true,
-    tag: data.url || 'trellis-chat-msg'
+    requireInteraction: isCall ? true : false,
+    tag: isCall ? 'trellis-incoming-call' : (data.url || 'trellis-chat-msg'),
+    actions: isCall ? [
+      { action: 'answer', title: '📞 Answer' },
+      { action: 'decline', title: '❌ Decline' }
+    ] : []
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
@@ -73,6 +81,11 @@ self.addEventListener('push', (event) => {
 // Handle notification tap / click on mobile phone or desktop
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+
+  if (event.action === 'decline') {
+    return;
+  }
+
   const targetUrl = event.notification.data?.url || '/dashboard';
 
   event.waitUntil(
@@ -84,7 +97,7 @@ self.addEventListener('notificationclick', (event) => {
           return client.focus();
         }
       }
-      // If not open, open a new window to the chat URL
+      // If not open, open a new window to the chat/call URL
       if (clients.openWindow) {
         return clients.openWindow(targetUrl);
       }

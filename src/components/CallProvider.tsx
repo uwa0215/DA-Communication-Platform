@@ -441,6 +441,17 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         type,
         caller: { id: myId, name: session.user.name || "User", avatar: session.user.image }
       });
+
+      // Trigger Web Push Notification for incoming call (Mobile / Lock screen / App closed)
+      fetch("/api/calls/notify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userToCall: user.id,
+          type: type,
+          callerName: session.user.name || "User"
+        })
+      }).catch(err => console.error("Failed to trigger call push notification:", err));
     } catch (e: any) {
       console.error("Error starting call:", e);
       alert(e?.message || "Could not access camera or microphone. Please check device permissions.");
