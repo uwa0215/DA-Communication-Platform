@@ -60,6 +60,10 @@ export default function Sidebar({ currentUser }: SidebarProps) {
   const { socket, isConnected } = useSocket();
   const { initiateCall } = useCall();
 
+  const { data: meData } = useSWR("/api/users/me", fetcher);
+  const myAvatar = meData?.user?.avatar || (currentUser as any)?.avatar || currentUser?.image;
+  const myName = meData?.user?.name || currentUser?.name || "User";
+
   const [channels, setChannels] = useState<Channel[]>([]);
   const [dmUsers, setDmUsers] = useState<DMUser[]>([]);
   const [allUsers, setAllUsers] = useState<DMUser[]>([]);
@@ -635,10 +639,14 @@ export default function Sidebar({ currentUser }: SidebarProps) {
             <div 
               className={`avatar avatar-sm status-${myStatus}`} 
               style={{ width: 36, height: 36, borderRadius: '50%', cursor: 'pointer' }}
-              onClick={() => setSelectedProfileUser(currentUser as any)}
-              title={currentUser.name}
+              onClick={() => setSelectedProfileUser({ ...(currentUser as any), avatar: myAvatar, name: myName })}
+              title={myName}
             >
-              {currentUser.image ? <Image src={currentUser.image} alt={currentUser.name} width={36} height={36} style={{ borderRadius: '50%', objectFit: 'cover' }} /> : initials(currentUser.name)}
+              {myAvatar ? (
+                <Image src={myAvatar} alt={myName} width={36} height={36} unoptimized style={{ borderRadius: '50%', objectFit: 'cover', width: 36, height: 36 }} />
+              ) : (
+                initials(myName)
+              )}
               <span className={styles.statusDotInner} />
             </div>
           </div>
