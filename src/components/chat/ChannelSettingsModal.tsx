@@ -393,7 +393,7 @@ export default function ChannelSettingsModal({
                           <div style={{
                             width: 36, height: 36, borderRadius: '50%',
                             background: 'linear-gradient(135deg, #10b981, #06b6d4)',
-                            display: 'flex', alignItems: 'center', justify: 'center',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
                             fontWeight: 700, fontSize: 13, color: 'white', flexShrink: 0
                           }}>
                             {member.user.avatar ? (
@@ -406,7 +406,7 @@ export default function ChannelSettingsModal({
                             <div style={{ fontWeight: 600, fontSize: 14, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: 6 }}>
                               {member.user.name}
                               {member.user.id === currentUserId && <span style={{ fontSize: 11, color: '#10b981', fontWeight: 700 }}>(You)</span>}
-                              {member.role === "admin" && <Crown size={14} color="#facc15" title="Admin" />}
+                              {member.role === "admin" && <span title="Admin" style={{ display: 'inline-flex' }}><Crown size={14} color="#facc15" /></span>}
                             </div>
                             <div style={{ fontSize: 12, color: '#94a3b8' }}>
                               {member.user.jobTitle || member.user.email}

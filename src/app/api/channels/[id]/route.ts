@@ -64,8 +64,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Channel not found" }, { status: 404 });
     }
 
-    const member = channel.members.find(m => m.userId === session.user.id);
-    const isCreator = channel.createdById === session.user.id;
+    const userId = session.user.id;
+    const member = channel.members.find(m => m.userId === userId);
+    const isCreator = channel.createdById === userId;
     const isAdmin = (session.user as any).role === "admin" || member?.role === "admin";
 
     if (!isCreator && !isAdmin) {
@@ -107,7 +108,8 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       return NextResponse.json({ error: "Channel not found" }, { status: 404 });
     }
 
-    const isCreator = channel.createdById === session.user.id;
+    const userId = session.user.id;
+    const isCreator = channel.createdById === userId;
     const isAdmin = (session.user as any).role === "admin";
 
     if (!isCreator && !isAdmin) {
