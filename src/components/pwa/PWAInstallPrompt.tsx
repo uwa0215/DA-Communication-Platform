@@ -12,18 +12,54 @@ export default function PWAInstallPrompt() {
   const [showIOSModal, setShowIOSModal] = useState(false);
 
   useEffect(() => {
-    // Check if already in standalone mode
-    const isStandaloneApp = window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as any).standalone === true;
-    
-    if (isStandaloneApp) {
+    // Check all standalone display modes & local storage flags
+    const checkStandalone = () => {
+      if (typeof window === "undefined") return false;
+      return (
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.matchMedia("(display-mode: window-controls-overlay)").matches ||
+        window.matchMedia("(display-mode: minimal-ui)").matches ||
+        window.matchMedia("(display-mode: fullscreen)").matches ||
+        (window.navigator as any).standalone === true ||
+        document.referrer.includes("android-app://")
+      );
+    };
+
+    const isInstalledStorage = localStorage.getItem("pwa_installed") === "true";
+    const isDismissedStorage = localStorage.getItem("pwa_prompt_dismissed") === "true";
+
+    const currentlyStandalone = checkStandalone();
+
+    if (currentlyStandalone || isInstalledStorage) {
       setIsStandalone(true);
+      setShowPrompt(false);
+      localStorage.setItem("pwa_installed", "true");
       return;
     }
 
-    // Check if dismissed previously in session
-    const isDismissed = sessionStorage.getItem("pwa_prompt_dismissed");
-    if (isDismissed) return;
+    if (isDismissedStorage) {
+      setShowPrompt(false);
+      return;
+    }
+
+    // Listen for standalone display-mode changes
+    const mediaQuery = window.matchMedia("(display-mode: standalone)");
+    const handleMediaChange = (e: MediaQueryListEvent) => {
+      if (e.matches) {
+        setIsStandalone(true);
+        setShowPrompt(false);
+        localStorage.setItem("pwa_installed", "true");
+      }
+    };
+    mediaQuery.addEventListener("change", handleMediaChange);
+
+    // Listen for native PWA installation event
+    const handleAppInstalled = () => {
+      setIsStandalone(true);
+      setShowPrompt(false);
+      localStorage.setItem("pwa_installed", "true");
+    };
+    window.addEventListener("appinstalled", handleAppInstalled);
 
     // Detect iOS
     const userAgent = window.navigator.userAgent.toLowerCase();
@@ -33,19 +69,23 @@ export default function PWAInstallPrompt() {
     // Listen for install prompt on Android / Chromium / Desktop
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e);
-      setShowPrompt(true);
+      if (!checkStandalone() && localStorage.getItem("pwa_installed") !== "true") {
+        setDeferredPrompt(e);
+        setShowPrompt(true);
+      }
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     // On iOS, show custom banner if not installed
-    if (iosDevice && !isStandaloneApp) {
+    if (iosDevice && !currentlyStandalone && !isInstalledStorage) {
       setShowPrompt(true);
     }
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("appinstalled", handleAppInstalled);
+      mediaQuery.removeEventListener("change", handleMediaChange);
     };
   }, []);
 
@@ -62,13 +102,14 @@ export default function PWAInstallPrompt() {
     
     if (outcome === "accepted") {
       setShowPrompt(false);
+      localStorage.setItem("pwa_installed", "true");
     }
     setDeferredPrompt(null);
   };
 
   const handleDismiss = () => {
     setShowPrompt(false);
-    sessionStorage.setItem("pwa_prompt_dismissed", "true");
+    localStorage.setItem("pwa_prompt_dismissed", "true");
   };
 
   if (isStandalone || !showPrompt) return null;
