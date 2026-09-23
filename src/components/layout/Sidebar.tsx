@@ -60,7 +60,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
   const { socket, isConnected } = useSocket();
   const { initiateCall } = useCall();
 
-  const { data: meData } = useSWR("/api/users/me", fetcher);
+  const { data: meData } = useSWR("/api/users/me", fetcher, { revalidateOnFocus: false, dedupingInterval: 30000 });
   const myAvatar = meData?.user?.avatar || (currentUser as any)?.avatar || currentUser?.image;
   const myName = meData?.user?.name || currentUser?.name || "User";
 

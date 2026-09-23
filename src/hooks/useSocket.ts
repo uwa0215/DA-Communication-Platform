@@ -7,7 +7,10 @@ let socket: Socket | null = null;
 export function getSocket(): Socket {
   if (!socket && typeof window !== "undefined") {
     socket = io(window.location.origin, {
-      transports: ["websocket", "polling"],
+      transports: ["websocket"],
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
     });
   }
   return socket!;
@@ -21,7 +24,10 @@ export function useSocket() {
   useEffect(() => {
     if (!socket && typeof window !== "undefined") {
       socket = io(window.location.origin, {
-        transports: ["websocket", "polling"],
+        transports: ["websocket"],
+        reconnection: true,
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1000,
       });
     }
     setSocketInstance(socket);

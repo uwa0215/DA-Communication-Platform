@@ -386,10 +386,13 @@
 .conversationList {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 6px 12px 16px;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  contain: content;
+  transform: translateZ(0);
 }
 
 .chatCard {

@@ -99,12 +99,15 @@
 .messageList {
   flex: 1;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 0;
   position: relative;
   z-index: 1;
+  contain: content;
+  transform: translateZ(0);
 }
 
 /* Loading Skeleton */

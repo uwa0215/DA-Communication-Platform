@@ -79,8 +79,8 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
 
   const { socket } = useSocket();
 
-  const { data: notifData, mutate: mutateNotifs } = useSWR("/api/notifications", fetcher);
-  const { data: meData } = useSWR("/api/users/me", fetcher);
+  const { data: notifData, mutate: mutateNotifs } = useSWR("/api/notifications", fetcher, { revalidateOnFocus: false, dedupingInterval: 15000 });
+  const { data: meData } = useSWR("/api/users/me", fetcher, { revalidateOnFocus: false, dedupingInterval: 30000 });
 
   const userAvatar = meData?.user?.avatar || (currentUser as any)?.avatar || currentUser?.image;
   const userName = meData?.user?.name || currentUser?.name || "User";
