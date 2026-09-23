@@ -171,22 +171,70 @@ export default function SettingsPage() {
     localStorage.setItem("trellis_blockedUsers", JSON.stringify(next));
   };
 
+  const compressImageForMobile = (file: File): Promise<Blob> => {
+    return new Promise((resolve) => {
+      const img = document.createElement("img");
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 800;
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return resolve(file);
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (blob) resolve(blob);
+              else resolve(file);
+            },
+            "image/jpeg",
+            0.85
+          );
+        };
+        img.onerror = () => resolve(file);
+        img.src = e.target?.result as string;
+      };
+      reader.onerror = () => resolve(file);
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      setError("File is too large. Please select an image under 10MB.");
-      return;
-    }
-
     setLoading(true);
-    setMessage("Uploading profile picture...");
+    setMessage("Processing & uploading profile picture...");
     setError("");
 
     try {
+      // Compress phone image (converts 15MB HEIC/JPG to lightweight ~150KB JPEG blob)
+      const compressedBlob = await compressImageForMobile(file);
+      const compressedFile = new File([compressedBlob], file.name.replace(/\.[^/.]+$/, ".jpg"), {
+        type: "image/jpeg",
+      });
+
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", compressedFile);
 
       const uploadRes = await fetch("/api/upload", {
         method: "POST",
@@ -196,22 +244,27 @@ export default function SettingsPage() {
 
       if (uploadRes.ok && uploadData.url) {
         setAvatar(uploadData.url);
-        setMessage("Photo uploaded! Click 'Save Changes' to update your profile.");
+
+        // Auto-save updated profile photo immediately to database
+        const saveRes = await fetch("/api/users/me", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ avatar: uploadData.url }),
+        });
+
+        if (saveRes.ok) {
+          setMessage("Profile picture updated successfully!");
+          mutate("/api/users/me");
+          mutate("/api/users");
+        } else {
+          setMessage("Photo uploaded! Click 'Save Changes' below to finalize.");
+        }
       } else {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          setAvatar(event.target?.result as string);
-        };
-        reader.readAsDataURL(file);
-        setMessage("Photo loaded! Click 'Save Changes' to update your profile.");
+        setError(uploadData.error || "Failed to upload photo.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Avatar upload error:", err);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setAvatar(event.target?.result as string);
-      };
-      reader.readAsDataURL(file);
+      setError("Failed to process profile photo. Please try another image.");
     } finally {
       setLoading(false);
     }
