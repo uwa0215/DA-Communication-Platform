@@ -4,6 +4,7 @@ import { directMessages, notifications } from "@/lib/schema";
 import { getCache, setCache, invalidateCachePrefix } from "@/lib/cache";
 import { eq, and, or, isNull } from "drizzle-orm";
 import { auth } from "@/lib/auth";
+import { sendPushToUser } from "@/lib/push";
 
 // GET /api/dm/[userId] — get DM conversation
 export async function GET(req: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
@@ -138,6 +139,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
 
     global.io.to(`user:${receiverId}`).emit("new-notification", notif);
   }
+
+  // Trigger Web Push Notification for receiver (Mobile / Lock screen)
+  sendPushToUser(receiverId, {
+    title: senderName,
+    body: notifPreview,
+    url: `/dm/${myId}`
+  }).catch(() => {});
 
   // Handle Mentions
   const mentionRegex = /data-type="mention"[^>]*data-id="([^"]+)"/g;

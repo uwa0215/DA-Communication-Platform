@@ -3,6 +3,8 @@ import { db } from "@/lib/db";
 import { messages as messagesSchema, notifications } from "@/lib/schema";
 import { getCache, setCache, invalidateCachePrefix } from "@/lib/cache";
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { sendPushToUser } from "@/lib/push";
 
 // GET /api/channels/[id]/messages
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -137,6 +139,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       global.io.to(`user:${userId}`).emit("new-notification", notif);
     }
   }
+
+  // Trigger Web Push Notifications for channel members (Mobile / Lock screen)
+  prisma.channelMember.findMany({
+    where: {
+      channelId: channelId,
+      NOT: { userId: session.user.id }
+    },
+    select: { userId: true }
+  }).then(members => {
+    for (const m of members) {
+      sendPushToUser(m.userId, {
+        title: `#${chName} • ${senderName}`,
+        body: notifPreview,
+        url: `/channels/${chName}`
+      }).catch(() => {});
+    }
+  }).catch(() => {});
 
   return NextResponse.json({ message: broadcastMsg }, { status: 201 });
 }
