@@ -11,22 +11,19 @@ export default function MobileBottomNav() {
   const router = useRouter();
   const { toggleMobileSidebar, setMobileSidebarOpen } = useUI();
 
+  // Hide mobile bottom nav when inside an active chat (e.g. /channels/*, /dm/*, /group/*)
+  // This ensures 100% unblocked visibility for the chat input box, attachment buttons, and keyboard
   const isChatActive = pathname.startsWith("/channels/") || pathname.startsWith("/dm/") || pathname.startsWith("/group/");
-
-  const handleChatsClick = () => {
-    setMobileSidebarOpen(false);
-    if (isChatActive) {
-      router.push("/dashboard");
-    } else {
-      toggleMobileSidebar();
-    }
-  };
+  if (isChatActive) return null;
 
   return (
     <nav className={styles.mobileNav}>
       <button
-        className={`${styles.navItem} ${isChatActive || pathname === "/dashboard" ? styles.active : ""}`}
-        onClick={handleChatsClick}
+        className={`${styles.navItem} ${pathname === "/dashboard" ? styles.active : ""}`}
+        onClick={() => {
+          setMobileSidebarOpen(false);
+          router.push("/dashboard");
+        }}
         aria-label="Chats"
       >
         <MessageSquare size={20} />

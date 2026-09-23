@@ -1190,16 +1190,12 @@ export default function ChatArea({
           <button
             className={styles.mobileBackBtn}
             onClick={() => {
-              if (typeof window !== "undefined" && window.innerWidth < 768) {
-                toggleMobileSidebar();
-              } else {
-                router.push("/dashboard");
-              }
+              router.push("/dashboard");
             }}
-            title="Go back / Chat list"
-            aria-label="Go back / Chat list"
+            title="Back to Chat List"
+            aria-label="Back to Chat List"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={22} />
           </button>
           {channelName
             ? <Hash size={20} className={styles.chatHeaderIcon} />
