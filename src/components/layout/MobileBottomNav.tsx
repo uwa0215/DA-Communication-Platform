@@ -1,24 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { MessageSquare, AtSign, Compass, Calendar, LayoutDashboard } from "lucide-react";
 import { useUI } from "@/components/UIProvider";
 import styles from "./MobileBottomNav.module.css";
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
-  const { toggleMobileSidebar } = useUI();
+  const router = useRouter();
+  const { toggleMobileSidebar, setMobileSidebarOpen } = useUI();
 
-  // Hide mobile bottom nav when inside an active chat (e.g. /channels/*, /dm/*, /group/*)
   const isChatActive = pathname.startsWith("/channels/") || pathname.startsWith("/dm/") || pathname.startsWith("/group/");
-  if (isChatActive) return null;
+
+  const handleChatsClick = () => {
+    setMobileSidebarOpen(false);
+    if (isChatActive) {
+      router.push("/dashboard");
+    } else {
+      toggleMobileSidebar();
+    }
+  };
 
   return (
     <nav className={styles.mobileNav}>
       <button
-        className={`${styles.navItem}`}
-        onClick={toggleMobileSidebar}
+        className={`${styles.navItem} ${isChatActive || pathname === "/dashboard" ? styles.active : ""}`}
+        onClick={handleChatsClick}
+        aria-label="Chats"
       >
         <MessageSquare size={20} />
         <span>Chats</span>
@@ -27,6 +36,7 @@ export default function MobileBottomNav() {
       <Link
         href="/mentions"
         className={`${styles.navItem} ${pathname === "/mentions" ? styles.active : ""}`}
+        onClick={() => setMobileSidebarOpen(false)}
       >
         <AtSign size={20} />
         <span>Mentions</span>
@@ -35,6 +45,7 @@ export default function MobileBottomNav() {
       <Link
         href="/people"
         className={`${styles.navItem} ${pathname === "/people" ? styles.active : ""}`}
+        onClick={() => setMobileSidebarOpen(false)}
       >
         <Compass size={20} />
         <span>People</span>
@@ -43,6 +54,7 @@ export default function MobileBottomNav() {
       <Link
         href="/calendar"
         className={`${styles.navItem} ${pathname === "/calendar" ? styles.active : ""}`}
+        onClick={() => setMobileSidebarOpen(false)}
       >
         <Calendar size={20} />
         <span>Calendar</span>
@@ -51,6 +63,7 @@ export default function MobileBottomNav() {
       <Link
         href="/dashboard"
         className={`${styles.navItem} ${pathname === "/dashboard" ? styles.active : ""}`}
+        onClick={() => setMobileSidebarOpen(false)}
       >
         <LayoutDashboard size={20} />
         <span>Dashboard</span>

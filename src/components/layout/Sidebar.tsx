@@ -579,6 +579,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
               href="/dashboard" 
               className={`${styles.navRailItem} ${pathname === '/dashboard' || pathname.startsWith('/dm/') || pathname.startsWith('/channels/') || pathname.startsWith('/group/') ? styles.navRailItemActive : ''}`}
               title="Chats & Messages"
+              onClick={() => setMobileSidebarOpen(false)}
             >
               <MessageCircle size={22} />
               {totalUnreadCount > 0 && <span className={styles.navRailBadge}>{totalUnreadCount}</span>}
@@ -588,6 +589,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
               href="/people" 
               className={`${styles.navRailItem} ${pathname === '/people' ? styles.navRailItemActive : ''}`}
               title="Discover People"
+              onClick={() => setMobileSidebarOpen(false)}
             >
               <Compass size={22} />
             </Link>
@@ -596,6 +598,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
               href="/mentions" 
               className={`${styles.navRailItem} ${pathname === '/mentions' ? styles.navRailItemActive : ''}`}
               title="Mentions"
+              onClick={() => setMobileSidebarOpen(false)}
             >
               <AtSign size={22} />
             </Link>
@@ -604,6 +607,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
               href="/calendar" 
               className={`${styles.navRailItem} ${pathname === '/calendar' ? styles.navRailItemActive : ''}`}
               title="Calendar"
+              onClick={() => setMobileSidebarOpen(false)}
             >
               <Calendar size={22} />
             </Link>
@@ -612,6 +616,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
               href="/dashboard" 
               className={`${styles.navRailItem} ${pathname === '/dashboard' ? styles.navRailItemActive : ''}`}
               title="Dashboard"
+              onClick={() => setMobileSidebarOpen(false)}
             >
               <Sprout size={22} />
             </Link>
@@ -621,6 +626,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
                 href="/admin" 
                 className={`${styles.navRailItem} ${pathname === '/admin' ? styles.navRailItemActive : ''}`}
                 title="Admin Dashboard"
+                onClick={() => setMobileSidebarOpen(false)}
               >
                 <Shield size={22} />
               </Link>
@@ -632,6 +638,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
               href="/settings" 
               className={`${styles.navRailItem} ${pathname === '/settings' ? styles.navRailItemActive : ''}`}
               title="Settings"
+              onClick={() => setMobileSidebarOpen(false)}
             >
               <Settings size={22} />
             </Link>
