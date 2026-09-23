@@ -25,7 +25,7 @@ export interface PushNotificationPayload {
 
 export async function sendPushToUser(userId: string, payload: PushNotificationPayload) {
   try {
-    const subscriptions = await prisma.pushSubscription.findMany({
+    const subscriptions = await (prisma as any).pushSubscription.findMany({
       where: { userId }
     });
 
@@ -38,7 +38,7 @@ export async function sendPushToUser(userId: string, payload: PushNotificationPa
       url: payload.url || "/dashboard"
     });
 
-    const sendPromises = subscriptions.map(async (sub) => {
+    const sendPromises = subscriptions.map(async (sub: any) => {
       const pushSub = {
         endpoint: sub.endpoint,
         keys: {
@@ -53,7 +53,7 @@ export async function sendPushToUser(userId: string, payload: PushNotificationPa
         // If subscription is expired or invalid (404 / 410), delete it from DB
         if (err.statusCode === 404 || err.statusCode === 410) {
           console.log(`[WebPush] Pruning expired subscription endpoint: ${sub.endpoint}`);
-          await prisma.pushSubscription.delete({
+          await (prisma as any).pushSubscription.delete({
             where: { id: sub.id }
           }).catch(() => {});
         } else {

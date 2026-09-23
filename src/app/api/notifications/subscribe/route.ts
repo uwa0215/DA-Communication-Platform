@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Upsert subscription into database
-    await prisma.pushSubscription.upsert({
+    await (prisma as any).pushSubscription.upsert({
       where: { endpoint: subscription.endpoint },
       update: {
         userId: session.user.id,
@@ -48,7 +48,7 @@ export async function DELETE(req: NextRequest) {
     const { endpoint } = await req.json();
 
     if (endpoint) {
-      await prisma.pushSubscription.deleteMany({
+      await (prisma as any).pushSubscription.deleteMany({
         where: {
           userId: session.user.id,
           endpoint: endpoint,
