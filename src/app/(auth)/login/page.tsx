@@ -30,7 +30,29 @@ function LoginContent() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    await signIn("credentials", { email, password, redirectTo: "/dashboard" });
+    try {
+      const res = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (!res || res.error) {
+        if (res?.error === "pending_approval") {
+          setError("Your account is pending admin approval.");
+        } else {
+          setError("Invalid email or password. Please try again.");
+        }
+        setLoading(false);
+      } else {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch (err: any) {
+      console.error("Login error:", err);
+      setError("Authentication failed. Please check your credentials.");
+      setLoading(false);
+    }
   }
 
   return (
