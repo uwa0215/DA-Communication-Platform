@@ -1,11 +1,13 @@
 .topbar {
   height: var(--header-h);
+  padding-top: var(--safe-top);
   background: var(--bg-panel);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px 0 0;
+  padding-right: 24px;
+  padding-left: 0;
   flex-shrink: 0;
   z-index: 50;
   box-shadow: 0 1px 4px rgba(0,0,0,0.02);
@@ -548,7 +550,7 @@
 
 @media (max-width: 768px) {
   .topbar {
-    padding: 0 12px 0 0;
+    padding: var(--safe-top) 12px 0 0;
   }
   .left {
     width: auto;

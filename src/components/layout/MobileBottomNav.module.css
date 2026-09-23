@@ -11,11 +11,11 @@
     bottom: 0;
     left: 0;
     right: 0;
-    height: 60px;
+    height: calc(60px + var(--safe-bottom));
     background: var(--bg-panel);
     border-top: 1px solid var(--border);
     z-index: 80;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: var(--safe-bottom);
     box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
   }
 

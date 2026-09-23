@@ -60,9 +60,11 @@
   --shadow-lg:  0 12px 32px rgba(16, 185, 129, 0.25);
   --shadow-glow:0 0 24px rgba(16, 185, 129, 0.4);
 
-  /* Spacing */
+  /* Safe Areas & Spacing */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
   --sidebar-w: 260px;
-  --header-h:  60px;
+  --header-h:  calc(60px + var(--safe-top));
 
   /* Radius - refined for enterprise */
   --r-sm: 8px;
