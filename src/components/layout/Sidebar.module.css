@@ -407,12 +407,14 @@
   position: relative;
   cursor: pointer;
 }
-.chatCard:hover {
-  background: var(--bg-hover);
-  transform: translateX(2px);
-}
-:global(.dark) .chatCard:hover {
-  background: rgba(52, 211, 153, 0.06);
+@media (hover: hover) {
+  .chatCard:hover {
+    background: var(--bg-hover);
+    transform: translateX(2px);
+  }
+  :global(.dark) .chatCard:hover {
+    background: rgba(52, 211, 153, 0.06);
+  }
 }
 .chatCardActive {
   background: var(--bg-hover) !important;
@@ -524,12 +526,14 @@
   border: none;
   cursor: pointer;
 }
-.chatCard:hover .moreBtn {
-  opacity: 1;
-}
-.moreBtn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
+@media (hover: hover) {
+  .chatCard:hover .moreBtn {
+    opacity: 1;
+  }
+  .moreBtn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+  }
 }
 
 /* ===== NEW COMPOSE MENU ===== */
@@ -698,6 +702,11 @@
   .mobileBackdrop {
     display: block;
     top: var(--header-h, 60px);
+  }
+
+  .moreBtn {
+    opacity: 0.6;
+    padding: 6px;
   }
 
   .resizer {

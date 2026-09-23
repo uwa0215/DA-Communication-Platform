@@ -420,6 +420,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
         <Link
           href={`/dm/${user.id}`}
           onMouseEnter={() => prefetchChatMessages(`/api/dm/${user.id}`)}
+          onTouchStart={() => prefetchChatMessages(`/api/dm/${user.id}`)}
           className={`${styles.chatCard} ${isUnread ? styles.chatCardUnread : ""} ${pathname === `/dm/${user.id}` ? styles.chatCardActive : ""}`}
           onClick={() => { setUnreadDMs(u => ({ ...u, [user.id]: 0 })); setMobileSidebarOpen(false); }}
         >
@@ -770,6 +771,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
                 key={ch.id}
                 href={`/channels/${ch.name}`}
                 onMouseEnter={() => prefetchChatMessages(`/api/channels/${ch.id}/messages`)}
+                onTouchStart={() => prefetchChatMessages(`/api/channels/${ch.id}/messages`)}
                 onClick={() => setMobileSidebarOpen(false)}
                 className={`${styles.chatCard} ${pathname === `/channels/${ch.name}` ? styles.chatCardActive : ""}`}
               >
@@ -793,6 +795,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
                 key={ch.id}
                 href={`/group/${ch.id}`}
                 onMouseEnter={() => prefetchChatMessages(`/api/channels/${ch.id}/messages`)}
+                onTouchStart={() => prefetchChatMessages(`/api/channels/${ch.id}/messages`)}
                 onClick={() => setMobileSidebarOpen(false)}
                 className={`${styles.chatCard} ${pathname === `/group/${ch.id}` ? styles.chatCardActive : ""}`}
               >
