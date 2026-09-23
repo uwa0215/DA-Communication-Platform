@@ -4,15 +4,15 @@ import * as schema from './schema';
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+const connectionString = process.env.DATABASE_URL || "postgresql://dummy:dummy@dummy/dummy";
+const isCloud = connectionString.includes('supabase.com') || connectionString.includes('neon.tech') || connectionString.includes('sslmode');
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || "postgresql://dummy:dummy@dummy/dummy",
-  // Production: more connections, longer timeouts for reliability
-  // Development: fewer connections, shorter timeouts for faster feedback
+  connectionString,
   max: isProduction ? 50 : 10,
   idleTimeoutMillis: isProduction ? 60000 : 30000,
   connectionTimeoutMillis: isProduction ? 10000 : 5000,
-  // Neon serverless requires SSL in production
-  ssl: isProduction ? { rejectUnauthorized: false } : undefined,
+  ssl: (isProduction || isCloud) ? { rejectUnauthorized: false } : undefined,
 });
 
 // Graceful shutdown: drain pool on process exit
