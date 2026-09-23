@@ -80,6 +80,11 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
   const { socket } = useSocket();
 
   const { data: notifData, mutate: mutateNotifs } = useSWR("/api/notifications", fetcher);
+  const { data: meData } = useSWR("/api/users/me", fetcher);
+
+  const userAvatar = meData?.user?.avatar || (currentUser as any)?.avatar || currentUser?.image;
+  const userName = meData?.user?.name || currentUser?.name || "User";
+  const userEmail = meData?.user?.email || currentUser?.email || "";
 
   useEffect(() => {
     if (notifData?.notifications) setNotifications(notifData.notifications);
@@ -359,10 +364,14 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
             style={{ cursor: 'pointer' }}
           >
             <div className={`avatar avatar-sm ${styles.avatar} status-${myStatus}`}>
-              {currentUser.image ? <Image src={currentUser.image} alt={currentUser.name} width={32} height={32} /> : initials(currentUser.name || 'U')}
+              {userAvatar ? (
+                <Image src={userAvatar} alt={userName} width={32} height={32} unoptimized style={{ objectFit: 'cover', borderRadius: '50%', width: 32, height: 32 }} />
+              ) : (
+                initials(userName || 'U')
+              )}
               <span className="status-dot"></span>
             </div>
-            <span className={styles.userName}>{currentUser.name}</span>
+            <span className={styles.userName}>{userName}</span>
             <ChevronDown size={14} className={styles.chevron} />
           </div>
 
@@ -371,8 +380,8 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
               <div className={styles.overlay} onClick={() => setShowProfileMenu(false)} />
               <div className={styles.menu}>
                 <div className={styles.menuHeader}>
-                  <p className={styles.menuName}>{currentUser.name}</p>
-                  <p className={styles.menuEmail}>{currentUser.email}</p>
+                  <p className={styles.menuName}>{userName}</p>
+                  <p className={styles.menuEmail}>{userEmail}</p>
                 </div>
                 
                 <div className={styles.menuItems}>

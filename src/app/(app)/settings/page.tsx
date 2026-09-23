@@ -10,6 +10,7 @@ import {
 import { useTheme } from "@/components/ThemeProvider";
 import { loadSettings, saveSettings, ChatSettings } from "@/lib/settingsStore";
 import { playMessageChime, playCallRingtone } from "@/lib/audioEffects";
+import { mutate } from "swr";
 import styles from "./settings.module.css";
 
 export default function SettingsPage() {
@@ -170,20 +171,50 @@ export default function SettingsPage() {
     localStorage.setItem("trellis_blockedUsers", JSON.stringify(next));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      setError("File is too large. Please select an image under 2MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      setError("File is too large. Please select an image under 10MB.");
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setAvatar(event.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    setLoading(true);
+    setMessage("Uploading profile picture...");
+    setError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const uploadData = await uploadRes.json();
+
+      if (uploadRes.ok && uploadData.url) {
+        setAvatar(uploadData.url);
+        setMessage("Photo uploaded! Click 'Save Changes' to update your profile.");
+      } else {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setAvatar(event.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+        setMessage("Photo loaded! Click 'Save Changes' to update your profile.");
+      }
+    } catch (err) {
+      console.error("Avatar upload error:", err);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setAvatar(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -212,6 +243,8 @@ export default function SettingsPage() {
       if (res.ok) {
         setMessage("Settings saved successfully!");
         setPassword("");
+        mutate("/api/users/me");
+        mutate("/api/users");
       } else {
         setError(data.error || "Failed to update settings");
       }
