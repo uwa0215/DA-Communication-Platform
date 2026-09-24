@@ -875,9 +875,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
                         }}
                         style={{ marginRight: 12 }}
                       />
-                      <span className={`avatar avatar-sm status-${u.status || 'offline'}`} style={{ marginRight: 8, display: 'inline-flex' }}>
-                        {u.avatar ? <Image src={u.avatar} alt={u.name} width={32} height={32} /> : initials(u.name)}
-                      </span>
+                      <UserAvatar src={u.avatar} name={u.name} size={32} style={{ marginRight: 8, borderRadius: '50%' }} />
                       <span>{u.name}</span>
                     </label>
                   ))}

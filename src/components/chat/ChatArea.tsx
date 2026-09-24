@@ -1803,10 +1803,9 @@ export default function ChatArea({
                     )}
                     
                     {lastReadMessageId === msg.id && dmUser && (
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 4 }}>
-                        <div className={`avatar avatar-sm status-${dmUser.status}`} style={{ width: 14, height: 14, fontSize: 8 }} title={`Seen by ${dmUser.name}`}>
-                          {dmUser.avatar ? <Image src={dmUser.avatar} alt={dmUser.name} width={14} height={14} /> : initials(dmUser.name)}
-                        </div>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 4, marginTop: 4 }} title={`Seen by ${dmUser.name}`}>
+                        <span style={{ fontSize: 10, color: 'var(--text-muted)', fontWeight: 500, opacity: 0.85 }}>Seen</span>
+                        <UserAvatar src={dmUser.avatar} name={dmUser.name} size={14} style={{ borderRadius: '50%' }} />
                       </div>
                     )}
                   </div>
@@ -2437,9 +2436,7 @@ export default function ChatArea({
                                  }}
                                  style={{ marginRight: 12 }}
                                />
-                               <span className={`avatar avatar-sm status-${u.status || 'offline'}`} style={{ marginRight: 8, display: 'inline-flex' }}>
-                                 {u.avatar ? <Image src={u.avatar} alt={u.name} width={32} height={32} /> : u.name.charAt(0).toUpperCase()}
-                               </span>
+                               <UserAvatar src={u.avatar} name={u.name} size={32} style={{ marginRight: 8, borderRadius: '50%' }} />
                                <span>{u.name}</span>
                              </label>
                            ))}
