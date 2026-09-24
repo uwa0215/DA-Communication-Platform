@@ -1937,7 +1937,19 @@ export default function ChatArea({
               </button>
 
               {showInputEmoji && (
-                <div style={{ position: "absolute", bottom: "calc(100% + 8px)", right: 0, zIndex: 9999, boxShadow: "0 16px 40px rgba(0, 0, 0, 0.4)", borderRadius: 16, overflow: "hidden", background: "var(--bg-panel, #0f172a)", border: "1px solid rgba(255, 255, 255, 0.12)" }}>
+                <div style={{
+                  position: "absolute",
+                  bottom: "calc(100% + 8px)",
+                  right: 0,
+                  zIndex: 9999,
+                  width: "350px",
+                  maxWidth: "calc(100vw - 32px)",
+                  boxShadow: "0 16px 40px rgba(0, 0, 0, 0.4)",
+                  borderRadius: 16,
+                  overflow: "hidden",
+                  background: "var(--bg-panel, #0f172a)",
+                  border: "1px solid rgba(255, 255, 255, 0.12)"
+                }}>
                   {/* Meta Messenger Expression Picker Header */}
                   <div style={{ display: "flex", background: "rgba(0, 0, 0, 0.25)", padding: "4px 8px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)", gap: 4 }}>
                     <button

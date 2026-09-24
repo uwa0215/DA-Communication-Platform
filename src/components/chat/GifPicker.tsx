@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Search, Loader2, Image as ImageIcon } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Search, Loader2, Image as ImageIcon, X } from "lucide-react";
 
 interface Props {
   onSelectGif: (url: string, title?: string) => void;
@@ -22,68 +22,49 @@ const FEATURED_CATEGORIES = [
   { label: "❤️ Love", query: "love" },
   { label: "💃 Dancing", query: "dance" },
   { label: "🤯 Mind Blown", query: "mind blown" },
-  { label: "👋 Waving", query: "wave" },
+  { label: "🐶 Animals", query: "funny dog cat" },
+  { label: "🍿 Memes", query: "memes" },
   { label: "👏 Clapping", query: "applause" },
   { label: "😭 Crying", query: "sad" },
   { label: "😎 Cool", query: "cool" },
 ];
 
-// Fallback high quality animated GIFs for 100% offline & instant loading
-const FALLBACK_GIFS: Record<string, GifItem[]> = {
-  trending: [
-    { id: "1", title: "Celebration", url: "https://media.giphy.com/media/g9582DNuQppxC/giphy.gif", previewUrl: "https://media.giphy.com/media/g9582DNuQppxC/giphy.gif" },
-    { id: "2", title: "Thumbs Up", url: "https://media.giphy.com/media/111ebonMs90YLu/giphy.gif", previewUrl: "https://media.giphy.com/media/111ebonMs90YLu/giphy.gif" },
-    { id: "3", title: "Mind Blown", url: "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif", previewUrl: "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif" },
-    { id: "4", title: "Clapping", url: "https://media.giphy.com/media/l3q2XhfQ8oCkm1Row/giphy.gif", previewUrl: "https://media.giphy.com/media/l3q2XhfQ8oCkm1Row/giphy.gif" },
-    { id: "5", title: "Dancing", url: "https://media.giphy.com/media/dh0l3f0w594b6/giphy.gif", previewUrl: "https://media.giphy.com/media/dh0l3f0w594b6/giphy.gif" },
-    { id: "6", title: "Laughing", url: "https://media.giphy.com/media/10JhgA679DqO3u/giphy.gif", previewUrl: "https://media.giphy.com/media/10JhgA679DqO3u/giphy.gif" },
-  ],
-  "thumbs up": [
-    { id: "t1", title: "Thumbs Up Kid", url: "https://media.giphy.com/media/111ebonMs90YLu/giphy.gif", previewUrl: "https://media.giphy.com/media/111ebonMs90YLu/giphy.gif" },
-    { id: "t2", title: "Cat Thumbs Up", url: "https://media.giphy.com/media/XreQmk7ETCak0/giphy.gif", previewUrl: "https://media.giphy.com/media/XreQmk7ETCak0/giphy.gif" },
-    { id: "t3", title: "Minion Thumbs Up", url: "https://media.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.gif", previewUrl: "https://media.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.gif" },
-  ],
-  lol: [
-    { id: "l1", title: "Laughing Out Loud", url: "https://media.giphy.com/media/10JhgA679DqO3u/giphy.gif", previewUrl: "https://media.giphy.com/media/10JhgA679DqO3u/giphy.gif" },
-    { id: "l2", title: "Cat Laughing", url: "https://media.giphy.com/media/kC8N6DPOkbqWTxkNTe/giphy.gif", previewUrl: "https://media.giphy.com/media/kC8N6DPOkbqWTxkNTe/giphy.gif" },
-  ]
-};
-
 export default function GifPicker({ onSelectGif }: Props) {
   const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("trending");
-  const [gifs, setGifs] = useState<GifItem[]>(FALLBACK_GIFS["trending"]);
-  const [loading, setLoading] = useState(false);
+  const [gifs, setGifs] = useState<GifItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const inputRef = useRef<HTMLInputElement>(null);
 
+  // Debounce search input by 300ms for smooth user typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(query.trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // Fetch GIFs from internal API
   useEffect(() => {
     let isCancelled = false;
-    const q = query.trim() || activeCategory;
+    const q = debouncedQuery || activeCategory;
     setLoading(true);
 
-    const apiKey = "dc6zaTOxFJmzC"; // Giphy Beta Key
-    const endpoint = query.trim()
-      ? `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(query.trim())}&limit=20&rating=g`
-      : `https://api.giphy.com/v1/gifs/search?api_key=${apiKey}&q=${encodeURIComponent(activeCategory)}&limit=20&rating=g`;
-
-    fetch(endpoint)
-      .then(res => res.json())
-      .then(data => {
+    fetch(`/api/gifs/search?q=${encodeURIComponent(q)}`)
+      .then((res) => res.json())
+      .then((data) => {
         if (isCancelled) return;
-        if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
-          const list: GifItem[] = data.data.map((item: any) => ({
-            id: item.id,
-            title: item.title || "GIF",
-            url: item.images?.downsized_medium?.url || item.images?.original?.url,
-            previewUrl: item.images?.fixed_height_small?.url || item.images?.downsized_small?.url || item.images?.original?.url,
-          }));
-          setGifs(list);
+        if (data?.gifs && Array.isArray(data.gifs)) {
+          setGifs(data.gifs);
         } else {
-          setGifs(FALLBACK_GIFS[activeCategory] || FALLBACK_GIFS["trending"]);
+          setGifs([]);
         }
       })
-      .catch(() => {
+      .catch((err) => {
         if (!isCancelled) {
-          setGifs(FALLBACK_GIFS[activeCategory] || FALLBACK_GIFS["trending"]);
+          console.error("GIF fetch error:", err);
+          setGifs([]);
         }
       })
       .finally(() => {
@@ -93,13 +74,14 @@ export default function GifPicker({ onSelectGif }: Props) {
     return () => {
       isCancelled = true;
     };
-  }, [query, activeCategory]);
+  }, [debouncedQuery, activeCategory]);
 
   return (
     <div
       style={{
-        width: typeof window !== "undefined" && window.innerWidth < 450 ? Math.min(320, window.innerWidth - 32) : 350,
-        height: 380,
+        width: "100%",
+        maxWidth: "360px",
+        height: "390px",
         display: "flex",
         flexDirection: "column",
         backgroundColor: "var(--bg-panel, #0f172a)",
@@ -107,83 +89,175 @@ export default function GifPicker({ onSelectGif }: Props) {
         borderRadius: 16,
         overflow: "hidden",
         boxShadow: "0 16px 40px rgba(0, 0, 0, 0.4)",
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-        fontFamily: "'Inter', -apple-system, sans-serif"
+        border: "1px solid rgba(255, 255, 255, 0.12)",
+        fontFamily: "var(--font-sans, -apple-system, BlinkMacSystemFont, sans-serif)",
+        boxSizing: "border-box",
       }}
     >
-      {/* Search Input */}
-      <div style={{ padding: "12px 12px 8px 12px", borderBottom: "1px solid rgba(255, 255, 255, 0.08)" }}>
-        <div style={{ position: "relative", width: "100%" }}>
-          <Search size={16} style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", opacity: 0.5 }} />
+      {/* Search Input Bar */}
+      <div
+        style={{
+          padding: "10px 12px",
+          borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          background: "rgba(0, 0, 0, 0.15)",
+        }}
+      >
+        <div style={{ position: "relative", width: "100%", display: "flex", alignItems: "center" }}>
+          <Search
+            size={16}
+            style={{
+              position: "absolute",
+              left: 12,
+              color: "rgba(255, 255, 255, 0.5)",
+              pointerEvents: "none",
+            }}
+          />
           <input
+            ref={inputRef}
             type="text"
-            placeholder="Search GIFs on Giphy..."
+            placeholder="Search GIFs..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             style={{
               width: "100%",
-              padding: "9px 12px 9px 36px",
+              padding: "8px 32px 8px 36px",
               borderRadius: 20,
-              border: "1px solid rgba(255, 255, 255, 0.12)",
-              backgroundColor: "rgba(255, 255, 255, 0.06)",
+              border: "1px solid rgba(255, 255, 255, 0.15)",
+              backgroundColor: "rgba(255, 255, 255, 0.07)",
               color: "#ffffff",
               fontSize: 13,
-              outline: "none"
+              outline: "none",
+              boxSizing: "border-box",
+              transition: "border-color 0.2s ease",
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = "var(--brand, #10b981)";
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = "rgba(255, 255, 255, 0.15)";
             }}
           />
+          {query && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                inputRef.current?.focus();
+              }}
+              style={{
+                position: "absolute",
+                right: 10,
+                background: "transparent",
+                border: "none",
+                color: "rgba(255, 255, 255, 0.6)",
+                cursor: "pointer",
+                padding: 2,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              title="Clear search"
+            >
+              <X size={15} />
+            </button>
+          )}
         </div>
 
-        {/* Categories Bar */}
+        {/* Featured Category Pills */}
         {!query && (
           <div
             style={{
               display: "flex",
               gap: 6,
               overflowX: "auto",
-              paddingTop: 8,
-              paddingBottom: 4,
-              scrollbarWidth: "none"
+              paddingBottom: 2,
+              scrollbarWidth: "none",
+              WebkitOverflowScrolling: "touch",
             }}
           >
-            {FEATURED_CATEGORIES.map(cat => (
-              <button
-                key={cat.query}
-                onClick={() => setActiveCategory(cat.query)}
-                style={{
-                  padding: "4px 10px",
-                  borderRadius: 12,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  whiteSpace: "nowrap",
-                  border: "none",
-                  cursor: "pointer",
-                  backgroundColor: activeCategory === cat.query ? "#10b981" : "rgba(255, 255, 255, 0.08)",
-                  color: activeCategory === cat.query ? "#ffffff" : "rgba(255, 255, 255, 0.7)",
-                  transition: "all 0.2s ease"
-                }}
-              >
-                {cat.label}
-              </button>
-            ))}
+            {FEATURED_CATEGORIES.map((cat) => {
+              const isActive = activeCategory === cat.query;
+              return (
+                <button
+                  key={cat.query}
+                  type="button"
+                  onClick={() => setActiveCategory(cat.query)}
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: 12,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    whiteSpace: "nowrap",
+                    border: "none",
+                    cursor: "pointer",
+                    backgroundColor: isActive ? "var(--brand, #10b981)" : "rgba(255, 255, 255, 0.08)",
+                    color: isActive ? "#ffffff" : "rgba(255, 255, 255, 0.7)",
+                    transition: "all 0.15s ease",
+                    flexShrink: 0,
+                  }}
+                >
+                  {cat.label}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* GIF Grid Area */}
-      <div style={{ flex: 1, overflowY: "auto", padding: 8 }}>
+      {/* GIF Grid Gallery */}
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          padding: 8,
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
         {loading ? (
-          <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "rgba(255, 255, 255, 0.5)" }}>
-            <Loader2 size={20} className="spinner" />
-            <span style={{ fontSize: 13 }}>Loading GIFs...</span>
+          <div
+            style={{
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 10,
+              color: "rgba(255, 255, 255, 0.6)",
+            }}
+          >
+            <Loader2 size={24} className="spinner" style={{ color: "var(--brand, #10b981)" }} />
+            <span style={{ fontSize: 13, fontWeight: 500 }}>Searching GIFs...</span>
           </div>
         ) : gifs.length === 0 ? (
-          <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: "rgba(255, 255, 255, 0.4)", padding: 20, textAlign: "center" }}>
-            <ImageIcon size={32} />
-            <span style={{ fontSize: 13 }}>No GIFs found. Try another search.</span>
+          <div
+            style={{
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              color: "rgba(255, 255, 255, 0.4)",
+              padding: 20,
+              textAlign: "center",
+            }}
+          >
+            <ImageIcon size={36} style={{ opacity: 0.5 }} />
+            <span style={{ fontSize: 13, fontWeight: 500 }}>No GIFs found for "{debouncedQuery || activeCategory}"</span>
+            <span style={{ fontSize: 11, color: "rgba(255, 255, 255, 0.3)" }}>Try searching for funny, reaction, or happy</span>
           </div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {gifs.map(gif => (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, 1fr)",
+              gap: 8,
+            }}
+          >
+            {gifs.map((gif) => (
               <div
                 key={gif.id}
                 onClick={() => onSelectGif(gif.url, gif.title)}
@@ -191,27 +265,61 @@ export default function GifPicker({ onSelectGif }: Props) {
                   position: "relative",
                   borderRadius: 10,
                   overflow: "hidden",
-                  height: 100,
+                  height: 105,
                   cursor: "pointer",
-                  backgroundColor: "rgba(255, 255, 255, 0.04)",
+                  backgroundColor: "rgba(255, 255, 255, 0.05)",
                   border: "1px solid rgba(255, 255, 255, 0.08)",
-                  transition: "transform 0.15s ease, box-shadow 0.15s ease"
+                  transition: "transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease",
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.transform = "scale(1.03)";
-                  e.currentTarget.style.boxShadow = "0 4px 14px rgba(16, 185, 129, 0.3)";
+                  e.currentTarget.style.borderColor = "var(--brand, #10b981)";
+                  e.currentTarget.style.boxShadow = "0 6px 18px rgba(16, 185, 129, 0.35)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.transform = "scale(1)";
+                  e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
                   e.currentTarget.style.boxShadow = "none";
                 }}
               >
                 <img
-                  src={gif.previewUrl}
+                  src={gif.previewUrl || gif.url}
                   alt={gif.title}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                   loading="lazy"
                 />
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    background: "linear-gradient(to top, rgba(0,0,0,0.6) 0%, transparent 50%)",
+                    opacity: 0,
+                    transition: "opacity 0.2s ease",
+                    display: "flex",
+                    alignItems: "flex-end",
+                    padding: 6,
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.opacity = "1";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.opacity = "0";
+                  }}
+                >
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 600,
+                      color: "#ffffff",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      maxWidth: "100%",
+                    }}
+                  >
+                    {gif.title}
+                  </span>
+                </div>
               </div>
             ))}
           </div>
@@ -219,8 +327,17 @@ export default function GifPicker({ onSelectGif }: Props) {
       </div>
 
       {/* Footer Branding */}
-      <div style={{ padding: "6px 12px", borderTop: "1px solid rgba(255, 255, 255, 0.06)", fontSize: 10, color: "rgba(255, 255, 255, 0.35)", textAlign: "center" }}>
-        Powered by Giphy · Trellis Meta Messenger
+      <div
+        style={{
+          padding: "6px 12px",
+          borderTop: "1px solid rgba(255, 255, 255, 0.06)",
+          fontSize: 10,
+          color: "rgba(255, 255, 255, 0.4)",
+          textAlign: "center",
+          background: "rgba(0, 0, 0, 0.2)",
+        }}
+      >
+        Meta Messenger GIF Search · Powered by Giphy & Tenor
       </div>
     </div>
   );
