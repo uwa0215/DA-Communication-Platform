@@ -1,6 +1,5 @@
-const CACHE_NAME = 'trellis-cache-v3';
+const CACHE_NAME = 'trellis-cache-v4';
 const URLS_TO_CACHE = [
-  '/',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png'
@@ -30,17 +29,17 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Cache strategy for static assets
+// Cache strategy for static assets only
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  // DO NOT intercept page navigations (prevents Safari "Response served by service worker has redirections" error)
+  if (event.request.mode === 'navigate') return;
   if (event.request.url.includes('/api/')) return;
-  
+  if (event.request.url.includes('/_next/')) return;
+
   event.respondWith(
     fetch(event.request).catch(() => {
-      return caches.match(event.request).then((response) => {
-        if (response) return response;
-        return caches.match('/');
-      });
+      return caches.match(event.request);
     })
   );
 });
