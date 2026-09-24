@@ -12,6 +12,7 @@ import { useUI } from "@/components/UIProvider";
 import { useTheme } from "@/components/ThemeProvider";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
+import UserAvatar from "@/components/UserAvatar";
 import styles from "./Topbar.module.css";
 
 interface User {
@@ -218,7 +219,7 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
                         {searchResults.users.map((u: any) => (
                           <Link key={u.id} href={`/dm/${u.id}`} className={styles.searchResultItem} onClick={() => setShowSearchMenu(false)}>
                             <div className={`avatar avatar-sm status-${u.status}`}>
-                              {u.avatar ? <Image src={u.avatar} alt={u.name} width={32} height={32} /> : initials(u.name)}
+                              <UserAvatar src={u.avatar} name={u.name} size={32} />
                             </div>
                             <div className={styles.searchResultText}>
                               <span className={styles.searchResultName}>{u.name}</span>
@@ -240,7 +241,7 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
                             onClick={() => setShowSearchMenu(false)}
                           >
                             <div className={`avatar avatar-sm`}>
-                              {m.sender.avatar ? <Image src={m.sender.avatar} alt={m.sender.name} width={32} height={32} /> : initials(m.sender.name)}
+                              <UserAvatar src={m.sender.avatar} name={m.sender.name} size={32} />
                             </div>
                             <div className={styles.searchResultText}>
                               <span className={styles.searchResultName}>{m.sender.name} <span style={{fontSize: 11, color: 'var(--text-muted)', fontWeight: 'normal'}}>in {m.type === 'channel' ? `#${m.channel.name}` : 'DM'}</span></span>
@@ -364,11 +365,7 @@ export default function Topbar({ currentUser }: { currentUser: User }) {
             style={{ cursor: 'pointer' }}
           >
             <div className={`avatar avatar-sm ${styles.avatar} status-${myStatus}`}>
-              {userAvatar ? (
-                <Image src={userAvatar} alt={userName} width={32} height={32} unoptimized style={{ objectFit: 'cover', borderRadius: '50%', width: 32, height: 32 }} />
-              ) : (
-                initials(userName || 'U')
-              )}
+              <UserAvatar src={userAvatar} name={userName} size={32} />
               <span className="status-dot"></span>
             </div>
             <span className={styles.userName}>{userName}</span>

@@ -11,6 +11,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { loadSettings, saveSettings, ChatSettings } from "@/lib/settingsStore";
 import { playMessageChime, playCallRingtone } from "@/lib/audioEffects";
 import { mutate } from "swr";
+import UserAvatar from "@/components/UserAvatar";
 import styles from "./settings.module.css";
 
 export default function SettingsPage() {
@@ -380,11 +381,7 @@ export default function SettingsPage() {
           {activeTab === "profile" && (
             <>
               <div className={styles.avatarSection}>
-                {avatar ? (
-                  <Image src={avatar} alt="Profile" width={100} height={100} className={styles.avatarPreview} />
-                ) : (
-                  <div className={styles.avatarPreview}>{initials}</div>
-                )}
+                <UserAvatar src={avatar} name={name} size={100} className={styles.avatarPreview} />
                 <div className={styles.avatarActions}>
                   <button
                     type="button"
@@ -735,11 +732,7 @@ export default function SettingsPage() {
                       <div key={id} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: 16, background: "var(--bg-input)", borderRadius: 12, border: "1px solid var(--border)" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                           <div className="avatar avatar-md">
-                            {bUser.avatar ? (
-                              <Image src={bUser.avatar} alt={bUser.name} width={32} height={32} style={{ borderRadius: "50%" }} />
-                            ) : (
-                              bUser.name[0]
-                            )}
+                            <UserAvatar src={bUser.avatar} name={bUser.name} size={32} />
                           </div>
                           <div>
                             <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>{bUser.name}</div>

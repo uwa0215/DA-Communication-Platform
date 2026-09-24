@@ -27,6 +27,7 @@ import { loadSettings } from "@/lib/settingsStore";
 import { playMessengerIncomingSound, playMessengerOutgoingSound } from "@/lib/audioEffects";
 import { useCall } from "@/components/CallProvider";
 import { getClientCachedMessages, setClientCachedMessages } from "@/lib/clientMessageCache";
+import UserAvatar from "@/components/UserAvatar";
 import styles from "./ChatArea.module.css";
 
 const EMOJI_SET = ["👍","❤️","😂","😮","😢","🔥","🎉","✅","👏","🚀"];
@@ -1204,7 +1205,7 @@ export default function ChatArea({
                 style={{ cursor: "pointer" }}
                 onClick={() => dmUser && setSelectedUserForProfile({ ...dmUser, status: liveStatus })}
               >
-                {dmUser?.avatar ? <Image src={dmUser.avatar} alt={dmUser.name} width={32} height={32} /> : initials(dmUser?.name || "U")}
+                <UserAvatar src={dmUser?.avatar} name={dmUser?.name} size={32} />
                 <span className="status-dot" />
               </div>
           }
@@ -1294,11 +1295,7 @@ export default function ChatArea({
             <div className={styles.pulseRing}></div>
             <div className={styles.pulseRing}></div>
             <div className={styles.callAvatar}>
-              {dmUser?.avatar || groupAvatar ? (
-                <Image src={dmUser?.avatar || groupAvatar || ""} alt="Avatar" width={100} height={100} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-              ) : (
-                initials(dmUser?.name || channelName || 'U')
-              )}
+              <UserAvatar src={dmUser?.avatar || groupAvatar} name={dmUser?.name || channelName} size={100} style={{ borderRadius: '50%' }} />
             </div>
           </div>
           
@@ -1420,10 +1417,7 @@ export default function ChatArea({
                       onClick={() => setSelectedUserForProfile(msg.sender)}
                       style={{ alignSelf: 'flex-end', marginBottom: 4 }}
                     >
-                      {msg.sender.avatar
-                        ? <Image src={msg.sender.avatar} alt={msg.sender.name} width={32} height={32} />
-                        : initials(msg.sender.name)
-                      }
+                      <UserAvatar src={msg.sender.avatar} name={msg.sender.name} size={32} />
                     </div>
                   ) : !isMine ? (
                     <div className={styles.msgAvatarPlaceholder}>
@@ -1930,7 +1924,7 @@ export default function ChatArea({
               <div className={styles.detailsContent} style={{ padding: '16px 12px' }}>
                 <div className={styles.detailsHero} style={{ paddingBottom: 16 }}>
                   <div className={`avatar avatar-xl status-${liveStatus}`} style={{ width: 88, height: 88, fontSize: 36, marginBottom: 12, cursor: 'pointer' }} onClick={() => setSelectedUserForProfile({ ...dmUser, status: liveStatus })}>
-                    {dmUser.avatar ? <Image src={dmUser.avatar} alt={dmUser.name} width={88} height={88} /> : initials(dmUser.name)}
+                    <UserAvatar src={dmUser.avatar} name={dmUser.name} size={88} style={{ borderRadius: '50%' }} />
                     <span className="status-dot" style={{ width: 18, height: 18, borderWidth: 3 }} />
                   </div>
                   <h3 className={styles.detailsName} style={{ fontSize: 20, fontWeight: 800 }}>{dmUser.name}</h3>

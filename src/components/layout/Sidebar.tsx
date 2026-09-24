@@ -20,6 +20,7 @@ import { useUI } from "@/components/UIProvider";
 import { prefetchChatMessages } from "@/lib/clientMessageCache";
 import { loadSettings } from "@/lib/settingsStore";
 import { playMessengerIncomingSound } from "@/lib/audioEffects";
+import UserAvatar from "@/components/UserAvatar";
 import styles from "./Sidebar.module.css";
 
 interface User {
@@ -425,7 +426,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
           onClick={() => { setUnreadDMs(u => ({ ...u, [user.id]: 0 })); setMobileSidebarOpen(false); }}
         >
           <div className={`avatar avatar-md ${styles.chatCardAvatar} status-${status}`}>
-            {user.avatar ? <Image src={user.avatar} alt={user.name} width={44} height={44} style={{ borderRadius: '50%', objectFit: 'cover' }} /> : initials(user.name)}
+            <UserAvatar src={user.avatar} name={user.name} size={44} />
             <span className={styles.statusDotInner} />
           </div>
 
@@ -650,11 +651,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
               onClick={() => setSelectedProfileUser({ ...(currentUser as any), avatar: myAvatar, name: myName })}
               title={myName}
             >
-              {myAvatar ? (
-                <Image src={myAvatar} alt={myName} width={36} height={36} unoptimized style={{ borderRadius: '50%', objectFit: 'cover', width: 36, height: 36 }} />
-              ) : (
-                initials(myName)
-              )}
+              <UserAvatar src={myAvatar} name={myName} size={36} />
               <span className={styles.statusDotInner} />
             </div>
           </div>
@@ -732,7 +729,7 @@ export default function Sidebar({ currentUser }: SidebarProps) {
                   >
                     <div className={styles.activeAvatarRing}>
                       <div className={styles.activeAvatarInner}>
-                        {user.avatar ? <Image src={user.avatar} alt={user.name} width={40} height={40} style={{ borderRadius: '50%', objectFit: 'cover' }} /> : initials(user.name)}
+                        <UserAvatar src={user.avatar} name={user.name} size={40} />
                       </div>
                       <span className={styles.activeOnlineDot} />
                     </div>

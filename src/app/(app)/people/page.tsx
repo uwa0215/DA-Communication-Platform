@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Search, MessageCircle, Mail, Briefcase, Building2, Users } from "lucide-react";
 import { useSocket } from "@/hooks/useSocket";
+import UserAvatar from "@/components/UserAvatar";
 import styles from "./people.module.css";
 
 interface User {
@@ -114,11 +115,7 @@ export default function PeoplePage() {
             {onlineUsers.map(user => (
               <Link key={user.id} href={`/dm/${user.id}`} className={styles.activeUserCard} title={`Chat with ${user.name}`}>
                 <div className={styles.activeAvatarWrap}>
-                  {user.avatar ? (
-                    <Image src={user.avatar} alt={user.name} width={54} height={54} className={styles.activeAvatar} />
-                  ) : (
-                    <div className={styles.activeAvatarFallback}>{initials(user.name)}</div>
-                  )}
+                  <UserAvatar src={user.avatar} name={user.name} size={54} className={styles.activeAvatar} />
                   <div className={styles.activeStatusBadge} />
                 </div>
                 <span className={styles.activeUserName}>{getFirstName(user.name)}</span>
@@ -214,11 +211,7 @@ export default function PeoplePage() {
               <Link key={user.id} href={`/dm/${user.id}`} className={styles.contactRow}>
                 <div className={styles.rowLeft}>
                   <div className={styles.avatarWrap}>
-                    {user.avatar ? (
-                      <Image src={user.avatar} alt={user.name} width={48} height={48} className={styles.avatarImg} />
-                    ) : (
-                      <div className={styles.avatarFallback}>{initials(user.name)}</div>
-                    )}
+                    <UserAvatar src={user.avatar} name={user.name} size={48} className={styles.avatarImg} />
                     <div className={`${styles.statusDot} ${statusClass}`} />
                   </div>
 

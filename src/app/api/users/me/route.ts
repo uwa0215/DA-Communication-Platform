@@ -20,7 +20,21 @@ export async function PATCH(req: Request) {
     if (jobTitle !== undefined) dataToUpdate.jobTitle = jobTitle;
     if (department !== undefined) dataToUpdate.department = department;
     if (unit !== undefined) dataToUpdate.unit = unit;
-    if (avatar !== undefined) dataToUpdate.avatar = avatar;
+    if (avatar !== undefined) {
+      if (!avatar || typeof avatar !== "string" || avatar.trim() === "") {
+        dataToUpdate.avatar = null;
+      } else {
+        const trimmed = avatar.trim();
+        if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:image/") || trimmed.startsWith("/")) {
+          dataToUpdate.avatar = trimmed;
+        } else if (trimmed.length > 50 && !trimmed.includes(" ")) {
+          // If raw base64 string was passed without header, format with data URL scheme
+          dataToUpdate.avatar = `data:image/jpeg;base64,${trimmed}`;
+        } else {
+          dataToUpdate.avatar = null;
+        }
+      }
+    }
     if (customStatus !== undefined) dataToUpdate.customStatus = customStatus;
 
     if (password) {

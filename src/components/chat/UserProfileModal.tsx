@@ -1,7 +1,7 @@
-import { X, Mail, Building, Briefcase, Smile, Edit2, Check } from "lucide-react";
-import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { X, Mail, Building, Briefcase, Smile, Edit2, Check } from "lucide-react";
+import UserAvatar from "@/components/UserAvatar";
 
 interface User {
   id: string;
@@ -68,7 +68,7 @@ export default function UserProfileModal({ user, onClose, isCurrentUser }: UserP
         
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 0 20px' }}>
           <div className={`avatar avatar-xl status-${user.status}`} style={{ width: 100, height: 100, fontSize: 36, marginBottom: 16 }}>
-            {user.avatar ? <Image src={user.avatar} alt={user.name} width={32} height={32} style={{ borderRadius: "50%", objectFit: "cover" }} /> : initials(user.name)}
+            <UserAvatar src={user.avatar} name={user.name} size={100} style={{ borderRadius: "50%" }} />
             <span className="status-dot" style={{ width: 20, height: 20, borderWidth: 4 }} />
           </div>
           <h3 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>{user.name}</h3>

@@ -7,10 +7,23 @@ import os from "os";
 import { auth } from "@/lib/auth";
 import { v2 as cloudinary } from "cloudinary";
 
-// Ensure cloudinary is configured. It will automatically pick up the CLOUDINARY_URL env variable.
-cloudinary.config({
-  secure: true
-});
+// Ensure Cloudinary is configured with API keys from environment
+if (process.env.CLOUDINARY_URL) {
+  const match = process.env.CLOUDINARY_URL.match(/cloudinary:\/\/([^:]+):([^@]+)@(.+)/);
+  if (match) {
+    cloudinary.config({
+      api_key: match[1],
+      api_secret: match[2],
+      cloud_name: match[3],
+      secure: true,
+    });
+  } else {
+    cloudinary.config({ secure: true });
+  }
+} else {
+  cloudinary.config({ secure: true });
+}
+
 
 export async function POST(req: NextRequest) {
   try {

@@ -10,6 +10,7 @@ import {
 import { useSocket } from "@/hooks/useSocket";
 import useSWR from "swr";
 import { fetcher } from "@/lib/fetcher";
+import UserAvatar from "@/components/UserAvatar";
 import styles from "./dashboard.module.css";
 
 interface UserItem {
@@ -219,7 +220,7 @@ export default function DashboardClient({
                 <div key={u.id} className={styles.upcomingItem} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                     <div className={`avatar avatar-sm status-${u.status || 'online'}`} style={{ flexShrink: 0 }}>
-                      {u.avatar ? <Image src={u.avatar} alt={u.name} width={32} height={32} /> : initials(u.name)}
+                      <UserAvatar src={u.avatar} name={u.name} size={32} />
                       <span className="status-dot" />
                     </div>
                     <div className={styles.upcomingInfo} style={{ minWidth: 0 }}>
@@ -260,7 +261,7 @@ export default function DashboardClient({
               recentMessages.map(m => (
                 <div key={m.id} className={styles.activityItem}>
                   <div className="avatar avatar-sm" style={{ flexShrink: 0 }}>
-                    {m.sender?.avatar ? <Image src={m.sender.avatar} alt="" width={32} height={32} /> : initials(m.sender?.name || "User")}
+                    <UserAvatar src={m.sender?.avatar} name={m.sender?.name || "User"} size={32} />
                   </div>
                   <div className={styles.activityInfo}>
                     <span className={styles.activityAuthor}>
