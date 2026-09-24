@@ -31,7 +31,6 @@ if (typeof window !== "undefined") {
 
 /**
  * Authentic Meta Messenger Incoming Message Chime
- * Synthesizes Meta Messenger's signature 2-tone melodic chime: Note 1 (C6 - 1046.5Hz) followed by Note 2 (E6 - 1318.5Hz) with a crystal harmonic (G6 - 1568Hz).
  */
 export function playMessengerIncomingSound() {
   if (typeof window === "undefined") return;
@@ -45,7 +44,6 @@ export function playMessengerIncomingSound() {
     masterGain.gain.setValueAtTime(0.28, now);
     masterGain.connect(ctx.destination);
 
-    // Tone 1: High crisp pop (C6 - 1046.5 Hz)
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();
     osc1.type = "sine";
@@ -57,7 +55,6 @@ export function playMessengerIncomingSound() {
     osc1.start(now);
     osc1.stop(now + 0.12);
 
-    // Tone 2: Bright chime pop (E6 - 1318.5 Hz) starting 70ms after Tone 1
     const osc2 = ctx.createOscillator();
     const gain2 = ctx.createGain();
     osc2.type = "sine";
@@ -69,7 +66,6 @@ export function playMessengerIncomingSound() {
     osc2.start(now + 0.07);
     osc2.stop(now + 0.38);
 
-    // Resonance harmonic (G6 - 1567.98 Hz) for Messenger crystal tone
     const osc3 = ctx.createOscillator();
     const gain3 = ctx.createGain();
     osc3.type = "sine";
@@ -87,7 +83,6 @@ export function playMessengerIncomingSound() {
 
 /**
  * Authentic Meta Messenger Outgoing Message Sound
- * Synthesizes Meta Messenger's signature subtle outgoing pop sound when sending a message.
  */
 export function playMessengerOutgoingSound() {
   if (typeof window === "undefined") return;
@@ -111,6 +106,56 @@ export function playMessengerOutgoingSound() {
   } catch (e) {
     console.error("Failed to play Messenger outgoing sound", e);
   }
+}
+
+/**
+ * Reaction Pop Sound
+ */
+export function playReactionSound() {
+  if (typeof window === "undefined") return;
+  try {
+    const ctx = getSharedAudioContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.2, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    gain.connect(ctx.destination);
+
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(800, now);
+    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.06);
+    osc.connect(gain);
+    osc.start(now);
+    osc.stop(now + 0.08);
+  } catch (e) {}
+}
+
+/**
+ * Swipe-to-Reply Sound
+ */
+export function playSwipeSound() {
+  if (typeof window === "undefined") return;
+  try {
+    const ctx = getSharedAudioContext();
+    if (!ctx) return;
+
+    const now = ctx.currentTime;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    gain.connect(ctx.destination);
+
+    const osc = ctx.createOscillator();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(440, now);
+    osc.frequency.exponentialRampToValueAtTime(660, now + 0.07);
+    osc.connect(gain);
+    osc.start(now);
+    osc.stop(now + 0.09);
+  } catch (e) {}
 }
 
 // Alias for backwards compatibility

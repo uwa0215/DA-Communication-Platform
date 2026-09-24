@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Hash, Phone, PhoneOff, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Bell, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings, Menu, ArrowLeft, Copy, Share2, Pin, User as UserIcon, Camera, RefreshCw, RotateCcw, ChevronDown, ChevronUp, Link2, ExternalLink, ShieldAlert, Lock } from "lucide-react";
+import { Hash, Phone, PhoneOff, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Bell, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings, Menu, ArrowLeft, Copy, Share2, Pin, User as UserIcon, Camera, RefreshCw, RotateCcw, ChevronDown, ChevronUp, Link2, ExternalLink, ShieldAlert, Lock, Palette } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useSocket } from "@/hooks/useSocket";
 import { useUI } from "@/components/UIProvider";
@@ -24,7 +24,7 @@ import GifPicker from "./GifPicker";
 import LinkPreview from "./LinkPreview";
 import { fetcher } from "@/lib/fetcher";
 import { loadSettings } from "@/lib/settingsStore";
-import { playMessengerIncomingSound, playMessengerOutgoingSound } from "@/lib/audioEffects";
+import { playMessengerIncomingSound, playMessengerOutgoingSound, playReactionSound, playSwipeSound } from "@/lib/audioEffects";
 import { useCall } from "@/components/CallProvider";
 import { getClientCachedMessages, setClientCachedMessages } from "@/lib/clientMessageCache";
 import UserAvatar from "@/components/UserAvatar";
@@ -33,6 +33,15 @@ import MediaLightboxModal from "./MediaLightboxModal";
 import styles from "./ChatArea.module.css";
 
 const EMOJI_SET = ["👍","❤️","😂","😮","😢","🔥","🎉","✅","👏","🚀"];
+
+const CHAT_THEMES = [
+  { id: "default", name: "Classic Trellis", gradient: "var(--brand, #10b981)", bg: "#10b981" },
+  { id: "ocean", name: "Ocean Breeze", gradient: "linear-gradient(135deg, #00c6ff, #0072ff)", bg: "#0072ff" },
+  { id: "sunset", name: "Sunset Purple", gradient: "linear-gradient(135deg, #ff416c, #8a2387)", bg: "#8a2387" },
+  { id: "emerald", name: "Teal Emerald", gradient: "linear-gradient(135deg, #11998e, #38ef7d)", bg: "#11998e" },
+  { id: "neon", name: "Neon Cyber", gradient: "linear-gradient(135deg, #f700ff, #00e5ff)", bg: "#f700ff" },
+  { id: "fire", name: "Crimson Flame", gradient: "linear-gradient(135deg, #f857a6, #ff5858)", bg: "#ff5858" },
+];
 
 interface User {
   id: string;
@@ -145,8 +154,15 @@ export default function ChatArea({
     }
   };
 
+  const touchStartXRef = useRef<number | null>(null);
+  const touchDeltaXRef = useRef<number>(0);
+
   const handleTouchStart = (msgId: string, e?: React.TouchEvent | React.MouseEvent) => {
     isLongPressRef.current = false;
+    if (e && 'touches' in e && e.touches.length > 0) {
+      touchStartXRef.current = e.touches[0].clientX;
+      touchDeltaXRef.current = 0;
+    }
     const targetEl = e?.currentTarget as HTMLElement | undefined;
     const rect = targetEl ? targetEl.getBoundingClientRect() : null;
 
@@ -155,7 +171,7 @@ export default function ChatArea({
     longPressTimerRef.current = setTimeout(() => {
       isLongPressRef.current = true;
       if (typeof navigator !== "undefined" && navigator.vibrate) {
-        try { navigator.vibrate(40); } catch (e) {}
+        try { navigator.vibrate(40); } catch (err) {}
       }
       if (rect && rect.width > 0) {
         openMessageMenuWithRect(msgId, rect);
@@ -165,18 +181,42 @@ export default function ChatArea({
     }, 350);
   };
 
-  const handleTouchMove = () => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
+  const handleTouchMove = (e?: React.TouchEvent) => {
+    if (e && 'touches' in e && e.touches.length > 0 && touchStartXRef.current !== null) {
+      const currentX = e.touches[0].clientX;
+      const deltaX = currentX - touchStartXRef.current;
+      touchDeltaXRef.current = deltaX;
+      
+      // If swiping horizontally > 20px, cancel long press
+      if (Math.abs(deltaX) > 20 && longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
     }
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleTouchEnd = (msgId: string, e: React.TouchEvent) => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
+
+    if (!isLongPressRef.current && touchDeltaXRef.current > 60) {
+      // Swipe to reply triggered!
+      const targetMsg = messages.find(m => m.id === msgId);
+      if (targetMsg) {
+        playSwipeSound();
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+          try { navigator.vibrate(25); } catch (err) {}
+        }
+        setReplyingToMessage(targetMsg);
+        editor?.commands.focus();
+      }
+    }
+
+    touchStartXRef.current = null;
+    touchDeltaXRef.current = 0;
+
     if (isLongPressRef.current) {
       e.preventDefault();
     }
@@ -209,6 +249,30 @@ export default function ChatArea({
   const [pinnedMessageIds, setPinnedMessageIds] = useState<string[]>([]);
   const [pinnedIndex, setPinnedIndex] = useState(0);
   const [lightboxMedia, setLightboxMedia] = useState<{ url: string; type?: string; fileName?: string } | null>(null);
+  const [chatTheme, setChatTheme] = useState<string>("default");
+
+  const currentChatKey = channelId ? `channel_${channelId}` : dmUserId ? `dm_${dmUserId}` : 'default';
+
+  const activeThemeObj = useMemo(() => {
+    return CHAT_THEMES.find(t => t.id === chatTheme) || CHAT_THEMES[0];
+  }, [chatTheme]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem(`companychat_theme_${currentChatKey}`);
+      if (saved) setChatTheme(saved);
+      else setChatTheme("default");
+    }
+  }, [currentChatKey]);
+
+  const changeTheme = (themeId: string) => {
+    setChatTheme(themeId);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(`companychat_theme_${currentChatKey}`, themeId);
+    }
+    setToastMessage("Chat theme updated");
+    setTimeout(() => setToastMessage(null), 2500);
+  };
 
   // Hold-to-grow quick emoji state (Meta Messenger style)
   const [quickEmojiScale, setQuickEmojiScale] = useState(1);
@@ -1182,6 +1246,7 @@ export default function ChatArea({
 
   async function toggleReaction(messageId: string, emoji: string) {
     const type = channelId ? "channel" : "dm";
+    playReactionSound();
     
     // Optimistic Update
     setMessages(msgs => msgs.map(m => {
@@ -1625,7 +1690,7 @@ export default function ChatArea({
                                 className={styles.callLogCard}
                                 onTouchStart={(e) => handleTouchStart(msg.id, e)}
                                 onTouchMove={handleTouchMove}
-                                onTouchEnd={handleTouchEnd}
+                                onTouchEnd={(e) => handleTouchEnd(msg.id, e)}
                                 onContextMenu={(e) => {
                                   e.preventDefault();
                                   if (typeof navigator !== "undefined" && navigator.vibrate) {
@@ -1683,10 +1748,11 @@ export default function ChatArea({
                                   <div
                                     data-msg-bubble={msg.id}
                                     className={`${styles.msgContent} ${isMine ? styles.msgContentMine : styles.msgContentTheirs} ${groupPositionClass}`}
-                                    dangerouslySetInnerHTML={{ __html: msg.content }}
-                                    onTouchStart={(e) => handleTouchStart(msg.id, e)}
-                                    onTouchMove={handleTouchMove}
-                                    onTouchEnd={handleTouchEnd}
+                                    style={isMine ? { background: activeThemeObj.gradient, color: "#ffffff" } : undefined}
+                                     dangerouslySetInnerHTML={{ __html: msg.content }}
+                                     onTouchStart={(e) => handleTouchStart(msg.id, e)}
+                                     onTouchMove={handleTouchMove}
+                                     onTouchEnd={(e) => handleTouchEnd(msg.id, e)}
                                     onContextMenu={(e) => {
                                       e.preventDefault();
                                       if (typeof navigator !== "undefined" && navigator.vibrate) {
@@ -1727,7 +1793,7 @@ export default function ChatArea({
                               className={styles.fileAttachment}
                               onTouchStart={(e) => handleTouchStart(msg.id, e)}
                               onTouchMove={handleTouchMove}
-                              onTouchEnd={handleTouchEnd}
+                              onTouchEnd={(e) => handleTouchEnd(msg.id, e)}
                               onContextMenu={(e) => {
                                 e.preventDefault();
                                 if (typeof navigator !== "undefined" && navigator.vibrate) {
@@ -2223,6 +2289,56 @@ export default function ChatArea({
                             {currentTimeStr || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (PST) · <span style={{ textTransform: 'capitalize', color: liveStatus === 'online' ? 'var(--status-online)' : 'var(--text-muted)' }}>{liveStatus}</span>
                           </div>
                         </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Collapsible Section: Chat Theme & Gradient Bubbles */}
+                <div style={{ borderBottom: '1px solid var(--border)', marginBottom: 8, paddingBottom: 8 }}>
+                  <div className={styles.detailsAccordionHeader} onClick={() => toggleAccordion('customization')}>
+                    <div className={styles.detailsAccordionTitle}>
+                      <Palette size={16} style={{ color: 'var(--brand)' }} /> Chat Theme & Colors
+                    </div>
+                    <ChevronDown size={16} className={`${styles.detailsAccordionChevron} ${accordionOpen.customization ? styles.detailsAccordionChevronOpen : ''}`} />
+                  </div>
+
+                  {accordionOpen.customization && (
+                    <div className={styles.detailsAccordionContent} style={{ padding: '8px 0' }}>
+                      <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 10 }}>
+                        Customize color gradient for this conversation:
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                        {CHAT_THEMES.map(t => (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => changeTheme(t.id)}
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              gap: 6,
+                              padding: '8px 4px',
+                              borderRadius: 12,
+                              border: chatTheme === t.id ? '2px solid var(--brand)' : '1px solid var(--border)',
+                              background: chatTheme === t.id ? 'var(--bg-hover)' : 'transparent',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            <div
+                              style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: '50%',
+                                background: t.gradient,
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                              }}
+                            />
+                            <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-primary)', textAlign: 'center' }}>{t.name}</span>
+                          </button>
+                        ))}
                       </div>
                     </div>
                   )}
