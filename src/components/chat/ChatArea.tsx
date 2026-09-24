@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Hash, Phone, PhoneOff, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Bell, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings, Menu, ArrowLeft, Copy, Share2, Pin, User as UserIcon, Camera, RefreshCw, RotateCcw, ChevronDown, ChevronUp, Link2, ExternalLink, ShieldAlert, Lock, Palette } from "lucide-react";
+import { Hash, Phone, PhoneOff, Video, Send, File, Image as ImageIcon, Smile, MoreVertical, Search, Edit2, LogOut, Check, FileText, Info, Users, Bold, Italic, List, Code, Paperclip, BellOff, Bell, Edit3, Trash2, X, Briefcase, AtSign, Plus, Building, Clock, Mail, MessageCircle, Download, Mic, Square, MessageSquare, Settings, Menu, ArrowLeft, Copy, Share2, Pin, User as UserIcon, Camera, RefreshCw, RotateCcw, ChevronDown, ChevronUp, Link2, ExternalLink, ShieldAlert, Lock, Palette, CornerUpLeft } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useSocket } from "@/hooks/useSocket";
 import { useUI } from "@/components/UIProvider";
@@ -155,13 +155,17 @@ export default function ChatArea({
   };
 
   const touchStartXRef = useRef<number | null>(null);
-  const touchDeltaXRef = useRef<number>(0);
+  const touchStartYRef = useRef<number | null>(null);
+  const [swipingMsgId, setSwipingMsgId] = useState<string | null>(null);
+  const [swipeOffsetX, setSwipeOffsetX] = useState<number>(0);
 
   const handleTouchStart = (msgId: string, e?: React.TouchEvent | React.MouseEvent) => {
     isLongPressRef.current = false;
     if (e && 'touches' in e && e.touches.length > 0) {
       touchStartXRef.current = e.touches[0].clientX;
-      touchDeltaXRef.current = 0;
+      touchStartYRef.current = e.touches[0].clientY;
+      setSwipingMsgId(msgId);
+      setSwipeOffsetX(0);
     }
     const targetEl = e?.currentTarget as HTMLElement | undefined;
     const rect = targetEl ? targetEl.getBoundingClientRect() : null;
@@ -181,28 +185,38 @@ export default function ChatArea({
     }, 350);
   };
 
-  const handleTouchMove = (e?: React.TouchEvent) => {
-    if (e && 'touches' in e && e.touches.length > 0 && touchStartXRef.current !== null) {
+  const handleTouchMove = (msgId: string, e?: React.TouchEvent) => {
+    if (e && 'touches' in e && e.touches.length > 0 && touchStartXRef.current !== null && touchStartYRef.current !== null) {
       const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
       const deltaX = currentX - touchStartXRef.current;
-      touchDeltaXRef.current = deltaX;
-      
-      // If swiping horizontally > 20px, cancel long press
-      if (Math.abs(deltaX) > 20 && longPressTimerRef.current) {
-        clearTimeout(longPressTimerRef.current);
-        longPressTimerRef.current = null;
+      const deltaY = currentY - touchStartYRef.current;
+
+      if (deltaX > 8 && Math.abs(deltaX) > Math.abs(deltaY) * 1.1) {
+        if (e.cancelable) {
+          e.preventDefault();
+        }
+        e.stopPropagation();
+
+        if (longPressTimerRef.current) {
+          clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
+        }
+
+        const clamped = Math.min(75, Math.max(0, deltaX));
+        setSwipingMsgId(msgId);
+        setSwipeOffsetX(clamped);
       }
     }
   };
 
-  const handleTouchEnd = (msgId: string, e: React.TouchEvent) => {
+  const handleTouchEnd = (msgId: string, e?: React.TouchEvent) => {
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
 
-    if (!isLongPressRef.current && touchDeltaXRef.current > 60) {
-      // Swipe to reply triggered!
+    if (swipingMsgId === msgId && swipeOffsetX >= 45 && !isLongPressRef.current) {
       const targetMsg = messages.find(m => m.id === msgId);
       if (targetMsg) {
         playSwipeSound();
@@ -215,9 +229,11 @@ export default function ChatArea({
     }
 
     touchStartXRef.current = null;
-    touchDeltaXRef.current = 0;
+    touchStartYRef.current = null;
+    setSwipingMsgId(null);
+    setSwipeOffsetX(0);
 
-    if (isLongPressRef.current) {
+    if (isLongPressRef.current && e && e.cancelable) {
       e.preventDefault();
     }
   };
@@ -1689,7 +1705,7 @@ export default function ChatArea({
                               <div
                                 className={styles.callLogCard}
                                 onTouchStart={(e) => handleTouchStart(msg.id, e)}
-                                onTouchMove={handleTouchMove}
+                                onTouchMove={(e) => handleTouchMove(msg.id, e)}
                                 onTouchEnd={(e) => handleTouchEnd(msg.id, e)}
                                 onContextMenu={(e) => {
                                   e.preventDefault();
@@ -1744,15 +1760,46 @@ export default function ChatArea({
                             }
                             return (
                               <>
-                                <div data-msg-id={msg.id} className={styles.msgBubbleRow} style={{ display: 'flex', alignItems: 'center', gap: 6, flexDirection: isMine ? 'row-reverse' : 'row', maxWidth: '100%' }}>
+                                <div data-msg-id={msg.id} className={styles.msgBubbleRow} style={{ display: 'flex', alignItems: 'center', gap: 6, flexDirection: isMine ? 'row-reverse' : 'row', maxWidth: '100%', position: 'relative', touchAction: 'pan-y' }}>
+                                  {swipingMsgId === msg.id && swipeOffsetX > 5 && (
+                                    <div
+                                      style={{
+                                        position: 'absolute',
+                                        left: isMine ? 'auto' : 8,
+                                        right: isMine ? 8 : 'auto',
+                                        top: '50%',
+                                        transform: 'translateY(-50%)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: 26,
+                                        height: 26,
+                                        borderRadius: '50%',
+                                        background: swipeOffsetX >= 45 ? 'var(--brand)' : 'var(--bg-hover)',
+                                        color: swipeOffsetX >= 45 ? '#ffffff' : 'var(--text-muted)',
+                                        transformOrigin: 'center',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                        transition: 'background 0.15s ease',
+                                        zIndex: 1
+                                      }}
+                                    >
+                                      <CornerUpLeft size={14} />
+                                    </div>
+                                  )}
                                   <div
                                     data-msg-bubble={msg.id}
                                     className={`${styles.msgContent} ${isMine ? styles.msgContentMine : styles.msgContentTheirs} ${groupPositionClass}`}
-                                    style={isMine ? { background: activeThemeObj.gradient, color: "#ffffff" } : undefined}
-                                     dangerouslySetInnerHTML={{ __html: msg.content }}
-                                     onTouchStart={(e) => handleTouchStart(msg.id, e)}
-                                     onTouchMove={handleTouchMove}
-                                     onTouchEnd={(e) => handleTouchEnd(msg.id, e)}
+                                    style={{
+                                      background: isMine ? activeThemeObj.gradient : undefined,
+                                      color: isMine ? "#ffffff" : undefined,
+                                      transform: swipingMsgId === msg.id ? `translateX(${swipeOffsetX}px)` : 'translateX(0)',
+                                      transition: swipingMsgId === msg.id ? 'none' : 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                                      touchAction: 'pan-y',
+                                    }}
+                                    dangerouslySetInnerHTML={{ __html: msg.content }}
+                                    onTouchStart={(e) => handleTouchStart(msg.id, e)}
+                                    onTouchMove={(e) => handleTouchMove(msg.id, e)}
+                                    onTouchEnd={(e) => handleTouchEnd(msg.id, e)}
                                     onContextMenu={(e) => {
                                       e.preventDefault();
                                       if (typeof navigator !== "undefined" && navigator.vibrate) {
@@ -1792,7 +1839,7 @@ export default function ChatArea({
                               data-msg-bubble={msg.id}
                               className={styles.fileAttachment}
                               onTouchStart={(e) => handleTouchStart(msg.id, e)}
-                              onTouchMove={handleTouchMove}
+                              onTouchMove={(e) => handleTouchMove(msg.id, e)}
                               onTouchEnd={(e) => handleTouchEnd(msg.id, e)}
                               onContextMenu={(e) => {
                                 e.preventDefault();
