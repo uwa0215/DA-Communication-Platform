@@ -28,6 +28,8 @@ import { playMessengerIncomingSound, playMessengerOutgoingSound } from "@/lib/au
 import { useCall } from "@/components/CallProvider";
 import { getClientCachedMessages, setClientCachedMessages } from "@/lib/clientMessageCache";
 import UserAvatar from "@/components/UserAvatar";
+import AudioWaveformPlayer from "./AudioWaveformPlayer";
+import MediaLightboxModal from "./MediaLightboxModal";
 import styles from "./ChatArea.module.css";
 
 const EMOJI_SET = ["👍","❤️","😂","😮","😢","🔥","🎉","✅","👏","🚀"];
@@ -205,6 +207,81 @@ export default function ChatArea({
   const [forwardingSending, setForwardingSending] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [pinnedMessageIds, setPinnedMessageIds] = useState<string[]>([]);
+  const [pinnedIndex, setPinnedIndex] = useState(0);
+  const [lightboxMedia, setLightboxMedia] = useState<{ url: string; type?: string; fileName?: string } | null>(null);
+
+  // Hold-to-grow quick emoji state (Meta Messenger style)
+  const [quickEmojiScale, setQuickEmojiScale] = useState(1);
+  const [isGrowingEmoji, setIsGrowingEmoji] = useState(false);
+  const growIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const emojiScaleRef = useRef(1);
+
+  const startGrowingEmoji = (e: React.MouseEvent | React.TouchEvent) => {
+    setIsGrowingEmoji(true);
+    emojiScaleRef.current = 1;
+    setQuickEmojiScale(1);
+
+    if (growIntervalRef.current) clearInterval(growIntervalRef.current);
+
+    growIntervalRef.current = setInterval(() => {
+      if (emojiScaleRef.current < 2.5) {
+        emojiScaleRef.current += 0.08;
+        setQuickEmojiScale(emojiScaleRef.current);
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+          try { navigator.vibrate(15); } catch (err) {}
+        }
+      }
+    }, 50);
+  };
+
+  const stopGrowingEmoji = (e?: React.MouseEvent | React.TouchEvent) => {
+    if (growIntervalRef.current) {
+      clearInterval(growIntervalRef.current);
+      growIntervalRef.current = null;
+    }
+
+    if (!isGrowingEmoji && emojiScaleRef.current === 1) return;
+
+    const finalScale = emojiScaleRef.current;
+    setIsGrowingEmoji(false);
+    setQuickEmojiScale(1);
+
+    let emojiHtml = "👍";
+    if (finalScale > 1.3) {
+      const fontSize = Math.round(20 * finalScale);
+      emojiHtml = `<span style="font-size: ${fontSize}px; display: inline-block; line-height: 1;">👍</span>`;
+    }
+    
+    sendCustomEmojiMessage(emojiHtml);
+  };
+
+  const sendCustomEmojiMessage = async (contentHtml: string) => {
+    const tempId = `optimistic-${Date.now()}`;
+    const optimisticMsg: Message = {
+      id: tempId,
+      content: contentHtml,
+      sender: {
+        id: currentUserId,
+        name: currentUserName,
+        status: "online"
+      },
+      createdAt: new Date().toISOString(),
+      reactions: [],
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+    playMessengerOutgoingSound();
+    scrollToBottom(true);
+
+    try {
+      await fetch(apiBase, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: contentHtml }),
+      });
+    } catch (err) {
+      console.error("Failed to send quick emoji:", err);
+    }
+  };
 
   // Details Panel State (Meta Messenger style)
   const [detailsTab, setDetailsTab] = useState<'media' | 'files' | 'links'>('media');
@@ -281,6 +358,10 @@ export default function ChatArea({
     });
     return links;
   }, [messages]);
+
+  const pinnedMessages = useMemo(() => {
+    return messages.filter(m => pinnedMessageIds.includes(m.id));
+  }, [messages, pinnedMessageIds]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -1331,6 +1412,58 @@ export default function ChatArea({
               <button className="btn-icon" onClick={() => { setShowSearch(false); setSearchQuery(""); }}><X size={16} /></button>
             </div>
           )}
+          {/* Meta Messenger Pinned Messages Banner Header */}
+          {pinnedMessages.length > 0 && (
+            <div 
+              style={{
+                padding: '8px 16px',
+                background: 'rgba(59, 130, 246, 0.08)',
+                borderBottom: '1px solid rgba(59, 130, 246, 0.2)',
+                backdropFilter: 'blur(10px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 12,
+                zIndex: 10,
+              }}
+            >
+              <div 
+                style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', flex: 1, minWidth: 0 }}
+                onClick={() => {
+                  const activePinned = pinnedMessages[pinnedIndex % pinnedMessages.length];
+                  if (activePinned) {
+                    const el = document.querySelector(`[data-msg-bubble="${activePinned.id}"]`);
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }
+                }}
+              >
+                <div style={{ background: 'var(--brand)', color: 'white', padding: 6, borderRadius: '50%', display: 'flex', flexShrink: 0 }}>
+                  <Pin size={14} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--brand)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Pinned Message {pinnedMessages.length > 1 ? `(${pinnedIndex + 1}/${pinnedMessages.length})` : ''}
+                  </span>
+                  <span style={{ fontSize: 13, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {pinnedMessages[pinnedIndex % pinnedMessages.length]?.content?.replace(/<[^>]*>?/gm, '') || "Pinned attachment"}
+                  </span>
+                </div>
+              </div>
+
+              {pinnedMessages.length > 1 && (
+                <button
+                  type="button"
+                  className="btn-icon"
+                  onClick={() => setPinnedIndex(prev => (prev + 1) % pinnedMessages.length)}
+                  style={{ padding: 4, borderRadius: '50%', background: 'rgba(255,255,255,0.1)' }}
+                  title="Next pinned message"
+                >
+                  <ChevronDown size={16} />
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Messages */}
           <div className={styles.messageList} id="message-list" ref={messageListRef}>
         {loading ? (
@@ -1609,17 +1742,19 @@ export default function ChatArea({
                                   alt={msg.fileName || "Uploaded image"} 
                                   className={styles.fileImg} 
                                   onLoad={() => scrollToBottom(true)}
-                                  onClick={() => setPreviewFile({ url: msg.fileUrl!, name: msg.fileName || 'file', type: 'image' })}
-                                  title="Click to view image"
+                                  onClick={() => setLightboxMedia({ url: msg.fileUrl!, fileName: msg.fileName || 'Photo', type: 'image' })}
+                                  title="Click to view image in Lightbox"
+                                  style={{ cursor: 'pointer' }}
                                 />
                               ) : isAudio ? (
-                                <audio controls src={msg.fileUrl} style={{ height: 40, outline: 'none', maxWidth: 250 }} />
+                                <AudioWaveformPlayer src={msg.fileUrl} isMine={isMine} />
                               ) : isVideo ? (
                                 <video 
                                   src={msg.fileUrl} 
                                   className={styles.fileImg} 
-                                  onClick={() => setPreviewFile({ url: msg.fileUrl!, name: msg.fileName || 'file', type: 'video' })}
-                                  title="Click to view video"
+                                  onClick={() => setLightboxMedia({ url: msg.fileUrl!, fileName: msg.fileName || 'Video', type: 'video' })}
+                                  title="Click to view video in Lightbox"
+                                  style={{ cursor: 'pointer' }}
                                 />
                               ) : (
                                 <button onClick={(e) => { e.preventDefault(); setPreviewFile({ url: msg.fileUrl!, name: msg.fileName || 'file', type: 'document' }); }}
@@ -1872,15 +2007,43 @@ export default function ChatArea({
           )}
 
           {!isRecording && (
-            <button
-              id="send-btn"
-              className={`${styles.sendBtn} ${!isEditorEmpty ? styles.sendBtnActive : ""}`}
-              onClick={sendMessage}
-              disabled={isEditorEmpty || sending}
-              aria-label={editingMessageId ? "Save changes" : "Send message"}
-            >
-              {sending ? <span className="spinner" style={{ width: 16, height: 16 }} /> : (editingMessageId ? <Check size={18} /> : <Send size={18} />)}
-            </button>
+            isEditorEmpty && !editingMessageId ? (
+              <button
+                type="button"
+                className={styles.sendBtn}
+                onMouseDown={startGrowingEmoji}
+                onMouseUp={stopGrowingEmoji}
+                onMouseLeave={stopGrowingEmoji}
+                onTouchStart={startGrowingEmoji}
+                onTouchEnd={stopGrowingEmoji}
+                title="Send 👍 (Hold to grow)"
+                style={{
+                  transform: `scale(${quickEmojiScale})`,
+                  transition: isGrowingEmoji ? "transform 0.05s ease-out" : "transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                  fontSize: 22,
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  userSelect: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 4,
+                }}
+              >
+                👍
+              </button>
+            ) : (
+              <button
+                id="send-btn"
+                className={`${styles.sendBtn} ${!isEditorEmpty ? styles.sendBtnActive : ""}`}
+                onClick={sendMessage}
+                disabled={isEditorEmpty || sending}
+                aria-label={editingMessageId ? "Save changes" : "Send message"}
+              >
+                {sending ? <span className="spinner" style={{ width: 16, height: 16 }} /> : (editingMessageId ? <Check size={18} /> : <Send size={18} />)}
+              </button>
+            )
           )}
           {editingMessageId && (
             <button
@@ -2875,6 +3038,16 @@ export default function ChatArea({
           );
         })(),
         document.body
+      )}
+
+      {/* Meta Messenger Lightbox Modal */}
+      {lightboxMedia && (
+        <MediaLightboxModal
+          url={lightboxMedia.url}
+          fileName={lightboxMedia.fileName}
+          type={lightboxMedia.type}
+          onClose={() => setLightboxMedia(null)}
+        />
       )}
     </div>
   );
