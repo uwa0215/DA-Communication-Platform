@@ -4,6 +4,7 @@ import { users, channels, channelMembers } from "@/lib/schema";
 import { eq, count } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { validatePassword } from "@/lib/passwordValidation";
+import { validateEmail } from "@/lib/emailValidation";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,6 +12,11 @@ export async function POST(req: NextRequest) {
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    const emailResult = validateEmail(email);
+    if (!emailResult.isValid) {
+      return NextResponse.json({ error: emailResult.error || "Invalid email address format" }, { status: 400 });
     }
 
     const passResult = validatePassword(password);

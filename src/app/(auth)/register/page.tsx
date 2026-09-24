@@ -9,6 +9,7 @@ import s from "../login/login.module.css";
 import rs from "./register.module.css";
 import { PasswordStrengthMeter } from "@/components/auth/PasswordStrengthMeter";
 import { validatePassword } from "@/lib/passwordValidation";
+import { validateEmail } from "@/lib/emailValidation";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,14 +18,36 @@ export default function RegisterPage() {
   });
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [emailTouched, setEmailTouched] = useState(false);
   const [loading, setLoading] = useState(false);
 
   function update(field: string, val: string) {
     setForm(f => ({ ...f, [field]: val }));
+    if (field === "email") {
+      if (emailTouched) {
+        const res = validateEmail(val);
+        setEmailError(res.isValid ? "" : (res.error || "Invalid email address"));
+      }
+    }
+  }
+
+  function handleEmailBlur() {
+    setEmailTouched(true);
+    const res = validateEmail(form.email);
+    setEmailError(res.isValid ? "" : (res.error || "Invalid email address"));
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const emailRes = validateEmail(form.email);
+    if (!emailRes.isValid) {
+      setEmailTouched(true);
+      setEmailError(emailRes.error || "Please enter a valid email address.");
+      setError(emailRes.error || "Please enter a valid email address.");
+      return;
+    }
+
     if (form.password !== form.confirmPassword) { setError("Passwords do not match."); return; }
     const passResult = validatePassword(form.password);
     if (!passResult.isValid) { setError(passResult.errors[0] || "Password does not meet security requirements."); return; }
@@ -105,8 +128,16 @@ export default function RegisterPage() {
                 <Mail className={s.inputIcon} size={18} />
                 <input id="reg-email" type="email" className={s.input}
                   placeholder="you@da.gov.ph" value={form.email}
-                  onChange={e => update("email", e.target.value)} required />
+                  onChange={e => update("email", e.target.value)}
+                  onBlur={handleEmailBlur}
+                  style={emailError ? { borderColor: "#ef4444", boxShadow: "0 0 0 3px rgba(239, 68, 68, 0.15)" } : {}}
+                  required />
               </div>
+              {emailError && (
+                <span style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px", display: "block", fontWeight: 500 }}>
+                  {emailError}
+                </span>
+              )}
             </div>
 
             {/* Job Title + Division */}
