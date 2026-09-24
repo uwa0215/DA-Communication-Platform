@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Suspense } from "react";
 import daLogo from "../../../../public/New Logo.png";
-import { Eye, EyeOff, ShieldCheck, Globe, Zap, Mail, Lock } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck, Globe, Zap, Mail, Lock, CheckCircle2, Sparkles, Loader2 } from "lucide-react";
 import s from "./login.module.css";
 
 function LoginContent() {
@@ -25,6 +25,7 @@ function LoginContent() {
     : authError ? "Authentication failed." : ""
   );
   const [loading, setLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -45,8 +46,11 @@ function LoginContent() {
         }
         setLoading(false);
       } else {
-        router.push("/dashboard");
-        router.refresh();
+        setIsSuccess(true);
+        setTimeout(() => {
+          router.push("/dashboard");
+          router.refresh();
+        }, 700);
       }
     } catch (err: any) {
       console.error("Login error:", err);
@@ -57,6 +61,23 @@ function LoginContent() {
 
   return (
     <div className={s.page}>
+      {/* Login Success Celebration Overlay */}
+      {isSuccess && (
+        <div className={s.successOverlay}>
+          <div className={s.successCard}>
+            <div className={s.successIconWrap}>
+              <div className={s.successRing} />
+              <CheckCircle2 size={48} color="#ffffff" />
+            </div>
+            <h2 className={s.successTitle}>Welcome Back!</h2>
+            <p className={s.successSub}>
+              <Sparkles size={14} style={{ display: 'inline', marginRight: 4 }} />
+              Authenticating secure session & entering workspace...
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Background decorations */}
       <div className={s.bgOrb1} />
       <div className={s.bgOrb2} />
@@ -115,8 +136,22 @@ function LoginContent() {
               </label>
               <Link href="/forgot-password" className={s.forgotLink}>Forgot password?</Link>
             </div>
-            <button type="submit" className={s.submitBtn} disabled={loading}>
-              {loading ? "Signing in..." : "Sign In to Workspace"}
+            <button
+              type="submit"
+              className={`${s.submitBtn} ${isSuccess ? s.submitBtnSuccess : ""}`}
+              disabled={loading || isSuccess}
+            >
+              {isSuccess ? (
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <CheckCircle2 size={20} /> Login Successful!
+                </span>
+              ) : loading ? (
+                <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <Loader2 size={18} style={{ animation: 'spin 0.8s linear infinite' }} /> Signing in...
+                </span>
+              ) : (
+                "Sign In to Workspace"
+              )}
             </button>
           </form>
 

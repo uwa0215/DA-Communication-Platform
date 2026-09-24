@@ -429,9 +429,109 @@
   40%  { left: 120%; opacity: 0; }
   100% { left: 120%; opacity: 0; }
 }
-.submitBtn:hover { transform: translateY(-2px); box-shadow: 0 8px 36px rgba(16,185,129,0.55); }
-.submitBtn:active { transform: translateY(0); }
-.submitBtn:disabled { opacity: 0.6; cursor: default; transform: none; }
+.submitBtn:hover { transform: translateY(-2px) scale(1.02); box-shadow: 0 8px 36px rgba(16,185,129,0.55); }
+.submitBtn:active { transform: scale(0.95); }
+.submitBtn:disabled { opacity: 0.8; cursor: default; transform: none; }
+
+.submitBtnSuccess {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important;
+  box-shadow: 0 0 35px rgba(16, 185, 129, 0.8), 0 0 60px rgba(16, 185, 129, 0.4) !important;
+  animation: successPulse 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite alternate !important;
+}
+
+@keyframes successPulse {
+  from { transform: scale(1); box-shadow: 0 0 25px rgba(16, 185, 129, 0.6); }
+  to { transform: scale(1.03); box-shadow: 0 0 45px rgba(16, 185, 129, 0.9), 0 0 80px rgba(52, 211, 153, 0.5); }
+}
+
+/* ── Login Success Celebration Modal Overlay ── */
+.successOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(2, 12, 24, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: overlayFadeIn 0.3s ease forwards;
+}
+
+.successCard {
+  background: rgba(6, 24, 44, 0.92);
+  border: 1.5px solid rgba(52, 211, 153, 0.35);
+  border-radius: 28px;
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 0 60px rgba(16, 185, 129, 0.35), 0 20px 60px rgba(0, 0, 0, 0.6);
+  animation: successPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.successIconWrap {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  box-shadow: 0 0 40px rgba(16, 185, 129, 0.6);
+  animation: checkPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.successRing {
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  border: 2px solid rgba(52, 211, 153, 0.6);
+  animation: ringExpand 1.5s ease-out infinite;
+}
+
+.successTitle {
+  font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 8px;
+}
+
+.successSub {
+  font-size: 14px;
+  color: #34d399;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes successPop {
+  0% { transform: scale(0.8) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+@keyframes checkPop {
+  0% { transform: scale(0.3) rotate(-45deg); opacity: 0; }
+  70% { transform: scale(1.15) rotate(10deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes ringExpand {
+  0% { transform: scale(0.85); opacity: 0.9; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
 
 /* ── Divider ── */
 .divider {

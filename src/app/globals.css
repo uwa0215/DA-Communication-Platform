@@ -199,6 +199,16 @@ button, a, input, textarea, select {
 }
 
 /* ===== BUTTONS ===== */
+button, .btn, [type="button"], [type="submit"] {
+  position: relative;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.25s ease, background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+  user-select: none;
+}
+
+button:active, .btn:active, [type="button"]:active, [type="submit"]:active {
+  transform: scale(0.94) translateY(1px) !important;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -210,24 +220,26 @@ button, a, input, textarea, select {
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  transition: all var(--t-fast) cubic-bezier(0.34, 1.56, 0.64, 1);
   border: 1px solid transparent;
   text-decoration: none;
   white-space: nowrap;
+  overflow: hidden;
 }
 
 .btn-primary {
   background: var(--brand);
   color: #fff;
   border-color: var(--brand);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
 }
 .btn-primary:hover {
   background: var(--brand-hover);
-  box-shadow: var(--shadow-glow);
+  box-shadow: var(--shadow-glow), 0 6px 20px rgba(16, 185, 129, 0.4);
   transform: translateY(-2px) scale(1.03);
 }
 .btn-primary:active {
-  transform: translateY(1px) scale(0.96);
+  transform: translateY(1px) scale(0.95);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .btn-ghost {
@@ -238,10 +250,10 @@ button, a, input, textarea, select {
 .btn-ghost:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
-  transform: translateY(-1px);
+  transform: translateY(-1px) scale(1.02);
 }
 .btn-ghost:active {
-  transform: scale(0.96);
+  transform: scale(0.95);
 }
 
 .btn-danger {
@@ -253,6 +265,10 @@ button, a, input, textarea, select {
   background: #ef4444;
   color: #fff;
   transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 4px 16px rgba(239, 68, 68, 0.35);
+}
+.btn-danger:active {
+  transform: scale(0.95);
 }
 
 .btn-icon {
@@ -262,7 +278,6 @@ button, a, input, textarea, select {
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all var(--t-fast) cubic-bezier(0.34, 1.56, 0.64, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -270,10 +285,11 @@ button, a, input, textarea, select {
 .btn-icon:hover {
   background: var(--bg-hover);
   color: var(--brand);
-  transform: scale(1.15) rotate(5deg);
+  transform: scale(1.15) rotate(6deg);
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.15);
 }
 .btn-icon:active {
-  transform: scale(0.9);
+  transform: scale(0.88) rotate(-4deg);
 }
 
 /* ===== INPUTS ===== */
