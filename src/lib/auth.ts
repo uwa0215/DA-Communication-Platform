@@ -9,9 +9,10 @@ class PendingApprovalError extends CredentialsSignin {
   code = "pending_approval";
 }
 
-// Hardcode AUTH_URL to explicitly force NextAuth to use the correct domain for redirects and secure cookies.
-// This completely overrides any misconfigured Railway environment variables and prevents ERR_INVALID_URL.
-process.env.AUTH_URL = "https://da-communication-platform-production.up.railway.app";
+// Use process.env.AUTH_URL or process.env.VERCEL_URL dynamically instead of hardcoded Railway domain
+if (!process.env.AUTH_URL && process.env.VERCEL_URL) {
+  process.env.AUTH_URL = `https://${process.env.VERCEL_URL}`;
+}
 process.env.AUTH_TRUST_HOST = "true";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -117,5 +118,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/login",
   },
   session: { strategy: "jwt" },
-  useSecureCookies: true,
+  useSecureCookies: process.env.NODE_ENV === "production",
 });
