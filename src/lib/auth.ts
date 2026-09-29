@@ -9,13 +9,19 @@ class PendingApprovalError extends CredentialsSignin {
   code = "pending_approval";
 }
 
-// Use process.env.AUTH_URL or process.env.VERCEL_URL dynamically instead of hardcoded Railway domain
+// Fallback secret if not configured in environment variables to prevent ConfigurationError
+if (!process.env.AUTH_SECRET) {
+  process.env.AUTH_SECRET = process.env.NEXTAUTH_SECRET || "your-super-secret-key-change-in-production-min-32-chars";
+}
+
+// Use process.env.AUTH_URL or process.env.VERCEL_URL dynamically
 if (!process.env.AUTH_URL && process.env.VERCEL_URL) {
   process.env.AUTH_URL = `https://${process.env.VERCEL_URL}`;
 }
 process.env.AUTH_TRUST_HOST = "true";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  secret: process.env.AUTH_SECRET,
   trustHost: true,
   providers: [
     Credentials({
