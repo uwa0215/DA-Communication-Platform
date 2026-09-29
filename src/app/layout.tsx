@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import PWAInstallPrompt from "@/components/pwa/PWAInstallPrompt";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -43,7 +42,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body suppressHydrationWarning className="bg-background text-foreground antialiased selection:bg-emerald-500/20 selection:text-emerald-400">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           {children}
-          <PWAInstallPrompt />
         </ThemeProvider>
         <script dangerouslySetInnerHTML={{
           __html: `
