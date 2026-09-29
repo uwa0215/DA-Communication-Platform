@@ -9,9 +9,9 @@ const isCloud = connectionString.includes('supabase.com') || connectionString.in
 
 const pool = new Pool({
   connectionString,
-  max: isProduction ? 50 : 10,
-  idleTimeoutMillis: isProduction ? 60000 : 30000,
-  connectionTimeoutMillis: isProduction ? 10000 : 5000,
+  max: 10,
+  idleTimeoutMillis: 20000,
+  connectionTimeoutMillis: 10000,
   ssl: (isProduction || isCloud) ? { rejectUnauthorized: false } : undefined,
 });
 

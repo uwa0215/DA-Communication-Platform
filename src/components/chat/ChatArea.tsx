@@ -758,24 +758,48 @@ export default function ChatArea({
 
     // 2. Background revalidation (SWR pattern)
     let isSubscribed = true;
-    fetch(apiBase)
-      .then(res => res.json())
-      .then(data => {
-        if (!isSubscribed) return;
-        const fetchedMsgs = data.messages || [];
-        const hasMoreVal = fetchedMsgs.length === 50;
-        setMessages(fetchedMsgs);
-        setHasMore(hasMoreVal);
-        setClientCachedMessages(apiBase, fetchedMsgs, hasMoreVal);
-        setLoading(false);
-      })
-      .catch(() => {
-        if (!isSubscribed) return;
-        setLoading(false);
-      });
+    const fetchLatest = () => {
+      fetch(apiBase)
+        .then(res => res.json())
+        .then(data => {
+          if (!isSubscribed) return;
+          const fetchedMsgs = data.messages || [];
+          const hasMoreVal = fetchedMsgs.length === 50;
+          setMessages(prev => {
+            if (prev.length === 0) return fetchedMsgs;
+            const lastPrev = prev[prev.length - 1];
+            const lastFetched = fetchedMsgs[fetchedMsgs.length - 1];
+            if (lastPrev?.id !== lastFetched?.id || prev.length !== fetchedMsgs.length) {
+              return fetchedMsgs;
+            }
+            const hasUpdate = fetchedMsgs.some((m: any, i: number) => {
+              const p = prev[i];
+              return !p || p.edited !== m.edited || (p.reactions?.length || 0) !== (m.reactions?.length || 0);
+            });
+            if (hasUpdate) return fetchedMsgs;
+            return prev;
+          });
+          setHasMore(hasMoreVal);
+          setClientCachedMessages(apiBase, fetchedMsgs, hasMoreVal);
+          setLoading(false);
+        })
+        .catch(() => {
+          if (!isSubscribed) return;
+          setLoading(false);
+        });
+    };
+
+    fetchLatest();
+
+    // 3. Auto-sync interval for serverless environments (Vercel)
+    const pollInterval = setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      fetchLatest();
+    }, 3000);
 
     return () => {
       isSubscribed = false;
+      clearInterval(pollInterval);
     };
   }, [apiBase]);
 
