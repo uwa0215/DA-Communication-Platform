@@ -76,11 +76,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new PendingApprovalError();
         }
 
+        // Only include avatar URL if it is a short URL (e.g. Cloudinary/CDN), NEVER large base64 data URIs
+        const safeAvatar = (user.avatar && !user.avatar.startsWith("data:") && user.avatar.length < 500) 
+          ? user.avatar 
+          : undefined;
+
         return {
           id: user.id,
           name: user.name,
           email: user.email,
-          image: user.avatar,
+          image: safeAvatar,
           role: user.role,
           isApproved: user.isApproved,
         };
@@ -104,8 +109,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.isApproved = (user as any).isApproved;
         token.name = user.name;
         token.email = user.email;
-        // Omit token.image to prevent HTTP 431 Request Header Fields Too Large
       }
+      // Strictly remove picture and oversized fields to prevent HTTP 494 / 431 Request Header Too Large
+      delete (token as any).picture;
+      delete (token as any).image;
       return token;
     },
     async session({ session, token }) {
