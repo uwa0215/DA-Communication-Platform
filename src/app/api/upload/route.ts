@@ -4,21 +4,23 @@ import { v2 as cloudinary } from "cloudinary";
 
 export const dynamic = "force-dynamic";
 
-// Ensure Cloudinary is configured with API keys from environment
-if (process.env.CLOUDINARY_URL) {
-  const match = process.env.CLOUDINARY_URL.match(/cloudinary:\/\/([^:]+):([^@]+)@(.+)/);
-  if (match) {
-    cloudinary.config({
-      api_key: match[1],
-      api_secret: match[2],
-      cloud_name: match[3],
-      secure: true,
-    });
-  } else {
-    cloudinary.config({ secure: true });
-  }
+// Ensure Cloudinary is configured with API keys from environment or fallback
+const cloudinaryUrl = process.env.CLOUDINARY_URL || "cloudinary://837568356153353:UunJ-NNsGfH5qc-_ZAWGYrfavBs@iwse7szz";
+const match = cloudinaryUrl.match(/cloudinary:\/\/([^:]+):([^@]+)@(.+)/);
+if (match) {
+  cloudinary.config({
+    api_key: process.env.CLOUDINARY_API_KEY || match[1],
+    api_secret: process.env.CLOUDINARY_API_SECRET || match[2],
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || match[3],
+    secure: true,
+  });
 } else {
-  cloudinary.config({ secure: true });
+  cloudinary.config({
+    api_key: process.env.CLOUDINARY_API_KEY || "837568356153353",
+    api_secret: process.env.CLOUDINARY_API_SECRET || "UunJ-NNsGfH5qc-_ZAWGYrfavBs",
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "iwse7szz",
+    secure: true,
+  });
 }
 
 export async function POST(req: NextRequest) {
