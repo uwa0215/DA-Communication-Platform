@@ -642,13 +642,12 @@ export default function ChatArea({
     if (!capturedPhotoBlob || uploadingPhoto) return;
     setUploadingPhoto(true);
 
-    const file = new (globalThis as any).File([capturedPhotoBlob], `photo_${Date.now()}.jpg`, { type: 'image/jpeg' });
-    const fakeEvent = {
-      target: { files: [file] }
-    } as unknown as React.ChangeEvent<HTMLInputElement>;
-
-    await handleFileUpload(fakeEvent);
-    closeCameraModal();
+    try {
+      await uploadAndSendFile(capturedPhotoBlob, `photo_${Date.now()}.jpg`);
+    } finally {
+      closeCameraModal();
+      setUploadingPhoto(false);
+    }
   };
 
   const extensions = useMemo(() => [
@@ -1158,25 +1157,28 @@ export default function ChatArea({
     setMessageToDelete(null);
   }
 
-  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function uploadAndSendFile(fileOrBlob: File | Blob, customFileName?: string) {
+    if (!fileOrBlob) return;
     
     setSending(true);
-    
+
+    const isFile = fileOrBlob instanceof File;
+    const fileName = customFileName || (isFile ? fileOrBlob.name : `photo_${Date.now()}.jpg`);
+    const fileType = fileOrBlob.type || (fileName.endsWith('.jpg') ? 'image/jpeg' : 'application/octet-stream');
+
     const formData = new FormData();
-    formData.append("file", file);
-    
+    formData.append("file", fileOrBlob, fileName);
+
     // 1. Create optimistic attachment message
     const tempId = `optimistic-${Date.now()}`;
-    const localUrl = URL.createObjectURL(file);
-    
+    const localUrl = URL.createObjectURL(fileOrBlob);
+
     const optimisticMsg: Message = {
       id: tempId,
       content: "",
       fileUrl: localUrl,
-      fileName: file.name,
-      fileType: file.type,
+      fileName: fileName,
+      fileType: fileType,
       sender: {
         id: currentUserId,
         name: currentUserName,
@@ -1185,19 +1187,26 @@ export default function ChatArea({
       createdAt: new Date().toISOString(),
       reactions: []
     };
-    
+
     setMessages(prev => [...prev, optimisticMsg]);
-    
+    scrollToBottom(true);
+
     try {
       const res = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
-      const data = await res.json();
-      
+
       if (!res.ok) {
-        throw new Error(data.error || `Upload failed (status: ${res.status})`);
+        let errMsg = `Upload failed (status: ${res.status})`;
+        try {
+          const errData = await res.json();
+          if (errData?.error) errMsg = errData.error;
+        } catch {}
+        throw new Error(errMsg);
       }
+
+      const data = await res.json();
 
       const msgRes = await fetch(apiBase, {
         method: "POST",
@@ -1205,8 +1214,9 @@ export default function ChatArea({
         body: JSON.stringify({ 
           content: "", 
           fileUrl: data.url, 
-          fileName: data.fileName, 
-          fileType: data.fileType 
+          fileName: data.fileName || fileName, 
+          fileType: data.fileType || fileType,
+          parentId: replyingToMessage?.id || null,
         }),
       });
 
@@ -1214,15 +1224,35 @@ export default function ChatArea({
         const errData = await msgRes.json().catch(() => ({}));
         throw new Error(errData.error || `Failed to save message (status: ${msgRes.status})`);
       }
+
+      const savedData = await msgRes.json();
+      if (savedData?.message) {
+        setMessages(prev => prev.map(m => m.id === tempId ? savedData.message : m));
+      }
+
+      const settings = loadSettings();
+      if (settings.playSounds) {
+        playMessengerOutgoingSound();
+      }
+      scrollToBottom();
+      setReplyingToMessage(null);
     } catch (err: any) {
       console.error("Upload error details:", err);
-      alert(`File upload failed: ${err.message || err}`);
+      alert(`Upload failed: ${err.message || err}`);
       // Remove optimistic message on upload failure
       setMessages(prev => prev.filter(x => x.id !== tempId));
     } finally {
       setSending(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (cameraInputRef.current) cameraInputRef.current.value = "";
     }
-    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      uploadAndSendFile(file, file.name);
+    }
   }
 
   const startRecording = async () => {
@@ -1254,14 +1284,9 @@ export default function ChatArea({
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new (globalThis as any).File(audioChunksRef.current, "voice_message.webm", { type: "audio/webm" });
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         audioChunksRef.current = [];
-        
-        const fakeEvent = {
-          target: { files: [audioBlob] }
-        } as unknown as React.ChangeEvent<HTMLInputElement>;
-        
-        await handleFileUpload(fakeEvent);
+        await uploadAndSendFile(audioBlob, "voice_message.webm");
       };
 
       mediaRecorderRef.current.stop();
