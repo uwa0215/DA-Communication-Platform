@@ -15,12 +15,4 @@ const pool = new Pool({
   ssl: (isProduction || isCloud) ? { rejectUnauthorized: false } : undefined,
 });
 
-// Graceful shutdown: drain pool on process exit
-process.on('SIGTERM', () => {
-  pool.end().catch(console.error);
-});
-process.on('SIGINT', () => {
-  pool.end().catch(console.error);
-});
-
 export const db = drizzle(pool, { schema });
