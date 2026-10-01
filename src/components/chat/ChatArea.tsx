@@ -1162,8 +1162,7 @@ export default function ChatArea({
     
     setSending(true);
 
-    const isFile = fileOrBlob instanceof File;
-    const fileName = customFileName || (isFile ? fileOrBlob.name : `photo_${Date.now()}.jpg`);
+    const fileName = customFileName || (fileOrBlob as any).name || `photo_${Date.now()}.jpg`;
     const fileType = fileOrBlob.type || (fileName.endsWith('.jpg') ? 'image/jpeg' : 'application/octet-stream');
 
     const formData = new FormData();
